@@ -55,32 +55,39 @@ class _GeneralUserSplashPageState extends State<GeneralUserSplashPage> {
               child: Column(
                 children: [
                   const Spacer(flex: 5),
-                  Container(
-                    width: 136,
-                    height: 136,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.92),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 24,
-                          spreadRadius: 1,
-                        ),
-                      ],
-                    ),
-                    child: Center(
-                      child: Container(
-                        width: 78,
-                        height: 78,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF2E6FB6),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.waves_rounded,
-                          color: Colors.white,
-                          size: 44,
+                  TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0.94, end: 1),
+                    duration: const Duration(milliseconds: 900),
+                    curve: Curves.easeOutCubic,
+                    builder: (context, scale, child) =>
+                        Transform.scale(scale: scale, child: child),
+                    child: Container(
+                      width: 136,
+                      height: 136,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.92),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.08),
+                            blurRadius: 24,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Container(
+                          width: 78,
+                          height: 78,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF2E6FB6),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.waves_rounded,
+                            color: Colors.white,
+                            size: 44,
+                          ),
                         ),
                       ),
                     ),

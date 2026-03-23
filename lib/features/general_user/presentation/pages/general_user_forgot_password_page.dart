@@ -49,9 +49,20 @@ class _GeneralUserForgotPasswordPageState
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0, end: 1),
+                duration: const Duration(milliseconds: 700),
+                curve: Curves.easeOutCubic,
+                builder: (context, progress, child) {
+                  final offsetY = (1 - progress) * 16;
+                  return Opacity(
+                    opacity: progress,
+                    child: Transform.translate(offset: Offset(0, offsetY), child: child),
+                  );
+                },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                   const SizedBox(height: 64),
                   Center(
                     child: Container(
@@ -202,7 +213,8 @@ class _GeneralUserForgotPasswordPageState
                   const Spacer(),
                   const Center(child: _BrandFooter()),
                   const SizedBox(height: 18),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

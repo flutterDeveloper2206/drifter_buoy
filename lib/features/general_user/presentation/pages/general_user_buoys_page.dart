@@ -168,11 +168,14 @@ class _GeneralUserBuoysPageState extends State<GeneralUserBuoysPage> {
                                       const SizedBox(height: 10),
                                   itemBuilder: (context, index) {
                                     final buoy = state.filteredBuoys[index];
-                                    return _BuoyCard(
-                                      buoy: buoy,
-                                      onTap: () => context.push(
-                                        AppRoutes.buoyOverviewPath,
-                                        extra: buoy.id.replaceAll(' ', ''),
+                                    return _AnimatedListItem(
+                                      index: index,
+                                      child: _BuoyCard(
+                                        buoy: buoy,
+                                        onTap: () => context.push(
+                                          AppRoutes.buoyOverviewPath,
+                                          extra: buoy.id.replaceAll(' ', ''),
+                                        ),
                                       ),
                                     );
                                   },
@@ -622,6 +625,35 @@ class _EmptyBuoysView extends StatelessWidget {
           textAlign: TextAlign.center,
         ),
       ),
+    );
+  }
+}
+
+class _AnimatedListItem extends StatelessWidget {
+  final int index;
+  final Widget child;
+
+  const _AnimatedListItem({required this.index, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final start = (index * 0.04).clamp(0.0, 0.6);
+    final end = (start + 0.35).clamp(0.0, 1.0);
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 650),
+      curve: Interval(start, end, curve: Curves.easeOutCubic),
+      builder: (context, progress, animatedChild) {
+        final offsetY = (1 - progress) * 12;
+        return Opacity(
+          opacity: progress,
+          child: Transform.translate(
+            offset: Offset(0, offsetY),
+            child: animatedChild,
+          ),
+        );
+      },
+      child: child,
     );
   }
 }

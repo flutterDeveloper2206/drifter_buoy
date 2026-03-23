@@ -12,20 +12,21 @@ class GeneralUserLoginPage extends StatefulWidget {
 class _GeneralUserLoginPageState extends State<GeneralUserLoginPage> {
   late final TextEditingController _emailController;
   late final TextEditingController _passwordController;
-
-  bool _obscurePassword = true;
+  late final ValueNotifier<bool> _obscurePasswordNotifier;
 
   @override
   void initState() {
     super.initState();
     _emailController = TextEditingController(text: 'mailid@example.com');
     _passwordController = TextEditingController(text: '**********');
+    _obscurePasswordNotifier = ValueNotifier<bool>(true);
   }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _obscurePasswordNotifier.dispose();
     super.dispose();
   }
 
@@ -40,9 +41,20 @@ class _GeneralUserLoginPageState extends State<GeneralUserLoginPage> {
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0, end: 1),
+                duration: const Duration(milliseconds: 700),
+                curve: Curves.easeOutCubic,
+                builder: (context, progress, child) {
+                  final offsetY = (1 - progress) * 16;
+                  return Opacity(
+                    opacity: progress,
+                    child: Transform.translate(offset: Offset(0, offsetY), child: child),
+                  );
+                },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                   const SizedBox(height: 64),
                   Center(
                     child: Container(
@@ -107,24 +119,27 @@ class _GeneralUserLoginPageState extends State<GeneralUserLoginPage> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  TextField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    decoration: _fieldDecoration.copyWith(
-                      suffixIcon: IconButton(
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
-                          color: const Color(0xFF3A4046),
+                  ValueListenableBuilder<bool>(
+                    valueListenable: _obscurePasswordNotifier,
+                    builder: (context, obscure, _) {
+                      return TextField(
+                        controller: _passwordController,
+                        obscureText: obscure,
+                        decoration: _fieldDecoration.copyWith(
+                          suffixIcon: IconButton(
+                            onPressed: () {
+                              _obscurePasswordNotifier.value = !obscure;
+                            },
+                            icon: Icon(
+                              obscure
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
+                              color: const Color(0xFF3A4046),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 20),
                   InkWell(
@@ -167,7 +182,8 @@ class _GeneralUserLoginPageState extends State<GeneralUserLoginPage> {
                   const Spacer(),
                   const Center(child: _BrandFooter()),
                   const SizedBox(height: 18),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

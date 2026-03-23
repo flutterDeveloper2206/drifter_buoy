@@ -15,21 +15,24 @@ class _GeneralUserCreatePasswordPageState
     extends State<GeneralUserCreatePasswordPage> {
   late final TextEditingController _newPasswordController;
   late final TextEditingController _confirmPasswordController;
-
-  bool _obscureNewPassword = true;
-  bool _obscureConfirmPassword = true;
+  late final ValueNotifier<bool> _obscureNewPasswordNotifier;
+  late final ValueNotifier<bool> _obscureConfirmPasswordNotifier;
 
   @override
   void initState() {
     super.initState();
     _newPasswordController = TextEditingController(text: '**********');
     _confirmPasswordController = TextEditingController(text: '**********');
+    _obscureNewPasswordNotifier = ValueNotifier<bool>(true);
+    _obscureConfirmPasswordNotifier = ValueNotifier<bool>(true);
   }
 
   @override
   void dispose() {
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
+    _obscureNewPasswordNotifier.dispose();
+    _obscureConfirmPasswordNotifier.dispose();
     super.dispose();
   }
 
@@ -44,9 +47,20 @@ class _GeneralUserCreatePasswordPageState
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0, end: 1),
+                duration: const Duration(milliseconds: 700),
+                curve: Curves.easeOutCubic,
+                builder: (context, progress, child) {
+                  final offsetY = (1 - progress) * 16;
+                  return Opacity(
+                    opacity: progress,
+                    child: Transform.translate(offset: Offset(0, offsetY), child: child),
+                  );
+                },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                   const SizedBox(height: 12),
                   IconButton(
                     onPressed: () {
@@ -78,24 +92,27 @@ class _GeneralUserCreatePasswordPageState
                     ),
                   ),
                   const SizedBox(height: 8),
-                  TextField(
-                    controller: _newPasswordController,
-                    obscureText: _obscureNewPassword,
-                    decoration: _fieldDecoration.copyWith(
-                      suffixIcon: IconButton(
-                        onPressed: () {
-                          setState(() {
-                            _obscureNewPassword = !_obscureNewPassword;
-                          });
-                        },
-                        icon: Icon(
-                          _obscureNewPassword
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
-                          color: const Color(0xFF3A4046),
+                  ValueListenableBuilder<bool>(
+                    valueListenable: _obscureNewPasswordNotifier,
+                    builder: (context, obscure, _) {
+                      return TextField(
+                        controller: _newPasswordController,
+                        obscureText: obscure,
+                        decoration: _fieldDecoration.copyWith(
+                          suffixIcon: IconButton(
+                            onPressed: () {
+                              _obscureNewPasswordNotifier.value = !obscure;
+                            },
+                            icon: Icon(
+                              obscure
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
+                              color: const Color(0xFF3A4046),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 14),
                   Text(
@@ -106,24 +123,27 @@ class _GeneralUserCreatePasswordPageState
                     ),
                   ),
                   const SizedBox(height: 8),
-                  TextField(
-                    controller: _confirmPasswordController,
-                    obscureText: _obscureConfirmPassword,
-                    decoration: _fieldDecoration.copyWith(
-                      suffixIcon: IconButton(
-                        onPressed: () {
-                          setState(() {
-                            _obscureConfirmPassword = !_obscureConfirmPassword;
-                          });
-                        },
-                        icon: Icon(
-                          _obscureConfirmPassword
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
-                          color: const Color(0xFF3A4046),
+                  ValueListenableBuilder<bool>(
+                    valueListenable: _obscureConfirmPasswordNotifier,
+                    builder: (context, obscure, _) {
+                      return TextField(
+                        controller: _confirmPasswordController,
+                        obscureText: obscure,
+                        decoration: _fieldDecoration.copyWith(
+                          suffixIcon: IconButton(
+                            onPressed: () {
+                              _obscureConfirmPasswordNotifier.value = !obscure;
+                            },
+                            icon: Icon(
+                              obscure
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
+                              color: const Color(0xFF3A4046),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 24),
                   SizedBox(
@@ -153,7 +173,8 @@ class _GeneralUserCreatePasswordPageState
                   const Spacer(),
                   const Center(child: _BrandFooter()),
                   const SizedBox(height: 18),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
