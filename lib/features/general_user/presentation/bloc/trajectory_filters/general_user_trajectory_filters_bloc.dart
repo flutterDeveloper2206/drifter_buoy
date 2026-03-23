@@ -112,26 +112,31 @@ class GeneralUserTrajectoryFiltersBloc
         position: LatLng(37.812, -122.430),
         status: BuoyStatus.active,
         label: '10:00 am',
+        secondaryLabel: '10:00 GMT',
       ),
       TrajectoryBuoyPoint(
         position: LatLng(37.772, -122.409),
         status: BuoyStatus.active,
         label: '12:00 pm',
+        secondaryLabel: '12:00 GMT',
       ),
       TrajectoryBuoyPoint(
         position: LatLng(37.744, -122.396),
         status: BuoyStatus.batteryLow,
         label: '3:00 pm',
+        secondaryLabel: '15:00 GMT',
       ),
       TrajectoryBuoyPoint(
         position: LatLng(37.734, -122.368),
         status: BuoyStatus.active,
         label: '05:00 pm',
+        secondaryLabel: '17:00 GMT',
       ),
       TrajectoryBuoyPoint(
         position: LatLng(37.728, -122.344),
         status: BuoyStatus.active,
         label: '09:30 pm',
+        secondaryLabel: '21:30 GMT',
       ),
     ];
   }

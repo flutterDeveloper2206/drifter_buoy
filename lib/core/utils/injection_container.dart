@@ -1,8 +1,11 @@
 import 'package:drifter_buoy/core/constants/app_constants.dart';
 import 'package:drifter_buoy/core/network/api_service.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoys/general_user_buoys_bloc.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/alerts/general_user_alerts_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoy_overview/general_user_buoy_overview_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/export/general_user_export_bloc.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/export_selection/general_user_export_selection_bloc.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/profile/general_user_profile_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/map/general_user_map_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/map_buoy_details/general_user_map_buoy_details_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/map_filters/general_user_map_filters_bloc.dart';
@@ -98,6 +101,20 @@ Future<void> initDependencies() async {
 
   if (!sl.isRegistered<GeneralUserExportBloc>()) {
     sl.registerFactory<GeneralUserExportBloc>(() => GeneralUserExportBloc());
+  }
+
+  if (!sl.isRegistered<GeneralUserExportSelectionBloc>()) {
+    sl.registerFactory<GeneralUserExportSelectionBloc>(
+      () => GeneralUserExportSelectionBloc(),
+    );
+  }
+
+  if (!sl.isRegistered<GeneralUserAlertsBloc>()) {
+    sl.registerFactory<GeneralUserAlertsBloc>(() => GeneralUserAlertsBloc());
+  }
+
+  if (!sl.isRegistered<GeneralUserProfileBloc>()) {
+    sl.registerFactory<GeneralUserProfileBloc>(() => GeneralUserProfileBloc());
   }
 
   if (!sl.isRegistered<GeneralUserBuoysBloc>()) {

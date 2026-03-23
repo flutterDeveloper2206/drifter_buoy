@@ -1,5 +1,4 @@
 import 'package:drifter_buoy/core/constants/app_routes.dart';
-import 'package:drifter_buoy/core/utils/widgets/app_flushbar.dart';
 import 'package:drifter_buoy/features/general_user/presentation/widgets/dummy_buoy_map_view.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -41,19 +40,13 @@ class GeneralUserDashboardPage extends StatelessWidget {
                         IconButton(
                           icon: const Icon(Icons.notifications_none),
                           onPressed: () {
-                            AppFlushbar.info(
-                              'No new notifications.',
-                              context: context,
-                            );
+                            context.push(AppRoutes.alertsPath);
                           },
                         ),
                         IconButton(
                           icon: const Icon(Icons.menu),
                           onPressed: () {
-                            AppFlushbar.info(
-                              'Menu actions coming soon.',
-                              context: context,
-                            );
+                            context.push(AppRoutes.profilePath);
                           },
                         ),
                       ],
@@ -176,7 +169,7 @@ class GeneralUserDashboardPage extends StatelessWidget {
                 }
 
                 if (index == 2) {
-                  context.push(AppRoutes.exportPath);
+                  context.push(AppRoutes.exportSelectionPath);
                 }
               },
             ),

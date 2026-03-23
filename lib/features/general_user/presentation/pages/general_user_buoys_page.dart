@@ -58,10 +58,7 @@ class _GeneralUserBuoysPageState extends State<GeneralUserBuoysPage> {
                     const Spacer(),
                     IconButton(
                       onPressed: () {
-                        AppFlushbar.info(
-                          'No new notifications.',
-                          context: context,
-                        );
+                        context.push(AppRoutes.alertsPath);
                       },
                       icon: const Icon(
                         Icons.notifications_none_rounded,
@@ -70,10 +67,7 @@ class _GeneralUserBuoysPageState extends State<GeneralUserBuoysPage> {
                     ),
                     IconButton(
                       onPressed: () {
-                        AppFlushbar.info(
-                          'Menu actions coming soon.',
-                          context: context,
-                        );
+                        context.push(AppRoutes.profilePath);
                       },
                       icon: const Icon(
                         Icons.menu_rounded,
@@ -193,7 +187,7 @@ class _GeneralUserBuoysPageState extends State<GeneralUserBuoysPage> {
                               case GeneralUserBottomNavTab.map:
                                 context.go(AppRoutes.mapPath);
                               case GeneralUserBottomNavTab.export:
-                                context.push(AppRoutes.exportPath);
+                                context.push(AppRoutes.exportSelectionPath);
                             }
                           },
                         ),

@@ -5,6 +5,7 @@ enum GeneralUserExportStatus { initial, loading, loaded, error, exporting }
 
 class GeneralUserExportState extends Equatable {
   final GeneralUserExportStatus status;
+  final int selectedBuoyCount;
   final ExportDateRange dateRange;
   final ExportFormat format;
   final String message;
@@ -12,6 +13,7 @@ class GeneralUserExportState extends Equatable {
 
   const GeneralUserExportState({
     required this.status,
+    required this.selectedBuoyCount,
     required this.dateRange,
     required this.format,
     required this.message,
@@ -20,6 +22,7 @@ class GeneralUserExportState extends Equatable {
 
   const GeneralUserExportState.initial()
     : status = GeneralUserExportStatus.initial,
+      selectedBuoyCount = 0,
       dateRange = ExportDateRange.last24Hours,
       format = ExportFormat.csv,
       message = '',
@@ -27,6 +30,7 @@ class GeneralUserExportState extends Equatable {
 
   GeneralUserExportState copyWith({
     GeneralUserExportStatus? status,
+    int? selectedBuoyCount,
     ExportDateRange? dateRange,
     ExportFormat? format,
     String? message,
@@ -34,6 +38,7 @@ class GeneralUserExportState extends Equatable {
   }) {
     return GeneralUserExportState(
       status: status ?? this.status,
+      selectedBuoyCount: selectedBuoyCount ?? this.selectedBuoyCount,
       dateRange: dateRange ?? this.dateRange,
       format: format ?? this.format,
       message: message ?? this.message,
@@ -42,5 +47,12 @@ class GeneralUserExportState extends Equatable {
   }
 
   @override
-  List<Object> get props => [status, dateRange, format, message, isSuccessMessage];
+  List<Object> get props => [
+    status,
+    selectedBuoyCount,
+    dateRange,
+    format,
+    message,
+    isSuccessMessage,
+  ];
 }

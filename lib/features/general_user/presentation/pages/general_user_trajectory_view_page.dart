@@ -155,6 +155,8 @@ class _GeneralUserTrajectoryViewPageState
       points: points,
       initialZoom: state.zoom,
       initialCenter: center,
+      showLabels: false,
+      showSecondaryLabels: false,
       interactive: true,
     );
   }
@@ -231,14 +233,14 @@ class _MapLegendCard extends StatelessWidget {
             color: Color(0xFF4CAF50),
           ),
           AppMapLegendItem(
-            icon: Icons.wifi_off,
-            label: 'Offline',
-            color: Color(0xFFE74C3C),
-          ),
-          AppMapLegendItem(
             icon: Icons.battery_1_bar,
             label: 'Battery Low',
             color: Color(0xFF4F95DA),
+          ),
+          AppMapLegendItem(
+            icon: Icons.wifi_off,
+            label: 'Offline',
+            color: Color(0xFFE74C3C),
           ),
         ],
       ),

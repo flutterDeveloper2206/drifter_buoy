@@ -21,6 +21,7 @@ class GeneralUserExportBloc
     emit(
       state.copyWith(
         status: GeneralUserExportStatus.loading,
+        selectedBuoyCount: event.selectedBuoyCount,
         message: '',
         isSuccessMessage: false,
       ),

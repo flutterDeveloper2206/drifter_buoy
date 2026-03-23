@@ -11,7 +11,12 @@ abstract class GeneralUserExportEvent extends Equatable {
 }
 
 class LoadGeneralUserExport extends GeneralUserExportEvent {
-  const LoadGeneralUserExport();
+  final int selectedBuoyCount;
+
+  const LoadGeneralUserExport({this.selectedBuoyCount = 0});
+
+  @override
+  List<Object> get props => [selectedBuoyCount];
 }
 
 class ChangeGeneralUserExportDateRange extends GeneralUserExportEvent {

@@ -45,6 +45,12 @@ class AppRoutes {
 
   static const String exportPath = '/export';
   static const String exportName = 'export';
+  static const String exportSelectionPath = '/export-selection';
+  static const String exportSelectionName = 'export-selection';
+  static const String alertsPath = '/alerts';
+  static const String alertsName = 'alerts';
+  static const String profilePath = '/profile';
+  static const String profileName = 'profile';
 
   static const String itemsPath = '/items';
   static const String itemsName = 'items';

@@ -3,10 +3,17 @@ import 'package:drifter_buoy/core/utils/injection_container.dart';
 import 'package:drifter_buoy/core/utils/navigation_service.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoys/general_user_buoys_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoys/general_user_buoys_event.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/alerts/general_user_alerts_bloc.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/alerts/general_user_alerts_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_create_password_page.dart';
+import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_alerts_page.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/profile/general_user_profile_bloc.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/profile/general_user_profile_event.dart';
+import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_profile_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_buoys_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_dashboard_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_export_page.dart';
+import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_export_selection_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_forgot_password_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_login_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_buoy_overview_page.dart';
@@ -21,6 +28,8 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/buoy_overvi
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoy_overview/general_user_buoy_overview_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/export/general_user_export_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/export/general_user_export_event.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/export_selection/general_user_export_selection_bloc.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/export_selection/general_user_export_selection_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/map/general_user_map_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/map/general_user_map_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/map_buoy_details/general_user_map_buoy_details_bloc.dart';
@@ -215,10 +224,52 @@ class AppRouter {
         path: AppRoutes.exportPath,
         name: AppRoutes.exportName,
         builder: (context, state) {
+          final extra = state.extra;
+          final selectedBuoyCount = extra is int && extra > 0 ? extra : 0;
+
           return BlocProvider<GeneralUserExportBloc>(
             create: (_) =>
-                sl<GeneralUserExportBloc>()..add(const LoadGeneralUserExport()),
+                sl<GeneralUserExportBloc>()
+                  ..add(
+                    LoadGeneralUserExport(
+                      selectedBuoyCount: selectedBuoyCount,
+                    ),
+                  ),
             child: const GeneralUserExportPage(),
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.exportSelectionPath,
+        name: AppRoutes.exportSelectionName,
+        builder: (context, state) {
+          return BlocProvider<GeneralUserExportSelectionBloc>(
+            create: (_) =>
+                sl<GeneralUserExportSelectionBloc>()
+                  ..add(const LoadGeneralUserExportSelection()),
+            child: const GeneralUserExportSelectionPage(),
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.alertsPath,
+        name: AppRoutes.alertsName,
+        builder: (context, state) {
+          return BlocProvider<GeneralUserAlertsBloc>(
+            create: (_) =>
+                sl<GeneralUserAlertsBloc>()..add(const LoadGeneralUserAlerts()),
+            child: const GeneralUserAlertsPage(),
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.profilePath,
+        name: AppRoutes.profileName,
+        builder: (context, state) {
+          return BlocProvider<GeneralUserProfileBloc>(
+            create: (_) =>
+                sl<GeneralUserProfileBloc>()..add(const LoadGeneralUserProfile()),
+            child: const GeneralUserProfilePage(),
           );
         },
       ),
