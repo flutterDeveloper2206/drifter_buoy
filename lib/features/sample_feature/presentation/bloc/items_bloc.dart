@@ -1,4 +1,5 @@
 import 'package:drifter_buoy/core/error/error_handler.dart';
+import 'package:drifter_buoy/core/utils/app_logger.dart';
 import 'package:drifter_buoy/features/sample_feature/data/models/item_model.dart';
 import 'package:drifter_buoy/features/sample_feature/domain/usecases/add_item.dart';
 import 'package:drifter_buoy/features/sample_feature/domain/usecases/delete_item.dart';
@@ -23,17 +24,24 @@ class ItemsBloc extends Bloc<ItemsEvent, ItemsState> {
   }
 
   Future<void> _onFetchItems(FetchItems event, Emitter<ItemsState> emit) async {
+    AppLogger.i('FetchItems event triggered');
     emit(const ItemsLoading());
 
     final result = await getItems();
     result.fold(
-      (failure) =>
-          emit(ItemsError(message: ErrorHandler.getErrorMessage(failure))),
-      (items) => emit(ItemsLoaded(items: items)),
+      (failure) {
+        AppLogger.w('FetchItems failed', error: failure.message);
+        emit(ItemsError(message: ErrorHandler.getErrorMessage(failure)));
+      },
+      (items) {
+        AppLogger.i('FetchItems success: ${items.length} items');
+        emit(ItemsLoaded(items: items));
+      },
     );
   }
 
   Future<void> _onAddItem(AddItemEvent event, Emitter<ItemsState> emit) async {
+    AppLogger.i('AddItemEvent triggered');
     final currentItems = _getCurrentItems();
     emit(const ItemsLoading());
 
@@ -42,12 +50,15 @@ class ItemsBloc extends Bloc<ItemsEvent, ItemsState> {
     );
 
     result.fold(
-      (failure) =>
-          emit(ItemsError(message: ErrorHandler.getErrorMessage(failure))),
+      (failure) {
+        AppLogger.w('AddItemEvent failed', error: failure.message);
+        emit(ItemsError(message: ErrorHandler.getErrorMessage(failure)));
+      },
       (createdItem) {
         final updatedItems = List<ItemModel>.from(currentItems)
           ..insert(0, createdItem);
 
+        AppLogger.i('AddItemEvent success: item added');
         emit(ItemsLoaded(items: updatedItems));
       },
     );
@@ -57,19 +68,23 @@ class ItemsBloc extends Bloc<ItemsEvent, ItemsState> {
     DeleteItemEvent event,
     Emitter<ItemsState> emit,
   ) async {
+    AppLogger.i('DeleteItemEvent triggered: id=${event.id}');
     final currentItems = _getCurrentItems();
     emit(const ItemsLoading());
 
     final result = await deleteItem(DeleteItemParams(event.id));
 
     result.fold(
-      (failure) =>
-          emit(ItemsError(message: ErrorHandler.getErrorMessage(failure))),
+      (failure) {
+        AppLogger.w('DeleteItemEvent failed', error: failure.message);
+        emit(ItemsError(message: ErrorHandler.getErrorMessage(failure)));
+      },
       (_) {
         final updatedItems = currentItems
             .where((item) => item.id != event.id)
             .toList(growable: false);
 
+        AppLogger.i('DeleteItemEvent success: id=${event.id}');
         emit(ItemsLoaded(items: updatedItems));
       },
     );

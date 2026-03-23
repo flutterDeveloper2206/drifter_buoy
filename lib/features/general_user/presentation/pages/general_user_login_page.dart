@@ -1,0 +1,272 @@
+import 'package:drifter_buoy/core/constants/app_routes.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+class GeneralUserLoginPage extends StatefulWidget {
+  const GeneralUserLoginPage({super.key});
+
+  @override
+  State<GeneralUserLoginPage> createState() => _GeneralUserLoginPageState();
+}
+
+class _GeneralUserLoginPageState extends State<GeneralUserLoginPage> {
+  late final TextEditingController _emailController;
+  late final TextEditingController _passwordController;
+
+  bool _obscurePassword = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _emailController = TextEditingController(text: 'mailid@example.com');
+    _passwordController = TextEditingController(text: '**********');
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Scaffold(
+      body: Stack(
+        children: [
+          const _LoginBackground(),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 64),
+                  Center(
+                    child: Container(
+                      width: 92,
+                      height: 92,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.82),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Container(
+                          width: 58,
+                          height: 58,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF1682C9),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.waves_rounded,
+                            color: Colors.white,
+                            size: 34,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 44),
+                  Text(
+                    'Log In',
+                    style: textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF2B2F33),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'to Access real-time buoy data, configuration, and\ndiagnostics.',
+                    style: textTheme.titleMedium?.copyWith(
+                      color: const Color(0xFF30363C),
+                      height: 1.35,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Email Address',
+                    style: textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF3F4750),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _emailController,
+                    decoration: _fieldDecoration,
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    'Password',
+                    style: textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF3F4750),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _passwordController,
+                    obscureText: _obscurePassword,
+                    decoration: _fieldDecoration.copyWith(
+                      suffixIcon: IconButton(
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                          color: const Color(0xFF3A4046),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  InkWell(
+                    onTap: () {
+                      context.go(AppRoutes.forgotPasswordPath);
+                    },
+                    child: Text(
+                      'Forgot Password ?',
+                      style: textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF37414A),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 34),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF256BBB),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        textStyle: textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      onPressed: () {
+                        context.go(AppRoutes.dashboardPath);
+                      },
+                      child: const Text('Log In'),
+                    ),
+                  ),
+                  const Spacer(),
+                  const Center(child: _BrandFooter()),
+                  const SizedBox(height: 18),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  InputDecoration get _fieldDecoration {
+    return InputDecoration(
+      filled: true,
+      fillColor: const Color(0xFFF2F2F2),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFC2C7CC)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFF3A86D1), width: 1.1),
+      ),
+    );
+  }
+}
+
+class _LoginBackground extends StatelessWidget {
+  const _LoginBackground();
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFFD0DEE8), Color(0xFFD5E2EA), Color(0xFFDFE8EE)],
+            ),
+          ),
+        ),
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: SizedBox(
+            height: 190,
+            width: double.infinity,
+            child: CustomPaint(painter: _WaterPainter()),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _WaterPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final basePaint = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xD9D8E4EB), Color(0xE7DFE9EF)],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), basePaint);
+
+    final ripplePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.05
+      ..color = const Color(0x7AAFC2CF);
+
+    for (double y = 20; y < size.height; y += 14) {
+      final path = Path()..moveTo(0, y);
+      for (double x = 0; x <= size.width; x += 22) {
+        path.quadraticBezierTo(x + 11, y - 2, x + 22, y);
+      }
+      canvas.drawPath(path, ripplePaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _BrandFooter extends StatelessWidget {
+  const _BrandFooter();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text('🪷', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 2),
+        Text(
+          'Azista',
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            color: const Color(0xFFC93333),
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.2,
+          ),
+        ),
+      ],
+    );
+  }
+}

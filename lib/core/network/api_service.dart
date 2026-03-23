@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:drifter_buoy/core/constants/app_constants.dart';
 import 'package:drifter_buoy/core/error/exception_manager.dart';
 import 'package:drifter_buoy/core/error/failure.dart';
+import 'package:drifter_buoy/core/utils/app_logger.dart';
 import 'package:drifter_buoy/core/utils/typedefs.dart';
 
 class ApiService {
@@ -54,6 +55,7 @@ class ApiService {
     dynamic data,
     Map<String, dynamic>? queryParameters,
   }) async {
+    AppLogger.d('DELETE request: $path');
     try {
       final response = await _dio.delete<dynamic>(
         path,
@@ -63,13 +65,17 @@ class ApiService {
 
       final failure = _validateResponse(response);
       if (failure != null) {
+        AppLogger.w('DELETE failed: $path', error: failure.message);
         return Left(failure);
       }
 
+      AppLogger.i('DELETE success: $path');
       return const Right(null);
     } on DioException catch (error) {
+      AppLogger.e('DELETE DioException: $path', error: error);
       return Left(ExceptionManager.mapDioException(error));
     } catch (error) {
+      AppLogger.e('DELETE Unknown error: $path', error: error);
       return Left(ExceptionManager.mapException(error));
     }
   }
@@ -81,6 +87,7 @@ class ApiService {
     Map<String, dynamic>? queryParameters,
     required T Function(dynamic data) parser,
   }) async {
+    AppLogger.d('${method.name.toUpperCase()} request: $path');
     try {
       late final Response<dynamic> response;
 
@@ -100,14 +107,27 @@ class ApiService {
 
       final failure = _validateResponse(response);
       if (failure != null) {
+        AppLogger.w(
+          '${method.name.toUpperCase()} failed: $path',
+          error: failure.message,
+        );
         return Left(failure);
       }
 
       final parsedResponse = parser(response.data);
+      AppLogger.i('${method.name.toUpperCase()} success: $path');
       return Right(parsedResponse);
     } on DioException catch (error) {
+      AppLogger.e(
+        '${method.name.toUpperCase()} DioException: $path',
+        error: error,
+      );
       return Left(ExceptionManager.mapDioException(error));
     } catch (error) {
+      AppLogger.e(
+        '${method.name.toUpperCase()} Unknown error: $path',
+        error: error,
+      );
       return Left(ExceptionManager.mapException(error));
     }
   }

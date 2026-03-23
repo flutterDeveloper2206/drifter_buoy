@@ -1,5 +1,5 @@
 import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
-import 'package:drifter_buoy/core/utils/widgets/app_loader.dart';
+import 'package:drifter_buoy/core/utils/widgets/app_shimmer.dart';
 import 'package:drifter_buoy/features/sample_feature/presentation/bloc/items_bloc.dart';
 import 'package:drifter_buoy/features/sample_feature/presentation/bloc/items_event.dart';
 import 'package:drifter_buoy/features/sample_feature/presentation/bloc/items_state.dart';
@@ -21,7 +21,7 @@ class ItemsPage extends StatelessWidget {
       body: BlocBuilder<ItemsBloc, ItemsState>(
         builder: (context, state) {
           if (state is ItemsInitial || state is ItemsLoading) {
-            return const AppLoader(message: 'Loading items...');
+            return const AppListShimmer();
           }
 
           if (state is ItemsError) {
