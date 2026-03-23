@@ -188,6 +188,8 @@ class _GeneralUserBuoysPageState extends State<GeneralUserBuoysPage> {
                                 context.go(AppRoutes.mapPath);
                               case GeneralUserBottomNavTab.export:
                                 context.push(AppRoutes.exportSelectionPath);
+                              case GeneralUserBottomNavTab.setup:
+                                context.push(AppRoutes.setupPath);
                             }
                           },
                         ),

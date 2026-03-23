@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 
-enum GeneralUserBottomNavTab { buoys, map, export }
+enum GeneralUserBottomNavTab { buoys, map, export, setup }
 
 class AppGeneralUserBottomNav extends StatelessWidget {
   final GeneralUserBottomNavTab selectedTab;
   final ValueChanged<GeneralUserBottomNavTab> onTap;
+  final bool showSetup;
 
   const AppGeneralUserBottomNav({
     super.key,
     required this.selectedTab,
     required this.onTap,
+    this.showSetup = false,
   });
 
   @override
@@ -37,6 +39,13 @@ class AppGeneralUserBottomNav extends StatelessWidget {
             selected: selectedTab == GeneralUserBottomNavTab.export,
             onTap: () => onTap(GeneralUserBottomNavTab.export),
           ),
+          if (showSetup)
+            _BottomNavItem(
+              icon: Icons.settings_outlined,
+              label: 'Set Up',
+              selected: selectedTab == GeneralUserBottomNavTab.setup,
+              onTap: () => onTap(GeneralUserBottomNavTab.setup),
+            ),
         ],
       ),
     );

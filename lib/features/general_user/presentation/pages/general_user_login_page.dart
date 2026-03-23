@@ -155,7 +155,11 @@ class _GeneralUserLoginPageState extends State<GeneralUserLoginPage> {
                         ),
                       ),
                       onPressed: () {
-                        context.go(AppRoutes.dashboardPath);
+                        final normalizedEmail = _emailController.text
+                            .trim()
+                            .toLowerCase();
+                        final isAdmin = normalizedEmail.contains('admin');
+                        context.go(AppRoutes.dashboardPath, extra: isAdmin);
                       },
                       child: const Text('Log In'),
                     ),

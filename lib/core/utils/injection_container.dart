@@ -3,6 +3,7 @@ import 'package:drifter_buoy/core/network/api_service.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoys/general_user_buoys_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/alerts/general_user_alerts_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoy_overview/general_user_buoy_overview_bloc.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/dashboard/general_user_dashboard_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/export/general_user_export_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/export_selection/general_user_export_selection_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/profile/general_user_profile_bloc.dart';
@@ -13,6 +14,10 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/map_search/
 import 'package:drifter_buoy/features/general_user/presentation/bloc/metrics/general_user_metrics_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_filters/general_user_trajectory_filters_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_view/general_user_trajectory_view_bloc.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_detail/general_user_setup_detail_bloc.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_add_device/general_user_setup_add_device_bloc.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/buoy_setup/general_user_buoy_setup_bloc.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/self_test_debug/general_user_self_test_debug_bloc.dart';
 import 'package:drifter_buoy/features/sample_feature/data/datasources/item_remote_data_source.dart';
 import 'package:drifter_buoy/features/sample_feature/data/repositories/item_repository_impl.dart';
 import 'package:drifter_buoy/features/sample_feature/domain/repositories/item_repository.dart';
@@ -117,11 +122,39 @@ Future<void> initDependencies() async {
     sl.registerFactory<GeneralUserProfileBloc>(() => GeneralUserProfileBloc());
   }
 
+  if (!sl.isRegistered<GeneralUserDashboardBloc>()) {
+    sl.registerFactory<GeneralUserDashboardBloc>(
+      () => GeneralUserDashboardBloc(),
+    );
+  }
+
   if (!sl.isRegistered<GeneralUserBuoysBloc>()) {
     sl.registerFactory<GeneralUserBuoysBloc>(() => GeneralUserBuoysBloc());
   }
 
   if (!sl.isRegistered<GeneralUserMetricsBloc>()) {
     sl.registerFactory<GeneralUserMetricsBloc>(() => GeneralUserMetricsBloc());
+  }
+
+  if (!sl.isRegistered<GeneralUserSetupDetailBloc>()) {
+    sl.registerFactory<GeneralUserSetupDetailBloc>(
+      () => GeneralUserSetupDetailBloc(),
+    );
+  }
+
+  if (!sl.isRegistered<GeneralUserSetupAddDeviceBloc>()) {
+    sl.registerFactory<GeneralUserSetupAddDeviceBloc>(
+      () => GeneralUserSetupAddDeviceBloc(),
+    );
+  }
+
+  if (!sl.isRegistered<GeneralUserBuoySetupBloc>()) {
+    sl.registerFactory<GeneralUserBuoySetupBloc>(() => GeneralUserBuoySetupBloc());
+  }
+
+  if (!sl.isRegistered<GeneralUserSelfTestDebugBloc>()) {
+    sl.registerFactory<GeneralUserSelfTestDebugBloc>(
+      () => GeneralUserSelfTestDebugBloc(),
+    );
   }
 }

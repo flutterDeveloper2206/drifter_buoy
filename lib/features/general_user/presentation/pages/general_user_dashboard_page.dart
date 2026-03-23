@@ -1,6 +1,11 @@
 import 'package:drifter_buoy/core/constants/app_routes.dart';
+import 'package:drifter_buoy/core/utils/widgets/app_general_user_bottom_nav.dart';
+import 'package:drifter_buoy/core/utils/widgets/app_loader.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/dashboard/general_user_dashboard_bloc.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/dashboard/general_user_dashboard_state.dart';
 import 'package:drifter_buoy/features/general_user/presentation/widgets/dummy_buoy_map_view.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 class GeneralUserDashboardPage extends StatelessWidget {
@@ -10,17 +15,27 @@ class GeneralUserDashboardPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFD9DEE2),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+    return BlocBuilder<GeneralUserDashboardBloc, GeneralUserDashboardState>(
+      builder: (context, state) {
+        if (state.status == GeneralUserDashboardStatus.loading ||
+            state.status == GeneralUserDashboardStatus.initial) {
+          return const Scaffold(
+            backgroundColor: Color(0xFFD9DEE2),
+            body: AppLoader(),
+          );
+        }
+
+        return Scaffold(
+          backgroundColor: const Color(0xFFD9DEE2),
+          body: SafeArea(
+            child: Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                     Row(
                       children: [
                         Container(
@@ -154,28 +169,29 @@ class GeneralUserDashboardPage extends StatelessWidget {
                     ),
                   ],
                 ),
-              ),
+                  ),
+                ),
+                AppGeneralUserBottomNav(
+                  selectedTab: GeneralUserBottomNavTab.buoys,
+                  showSetup: state.isAdmin,
+                  onTap: (tab) {
+                    switch (tab) {
+                      case GeneralUserBottomNavTab.buoys:
+                        context.go(AppRoutes.buoysPath);
+                      case GeneralUserBottomNavTab.map:
+                        context.go(AppRoutes.mapPath);
+                      case GeneralUserBottomNavTab.export:
+                        context.push(AppRoutes.exportSelectionPath);
+                      case GeneralUserBottomNavTab.setup:
+                        context.push(AppRoutes.setupPath);
+                    }
+                  },
+                ),
+              ],
             ),
-            _DashboardBottomNav(
-              onTap: (index) {
-                if (index == 0) {
-                  context.go(AppRoutes.buoysPath);
-                  return;
-                }
-
-                if (index == 1) {
-                  context.go(AppRoutes.mapPath);
-                  return;
-                }
-
-                if (index == 2) {
-                  context.push(AppRoutes.exportSelectionPath);
-                }
-              },
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -255,74 +271,3 @@ class _MapPreviewCard extends StatelessWidget {
   }
 }
 
-class _DashboardBottomNav extends StatelessWidget {
-  final ValueChanged<int> onTap;
-
-  const _DashboardBottomNav({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: const Color(0xFFD9DEE2),
-      padding: const EdgeInsets.fromLTRB(10, 8, 10, 12),
-      child: Row(
-        children: [
-          _BottomNavItem(
-            icon: Icons.anchor_outlined,
-            label: "Buoy's",
-            onTap: () => onTap(0),
-          ),
-          _BottomNavItem(
-            icon: Icons.map_outlined,
-            label: 'Map',
-            onTap: () => onTap(1),
-          ),
-          _BottomNavItem(
-            icon: Icons.file_download_outlined,
-            label: 'Export',
-            onTap: () => onTap(2),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _BottomNavItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  const _BottomNavItem({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 24, color: const Color(0xFF2A2F34)),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: const Color(0xFF2A2F34),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}

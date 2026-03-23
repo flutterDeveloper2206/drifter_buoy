@@ -7,9 +7,24 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/alerts/gene
 import 'package:drifter_buoy/features/general_user/presentation/bloc/alerts/general_user_alerts_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_create_password_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_alerts_page.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/dashboard/general_user_dashboard_bloc.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/dashboard/general_user_dashboard_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/profile/general_user_profile_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/profile/general_user_profile_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_profile_page.dart';
+import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_setup_page.dart';
+import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_setup_detail_page.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_detail/general_user_setup_detail_bloc.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_detail/general_user_setup_detail_event.dart';
+import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_setup_add_device_page.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_add_device/general_user_setup_add_device_bloc.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_add_device/general_user_setup_add_device_event.dart';
+import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_buoy_setup_page.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/buoy_setup/general_user_buoy_setup_bloc.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/buoy_setup/general_user_buoy_setup_event.dart';
+import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_self_test_debug_page.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/self_test_debug/general_user_self_test_debug_bloc.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/self_test_debug/general_user_self_test_debug_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_buoys_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_dashboard_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_export_page.dart';
@@ -91,7 +106,14 @@ class AppRouter {
         path: AppRoutes.dashboardPath,
         name: AppRoutes.dashboardName,
         builder: (context, state) {
-          return const GeneralUserDashboardPage();
+          final extra = state.extra;
+          final isAdmin = extra is bool ? extra : false;
+          return BlocProvider<GeneralUserDashboardBloc>(
+            create: (_) =>
+                sl<GeneralUserDashboardBloc>()
+                  ..add(LoadGeneralUserDashboard(isAdmin: isAdmin)),
+            child: const GeneralUserDashboardPage(),
+          );
         },
       ),
       GoRoute(
@@ -270,6 +292,60 @@ class AppRouter {
             create: (_) =>
                 sl<GeneralUserProfileBloc>()..add(const LoadGeneralUserProfile()),
             child: const GeneralUserProfilePage(),
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.setupPath,
+        name: AppRoutes.setupName,
+        builder: (context, state) {
+          return const GeneralUserSetupPage();
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.setupDetailPath,
+        name: AppRoutes.setupDetailName,
+        builder: (context, state) {
+          return BlocProvider<GeneralUserSetupDetailBloc>(
+            create: (_) =>
+                sl<GeneralUserSetupDetailBloc>()
+                  ..add(const LoadGeneralUserSetupDetail()),
+            child: const GeneralUserSetupDetailPage(),
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.setupAddDevicePath,
+        name: AppRoutes.setupAddDeviceName,
+        builder: (context, state) {
+          return BlocProvider<GeneralUserSetupAddDeviceBloc>(
+            create: (_) =>
+                sl<GeneralUserSetupAddDeviceBloc>()
+                  ..add(const LoadGeneralUserSetupAddDevice()),
+            child: const GeneralUserSetupAddDevicePage(),
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.buoySetupPath,
+        name: AppRoutes.buoySetupName,
+        builder: (context, state) {
+          return BlocProvider<GeneralUserBuoySetupBloc>(
+            create: (_) =>
+                sl<GeneralUserBuoySetupBloc>()..add(const LoadGeneralUserBuoySetup()),
+            child: const GeneralUserBuoySetupPage(),
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.selfTestDebugPath,
+        name: AppRoutes.selfTestDebugName,
+        builder: (context, state) {
+          return BlocProvider<GeneralUserSelfTestDebugBloc>(
+            create: (_) =>
+                sl<GeneralUserSelfTestDebugBloc>()
+                  ..add(const LoadGeneralUserSelfTestDebug()),
+            child: const GeneralUserSelfTestDebugPage(),
           );
         },
       ),

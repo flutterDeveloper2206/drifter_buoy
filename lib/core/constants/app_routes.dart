@@ -51,6 +51,16 @@ class AppRoutes {
   static const String alertsName = 'alerts';
   static const String profilePath = '/profile';
   static const String profileName = 'profile';
+  static const String setupPath = '/setup';
+  static const String setupName = 'setup';
+  static const String setupDetailPath = '/setup-detail';
+  static const String setupDetailName = 'setup-detail';
+  static const String setupAddDevicePath = '/setup-add-device';
+  static const String setupAddDeviceName = 'setup-add-device';
+  static const String buoySetupPath = '/buoy-setup';
+  static const String buoySetupName = 'buoy-setup';
+  static const String selfTestDebugPath = '/self-test-debug';
+  static const String selfTestDebugName = 'self-test-debug';
 
   static const String itemsPath = '/items';
   static const String itemsName = 'items';

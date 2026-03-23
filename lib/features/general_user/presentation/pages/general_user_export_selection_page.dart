@@ -129,6 +129,8 @@ class GeneralUserExportSelectionPage extends StatelessWidget {
                               context.go(AppRoutes.mapPath);
                             case GeneralUserBottomNavTab.export:
                               break;
+                            case GeneralUserBottomNavTab.setup:
+                              context.go(AppRoutes.setupPath);
                           }
                         },
                       ),
