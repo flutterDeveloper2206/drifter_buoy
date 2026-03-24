@@ -159,7 +159,7 @@ class _Header extends StatelessWidget {
               if (GoRouter.of(context).canPop()) {
                 context.pop();
               } else {
-                context.go(AppRoutes.setupAddDevicePath);
+                context.go(AppRoutes.setupDetailPath);
               }
             },
             icon: Icons.arrow_back,

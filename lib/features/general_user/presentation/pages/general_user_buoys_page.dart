@@ -185,6 +185,8 @@ class _GeneralUserBuoysPageState extends State<GeneralUserBuoysPage> {
                           selectedTab: GeneralUserBottomNavTab.buoys,
                           onTap: (tab) {
                             switch (tab) {
+                              case GeneralUserBottomNavTab.home:
+                                context.go(AppRoutes.dashboardPath);
                               case GeneralUserBottomNavTab.buoys:
                                 break;
                               case GeneralUserBottomNavTab.map:

@@ -10,12 +10,10 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/profile/gen
 import 'package:drifter_buoy/features/general_user/presentation/bloc/map/general_user_map_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/map_buoy_details/general_user_map_buoy_details_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/map_filters/general_user_map_filters_bloc.dart';
-import 'package:drifter_buoy/features/general_user/presentation/bloc/map_search/general_user_map_search_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/metrics/general_user_metrics_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_filters/general_user_trajectory_filters_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_view/general_user_trajectory_view_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_detail/general_user_setup_detail_bloc.dart';
-import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_add_device/general_user_setup_add_device_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoy_setup/general_user_buoy_setup_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/self_test_debug/general_user_self_test_debug_bloc.dart';
 import 'package:drifter_buoy/features/sample_feature/data/datasources/item_remote_data_source.dart';
@@ -80,12 +78,6 @@ Future<void> initDependencies() async {
     );
   }
 
-  if (!sl.isRegistered<GeneralUserMapSearchBloc>()) {
-    sl.registerFactory<GeneralUserMapSearchBloc>(
-      () => GeneralUserMapSearchBloc(),
-    );
-  }
-
   if (!sl.isRegistered<GeneralUserBuoyOverviewBloc>()) {
     sl.registerFactory<GeneralUserBuoyOverviewBloc>(
       () => GeneralUserBuoyOverviewBloc(),
@@ -139,12 +131,6 @@ Future<void> initDependencies() async {
   if (!sl.isRegistered<GeneralUserSetupDetailBloc>()) {
     sl.registerFactory<GeneralUserSetupDetailBloc>(
       () => GeneralUserSetupDetailBloc(),
-    );
-  }
-
-  if (!sl.isRegistered<GeneralUserSetupAddDeviceBloc>()) {
-    sl.registerFactory<GeneralUserSetupAddDeviceBloc>(
-      () => GeneralUserSetupAddDeviceBloc(),
     );
   }
 

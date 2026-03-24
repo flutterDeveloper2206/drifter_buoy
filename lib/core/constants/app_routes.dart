@@ -28,8 +28,8 @@ class AppRoutes {
   static const String mapBuoyDetailsPath = '/map-buoy-details';
   static const String mapBuoyDetailsName = 'map-buoy-details';
 
-  static const String mapSearchPath = '/map-search';
-  static const String mapSearchName = 'map-search';
+  /// Opens the main map with the in-place search bar (`/map?search=1`).
+  static String get mapPathOpenSearch => '${mapPath}?search=1';
 
   static const String buoyOverviewPath = '/buoy-overview';
   static const String buoyOverviewName = 'buoy-overview';
@@ -55,8 +55,6 @@ class AppRoutes {
   static const String setupName = 'setup';
   static const String setupDetailPath = '/setup-detail';
   static const String setupDetailName = 'setup-detail';
-  static const String setupAddDevicePath = '/setup-add-device';
-  static const String setupAddDeviceName = 'setup-add-device';
   static const String buoySetupPath = '/buoy-setup';
   static const String buoySetupName = 'buoy-setup';
   static const String selfTestDebugPath = '/self-test-debug';

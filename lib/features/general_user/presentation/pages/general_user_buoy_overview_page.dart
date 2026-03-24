@@ -385,17 +385,17 @@ class _MetricColumn extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           title,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
             color: const Color(0xFF5C5C5C),
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w500,
           ),
         ),
         const SizedBox(height: 4),
         Text(
           value,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
             color: const Color(0xFF2D2D2D),
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w500,
             height: 1.2,
           ),
         ),

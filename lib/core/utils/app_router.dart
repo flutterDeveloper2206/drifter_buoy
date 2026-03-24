@@ -16,9 +16,6 @@ import 'package:drifter_buoy/features/general_user/presentation/pages/general_us
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_setup_detail_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_detail/general_user_setup_detail_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_detail/general_user_setup_detail_event.dart';
-import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_setup_add_device_page.dart';
-import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_add_device/general_user_setup_add_device_bloc.dart';
-import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_add_device/general_user_setup_add_device_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_buoy_setup_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoy_setup/general_user_buoy_setup_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoy_setup/general_user_buoy_setup_event.dart';
@@ -35,7 +32,6 @@ import 'package:drifter_buoy/features/general_user/presentation/pages/general_us
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_map_buoy_details_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_map_filters_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_map_page.dart';
-import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_map_search_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_splash_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_trajectory_filters_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_trajectory_view_page.dart';
@@ -53,8 +49,6 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/map_filters
 import 'package:drifter_buoy/features/general_user/presentation/bloc/map_filters/general_user_map_filters_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/metrics/general_user_metrics_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/metrics/general_user_metrics_event.dart';
-import 'package:drifter_buoy/features/general_user/presentation/bloc/map_search/general_user_map_search_bloc.dart';
-import 'package:drifter_buoy/features/general_user/presentation/bloc/map_search/general_user_map_search_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_view/general_user_trajectory_view_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_view/general_user_trajectory_view_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_filters/general_user_trajectory_filters_bloc.dart';
@@ -131,10 +125,11 @@ class AppRouter {
         path: AppRoutes.mapPath,
         name: AppRoutes.mapName,
         builder: (context, state) {
+          final openSearch = state.uri.queryParameters['search'] == '1';
           return BlocProvider<GeneralUserMapBloc>(
             create: (_) =>
                 sl<GeneralUserMapBloc>()..add(const LoadGeneralUserMap()),
-            child: const GeneralUserMapPage(),
+            child: GeneralUserMapPage(initialSearchOpen: openSearch),
           );
         },
       ),
@@ -159,18 +154,6 @@ class AppRouter {
                 sl<GeneralUserMapBuoyDetailsBloc>()
                   ..add(const LoadGeneralUserMapBuoyDetails()),
             child: const GeneralUserMapBuoyDetailsPage(),
-          );
-        },
-      ),
-      GoRoute(
-        path: AppRoutes.mapSearchPath,
-        name: AppRoutes.mapSearchName,
-        builder: (context, state) {
-          return BlocProvider<GeneralUserMapSearchBloc>(
-            create: (_) =>
-                sl<GeneralUserMapSearchBloc>()
-                  ..add(const LoadGeneralUserMapSearch()),
-            child: const GeneralUserMapSearchPage(),
           );
         },
       ),
@@ -311,18 +294,6 @@ class AppRouter {
                 sl<GeneralUserSetupDetailBloc>()
                   ..add(const LoadGeneralUserSetupDetail()),
             child: const GeneralUserSetupDetailPage(),
-          );
-        },
-      ),
-      GoRoute(
-        path: AppRoutes.setupAddDevicePath,
-        name: AppRoutes.setupAddDeviceName,
-        builder: (context, state) {
-          return BlocProvider<GeneralUserSetupAddDeviceBloc>(
-            create: (_) =>
-                sl<GeneralUserSetupAddDeviceBloc>()
-                  ..add(const LoadGeneralUserSetupAddDevice()),
-            child: const GeneralUserSetupAddDevicePage(),
           );
         },
       ),

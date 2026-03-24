@@ -1,11 +1,9 @@
-import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_detail/general_user_setup_detail_event.dart';
 import 'package:equatable/equatable.dart';
 
 enum GeneralUserSetupDetailStatus { initial, loading, loaded, error }
 
 class GeneralUserSetupDetailState extends Equatable {
   final GeneralUserSetupDetailStatus status;
-  final SetupDetailTab selectedTab;
   final bool enableConfiguration;
   final String signalStrength;
   final String bluetoothDevice;
@@ -16,7 +14,6 @@ class GeneralUserSetupDetailState extends Equatable {
 
   const GeneralUserSetupDetailState({
     required this.status,
-    required this.selectedTab,
     required this.enableConfiguration,
     required this.signalStrength,
     required this.bluetoothDevice,
@@ -28,18 +25,16 @@ class GeneralUserSetupDetailState extends Equatable {
 
   const GeneralUserSetupDetailState.initial()
     : status = GeneralUserSetupDetailStatus.initial,
-      selectedTab = SetupDetailTab.addNew,
       enableConfiguration = false,
       signalStrength = '--',
       bluetoothDevice = '--',
       lastSync = '--',
       connectionStatus = 'Disconnected',
-      memoryStatus = '234 Logs',
+      memoryStatus = '0 Records',
       message = '';
 
   GeneralUserSetupDetailState copyWith({
     GeneralUserSetupDetailStatus? status,
-    SetupDetailTab? selectedTab,
     bool? enableConfiguration,
     String? signalStrength,
     String? bluetoothDevice,
@@ -50,7 +45,6 @@ class GeneralUserSetupDetailState extends Equatable {
   }) {
     return GeneralUserSetupDetailState(
       status: status ?? this.status,
-      selectedTab: selectedTab ?? this.selectedTab,
       enableConfiguration: enableConfiguration ?? this.enableConfiguration,
       signalStrength: signalStrength ?? this.signalStrength,
       bluetoothDevice: bluetoothDevice ?? this.bluetoothDevice,
@@ -64,7 +58,6 @@ class GeneralUserSetupDetailState extends Equatable {
   @override
   List<Object> get props => [
     status,
-    selectedTab,
     enableConfiguration,
     signalStrength,
     bluetoothDevice,

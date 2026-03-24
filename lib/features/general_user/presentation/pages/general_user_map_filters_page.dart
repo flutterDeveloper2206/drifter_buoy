@@ -54,7 +54,7 @@ class GeneralUserMapFiltersPage extends StatelessWidget {
                             const Spacer(),
                             AppIconCircleButton(
                               onTap: () =>
-                                  context.push(AppRoutes.mapSearchPath),
+                                  context.go(AppRoutes.mapPathOpenSearch),
                               icon: Icons.search,
                             ),
                           ],

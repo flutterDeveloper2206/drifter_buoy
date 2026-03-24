@@ -11,17 +11,23 @@ class LoadGeneralUserSetupDetail extends GeneralUserSetupDetailEvent {
   const LoadGeneralUserSetupDetail();
 }
 
-class ChangeGeneralUserSetupDetailTab extends GeneralUserSetupDetailEvent {
-  final SetupDetailTab tab;
-
-  const ChangeGeneralUserSetupDetailTab(this.tab);
-
-  @override
-  List<Object> get props => [tab];
-}
-
 class ToggleGeneralUserEnableConfiguration extends GeneralUserSetupDetailEvent {
   const ToggleGeneralUserEnableConfiguration();
 }
 
-enum SetupDetailTab { addNew, backup }
+class ClearBluetoothSetup extends GeneralUserSetupDetailEvent {
+  const ClearBluetoothSetup();
+}
+
+class SelectBluetoothDevice extends GeneralUserSetupDetailEvent {
+  const SelectBluetoothDevice({
+    required this.displayName,
+    required this.bluetoothId,
+  });
+
+  final String displayName;
+  final String bluetoothId;
+
+  @override
+  List<Object?> get props => [displayName, bluetoothId];
+}

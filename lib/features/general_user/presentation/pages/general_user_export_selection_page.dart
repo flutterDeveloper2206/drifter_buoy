@@ -43,6 +43,11 @@ class GeneralUserExportSelectionPage extends StatelessWidget {
                     );
                   }
 
+                  final queryTrimmed = state.query.trim();
+                  final isSearching = queryTrimmed.isNotEmpty;
+                  final showSelectAll =
+                      !isSearching && state.filteredItems.isNotEmpty;
+
                   return Column(
                     children: [
                       Padding(
@@ -55,36 +60,54 @@ class GeneralUserExportSelectionPage extends StatelessWidget {
                           },
                         ),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                        child: _SelectAllRow(
-                          selected: state.allFilteredSelected,
-                          onTap: () {
-                            context.read<GeneralUserExportSelectionBloc>().add(
-                              const ToggleGeneralUserExportSelectionAll(),
-                            );
-                          },
+                      if (showSelectAll)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                          child: _SelectAllRow(
+                            selected: state.allFilteredSelected,
+                            onTap: () {
+                              context.read<GeneralUserExportSelectionBloc>().add(
+                                const ToggleGeneralUserExportSelectionAll(),
+                              );
+                            },
+                          ),
                         ),
-                      ),
                       Expanded(
-                        child: ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                          itemCount: state.filteredItems.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 8),
-                          itemBuilder: (context, index) {
-                            final item = state.filteredItems[index];
-                            final selected = state.selectedIds.contains(item.id);
-                            return _BuoySelectableCard(
-                              item: item,
-                              selected: selected,
-                              onTap: () {
-                                context.read<GeneralUserExportSelectionBloc>().add(
-                                  ToggleGeneralUserExportSelectionItem(item.id),
-                                );
-                              },
-                            );
-                          },
-                        ),
+                        child: state.filteredItems.isEmpty
+                            ? _ExportSelectionEmptyView(
+                                isSearching: isSearching,
+                                query: queryTrimmed,
+                              )
+                            : ListView.separated(
+                                padding: const EdgeInsets.fromLTRB(
+                                  16,
+                                  0,
+                                  16,
+                                  8,
+                                ),
+                                itemCount: state.filteredItems.length,
+                                separatorBuilder: (_, __) =>
+                                    const SizedBox(height: 8),
+                                itemBuilder: (context, index) {
+                                  final item = state.filteredItems[index];
+                                  final selected = state.selectedIds.contains(
+                                    item.id,
+                                  );
+                                  return _BuoySelectableCard(
+                                    item: item,
+                                    selected: selected,
+                                    onTap: () {
+                                      context
+                                          .read<GeneralUserExportSelectionBloc>()
+                                          .add(
+                                            ToggleGeneralUserExportSelectionItem(
+                                              item.id,
+                                            ),
+                                          );
+                                    },
+                                  );
+                                },
+                              ),
                       ),
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
@@ -123,6 +146,8 @@ class GeneralUserExportSelectionPage extends StatelessWidget {
                         selectedTab: GeneralUserBottomNavTab.export,
                         onTap: (tab) {
                           switch (tab) {
+                            case GeneralUserBottomNavTab.home:
+                              context.go(AppRoutes.dashboardPath);
                             case GeneralUserBottomNavTab.buoys:
                               context.go(AppRoutes.buoysPath);
                             case GeneralUserBottomNavTab.map:
@@ -216,6 +241,37 @@ class _SearchBar extends StatelessWidget {
   }
 }
 
+class _ExportSelectionEmptyView extends StatelessWidget {
+  final bool isSearching;
+  final String query;
+
+  const _ExportSelectionEmptyView({
+    required this.isSearching,
+    required this.query,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final message = isSearching
+        ? 'No buoys match "$query".'
+        : 'No buoys available to export.';
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Text(
+          message,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            color: const Color(0xFF5E656C),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _SelectAllRow extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
@@ -224,24 +280,24 @@ class _SelectAllRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Row(
-        children: [
-          Icon(
-            selected ? Icons.check_box : Icons.check_box_outline_blank,
-            color: selected ? const Color(0xFF216CC0) : const Color(0xFF71777D),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            'Select All',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: const Color(0xFF353B41),
-              fontWeight: FontWeight.w700,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            _ExportCircularCheckbox(selected: selected),
+            const SizedBox(width: 10),
+            Text(
+              'Select All',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: const Color(0xFF353B41),
+                fontWeight: FontWeight.w700,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -275,6 +331,8 @@ class _BuoySelectableCard extends StatelessWidget {
         ),
         child: Row(
           children: [
+            _ExportCircularCheckbox(selected: selected),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -316,6 +374,38 @@ class _BuoySelectableCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Circular checkbox used on export selection (list + select all).
+class _ExportCircularCheckbox extends StatelessWidget {
+  final bool selected;
+
+  const _ExportCircularCheckbox({required this.selected});
+
+  static const Color _accent = Color(0xFF216CC0);
+  static const Color _ring = Color(0xFFB1B6BB);
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+      width: 24,
+      height: 24,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: selected ? _accent : Colors.transparent,
+        border: Border.all(
+          color: selected ? _accent : _ring,
+          width: 2,
+        ),
+      ),
+      child: selected
+          ? const Icon(Icons.check_rounded, size: 15, color: Colors.white)
+          : null,
     );
   }
 }

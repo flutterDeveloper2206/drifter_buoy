@@ -65,7 +65,7 @@ class _GeneralUserMapBuoyDetailsPageState
                                 const Spacer(),
                                 AppIconCircleButton(
                                   onTap: () =>
-                                      context.push(AppRoutes.mapSearchPath),
+                                      context.go(AppRoutes.mapPathOpenSearch),
                                   icon: Icons.search,
                                 ),
                               ],

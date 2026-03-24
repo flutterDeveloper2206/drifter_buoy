@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum GeneralUserBottomNavTab { buoys, map, export, setup }
+enum GeneralUserBottomNavTab { home, buoys, map, export, setup }
 
 class AppGeneralUserBottomNav extends StatelessWidget {
   final GeneralUserBottomNavTab selectedTab;
@@ -11,16 +11,32 @@ class AppGeneralUserBottomNav extends StatelessWidget {
     super.key,
     required this.selectedTab,
     required this.onTap,
-    this.showSetup = false,
+    this.showSetup = true,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFDDE1E4),
+      decoration: const BoxDecoration(
+        color: Color(0xFFDDE1E4),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x1F000000),
+            offset: Offset(0, -2),
+            blurRadius: 10,
+            spreadRadius: 0,
+          ),
+        ],
+      ),
       padding: const EdgeInsets.fromLTRB(10, 8, 10, 12),
       child: Row(
         children: [
+          _BottomNavItem(
+            icon: Icons.home_outlined,
+            label: 'Home',
+            selected: selectedTab == GeneralUserBottomNavTab.home,
+            onTap: () => onTap(GeneralUserBottomNavTab.home),
+          ),
           _BottomNavItem(
             icon: Icons.anchor_outlined,
             label: "Buoy's",

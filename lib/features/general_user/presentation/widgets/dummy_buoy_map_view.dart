@@ -87,45 +87,62 @@ class DummyBuoyMapView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FlutterMap(
-      mapController: mapController,
-      options: MapOptions(
-        initialCenter: initialCenter,
-        initialZoom: initialZoom,
-        interactionOptions: InteractionOptions(
-          flags: interactive ? InteractiveFlag.all : InteractiveFlag.none,
+    return SizedBox.expand(
+      child: FlutterMap(
+        mapController: mapController,
+        options: MapOptions(
+          initialCenter: initialCenter,
+          initialZoom: initialZoom,
+          interactionOptions: InteractionOptions(
+            flags: interactive ? InteractiveFlag.all : InteractiveFlag.none,
+          ),
         ),
-      ),
-      children: [
-        TileLayer(
-          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-          userAgentPackageName: 'com.azista.drifter_buoy',
-        ),
-        MarkerLayer(
-          markers: buoys
-              .map(
-                (buoy) => Marker(
-                  point: buoy.position,
-                  width: showLabels ? 72 : 40,
-                  height: showLabels ? 82 : 54,
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: onBuoyTap == null ? null : () => onBuoyTap!(buoy),
-                    child: _BuoyMarker(
-                      id: buoy.id,
-                      status: buoy.status,
-                      showLabel: showLabels,
-                      isSelected: selectedBuoy == buoy,
+        children: [
+          TileLayer(
+            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            userAgentPackageName: 'com.azista.drifter_buoy',
+          ),
+          MarkerLayer(
+            markers: buoys
+                .map(
+                  (buoy) => Marker(
+                    point: buoy.position,
+                    width: showLabels ? 88 : 48,
+                    height: showLabels ? 98 : 62,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: onBuoyTap == null ? null : () => onBuoyTap!(buoy),
+                      child: Transform.scale(
+                        scale: _isSameBuoy(selectedBuoy, buoy) ? 1.28 : 1,
+                        alignment: Alignment.bottomCenter,
+                        child: _BuoyMarker(
+                          id: buoy.id,
+                          status: buoy.status,
+                          showLabel: showLabels,
+                          isSelected: _isSameBuoy(selectedBuoy, buoy),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              )
-              .toList(),
-        ),
-      ],
+                )
+                .toList(),
+          ),
+        ],
+      ),
     );
   }
 }
+
+/// Matches buoy ids ignoring spaces (e.g. `DB-01` vs `DB - 01`).
+bool _isSameBuoy(DummyBuoy? selected, DummyBuoy buoy) {
+  if (selected == null) {
+    return false;
+  }
+  return _normalizeBuoyId(selected.id) == _normalizeBuoyId(buoy.id);
+}
+
+String _normalizeBuoyId(String id) =>
+    id.toLowerCase().replaceAll(RegExp(r'\s+'), '');
 
 class _BuoyMarker extends StatelessWidget {
   final String id;

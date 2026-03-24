@@ -172,10 +172,11 @@ class GeneralUserDashboardPage extends StatelessWidget {
                   ),
                 ),
                 AppGeneralUserBottomNav(
-                  selectedTab: GeneralUserBottomNavTab.buoys,
-                  showSetup: state.isAdmin,
+                  selectedTab: GeneralUserBottomNavTab.home,
                   onTap: (tab) {
                     switch (tab) {
+                      case GeneralUserBottomNavTab.home:
+                        context.go(AppRoutes.dashboardPath);
                       case GeneralUserBottomNavTab.buoys:
                         context.go(AppRoutes.buoysPath);
                       case GeneralUserBottomNavTab.map:

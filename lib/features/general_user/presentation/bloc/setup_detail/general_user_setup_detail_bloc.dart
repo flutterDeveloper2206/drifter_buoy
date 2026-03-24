@@ -8,10 +8,11 @@ class GeneralUserSetupDetailBloc
   GeneralUserSetupDetailBloc()
     : super(const GeneralUserSetupDetailState.initial()) {
     on<LoadGeneralUserSetupDetail>(_onLoadGeneralUserSetupDetail);
-    on<ChangeGeneralUserSetupDetailTab>(_onChangeGeneralUserSetupDetailTab);
     on<ToggleGeneralUserEnableConfiguration>(
       _onToggleGeneralUserEnableConfiguration,
     );
+    on<ClearBluetoothSetup>(_onClearBluetoothSetup);
+    on<SelectBluetoothDevice>(_onSelectBluetoothDevice);
   }
 
   Future<void> _onLoadGeneralUserSetupDetail(
@@ -34,13 +35,6 @@ class GeneralUserSetupDetailBloc
     );
   }
 
-  void _onChangeGeneralUserSetupDetailTab(
-    ChangeGeneralUserSetupDetailTab event,
-    Emitter<GeneralUserSetupDetailState> emit,
-  ) {
-    emit(state.copyWith(selectedTab: event.tab));
-  }
-
   void _onToggleGeneralUserEnableConfiguration(
     ToggleGeneralUserEnableConfiguration event,
     Emitter<GeneralUserSetupDetailState> emit,
@@ -49,14 +43,40 @@ class GeneralUserSetupDetailBloc
     emit(
       state.copyWith(
         enableConfiguration: enabled,
-        signalStrength: enabled ? '82%' : '--',
-        bluetoothDevice: enabled ? 'DB021_BT' : '--',
-        lastSync: enabled ? '10:45 AM' : '--',
-        connectionStatus: enabled ? 'Connected' : 'Disconnected',
-        memoryStatus: enabled
-            ? (state.selectedTab == SetupDetailTab.backup ? '0 Records' : '234 Logs')
-            : '234 Logs',
+        memoryStatus: _memoryLabel(enabled),
       ),
     );
+  }
+
+  void _onClearBluetoothSetup(
+    ClearBluetoothSetup event,
+    Emitter<GeneralUserSetupDetailState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        bluetoothDevice: '--',
+        connectionStatus: 'Disconnected',
+        signalStrength: '--',
+        lastSync: '--',
+      ),
+    );
+  }
+
+  void _onSelectBluetoothDevice(
+    SelectBluetoothDevice event,
+    Emitter<GeneralUserSetupDetailState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        bluetoothDevice: event.bluetoothId,
+        connectionStatus: 'Connected',
+        signalStrength: '82%',
+        lastSync: '10:45 AM',
+      ),
+    );
+  }
+
+  String _memoryLabel(bool configEnabled) {
+    return configEnabled ? '234 Logs' : '0 Records';
   }
 }
