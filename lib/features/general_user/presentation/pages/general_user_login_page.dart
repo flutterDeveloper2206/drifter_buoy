@@ -50,7 +50,9 @@ class _GeneralUserLoginPageState extends State<GeneralUserLoginPage> {
                       ScrollViewKeyboardDismissBehavior.onDrag,
                   padding: EdgeInsets.only(bottom: viewInsets.bottom),
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: TweenAnimationBuilder<double>(
@@ -193,9 +195,8 @@ class _GeneralUserLoginPageState extends State<GeneralUserLoginPage> {
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
-                                    textStyle: textTheme.headlineSmall?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                    textStyle: textTheme.headlineSmall
+                                        ?.copyWith(fontWeight: FontWeight.w600),
                                   ),
                                   onPressed: _onLoginTap,
                                   child: const Text('Log In'),
@@ -265,8 +266,7 @@ class _GeneralUserLoginPageState extends State<GeneralUserLoginPage> {
       return 'Email is required';
     }
 
-    const emailPattern =
-        r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$';
+    const emailPattern = r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$';
     final isValid = RegExp(emailPattern).hasMatch(email);
     if (!isValid) {
       return 'Enter a valid email address';
