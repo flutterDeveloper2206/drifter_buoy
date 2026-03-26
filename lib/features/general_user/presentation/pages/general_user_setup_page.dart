@@ -156,9 +156,7 @@ class _GeneralUserSetupPageState extends State<GeneralUserSetupPage> {
                 },
               ),
             ),
-            AppGeneralUserBottomNav(
-              selectedTab: GeneralUserBottomNavTab.setup,
-            ),
+            AppGeneralUserBottomNav(selectedTab: GeneralUserBottomNavTab.setup),
           ],
         ),
       ),

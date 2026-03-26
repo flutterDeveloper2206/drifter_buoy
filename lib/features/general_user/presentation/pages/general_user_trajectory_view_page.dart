@@ -1,8 +1,13 @@
 import 'package:drifter_buoy/core/constants/app_routes.dart';
+import 'package:drifter_buoy/core/utils/injection_container.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_icon_circle_button.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_loader.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_map_legend_item.dart';
+import 'package:drifter_buoy/core/utils/widgets/app_settings_tiles.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_filters/general_user_trajectory_filters_bloc.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_filters/general_user_trajectory_filters_event.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_filters/general_user_trajectory_filters_state.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_view/general_user_trajectory_view_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_view/general_user_trajectory_view_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_view/general_user_trajectory_view_state.dart';
@@ -24,6 +29,23 @@ class GeneralUserTrajectoryViewPage extends StatefulWidget {
 class _GeneralUserTrajectoryViewPageState
     extends State<GeneralUserTrajectoryViewPage> {
   final MapController _mapController = MapController();
+
+  void _openFiltersSheet(String buoyId) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      barrierColor: const Color(0x66000000),
+      backgroundColor: Colors.transparent,
+      builder: (_) {
+        return BlocProvider<GeneralUserTrajectoryFiltersBloc>(
+          create: (_) =>
+              sl<GeneralUserTrajectoryFiltersBloc>()
+                ..add(LoadGeneralUserTrajectoryFilters(buoyId: buoyId)),
+          child: const _TrajectoryFiltersSheet(),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,21 +85,6 @@ class _GeneralUserTrajectoryViewPageState
                                   },
                                   icon: Icons.arrow_back,
                                 ),
-                                Expanded(
-                                  child: Center(
-                                    child: Text(
-                                      'Trajectory View',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .headlineSmall
-                                          ?.copyWith(
-                                            color: const Color(0xFF1E252C),
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 48),
                               ],
                             ),
                           ),
@@ -111,10 +118,7 @@ class _GeneralUserTrajectoryViewPageState
                         Align(
                           alignment: Alignment.bottomCenter,
                           child: _BottomTogglePanel(
-                            onTap: () => context.push(
-                              AppRoutes.trajectoryFiltersPath,
-                              extra: state.buoyId,
-                            ),
+                            onTap: () => _openFiltersSheet(state.buoyId),
                           ),
                         ),
                       ],
@@ -286,18 +290,132 @@ class _BottomTogglePanel extends StatelessWidget {
                 fontWeight: FontWeight.w700,
               ),
             ),
-            Container(
-              margin: const EdgeInsets.only(top: 6),
-              width: 130,
-              height: 5,
-              decoration: BoxDecoration(
-                color: const Color(0xFF111111),
-                borderRadius: BorderRadius.circular(99),
-              ),
-            ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _TrajectoryFiltersSheet extends StatelessWidget {
+  const _TrajectoryFiltersSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<
+      GeneralUserTrajectoryFiltersBloc,
+      GeneralUserTrajectoryFiltersState
+    >(
+      builder: (context, state) {
+        if (state.status == GeneralUserTrajectoryFiltersStatus.loading ||
+            state.status == GeneralUserTrajectoryFiltersStatus.initial) {
+          return _TrajectoryFiltersBottomSheetContainer(
+            child: const Padding(
+              padding: EdgeInsets.symmetric(vertical: 48),
+              child: AppLoader(),
+            ),
+          );
+        }
+
+        if (state.status == GeneralUserTrajectoryFiltersStatus.error) {
+          return _TrajectoryFiltersBottomSheetContainer(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 22),
+              child: AppErrorView(
+                message: state.message,
+                onRetry: () {
+                  context.read<GeneralUserTrajectoryFiltersBloc>().add(
+                    LoadGeneralUserTrajectoryFilters(buoyId: state.buoyId),
+                  );
+                },
+              ),
+            ),
+          );
+        }
+
+        return _TrajectoryFiltersBottomSheetContainer(
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () => Navigator.of(context).pop(),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 1),
+                    child: Icon(
+                      Icons.keyboard_arrow_down,
+                      size: 24,
+                      color: Color(0xFF2E343A),
+                    ),
+                  ),
+                ),
+                Text(
+                  'Toggles and Filters',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    color: const Color(0xFF2D2D2D),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Divider(color: Color(0xFFD2D2D2), thickness: 1),
+                const SizedBox(height: 8),
+                AppSwitchSettingTile(
+                  label: 'GPS coordinates',
+                  value: state.gpsCoordinatesEnabled,
+                  onChanged: (_) {
+                    context.read<GeneralUserTrajectoryFiltersBloc>().add(
+                      const ToggleGpsCoordinatesFilter(),
+                    );
+                  },
+                ),
+                AppSwitchSettingTile(
+                  label: 'Timestamps',
+                  value: state.timestampsEnabled,
+                  onChanged: (_) {
+                    context.read<GeneralUserTrajectoryFiltersBloc>().add(
+                      const ToggleTimestampsFilter(),
+                    );
+                  },
+                ),
+                AppSwitchSettingTile(
+                  label: 'Battery logs',
+                  value: state.batteryLogsEnabled,
+                  onChanged: (_) {
+                    context.read<GeneralUserTrajectoryFiltersBloc>().add(
+                      const ToggleBatteryLogsFilter(),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _TrajectoryFiltersBottomSheetContainer extends StatelessWidget {
+  const _TrajectoryFiltersBottomSheetContainer({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: BoxConstraints(
+        minHeight: MediaQuery.sizeOf(context).height * 0.34,
+        maxHeight: MediaQuery.sizeOf(context).height * 0.52,
+      ),
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        color: Color(0xFFF2F2F2),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+      ),
+      child: SafeArea(top: false, child: child),
     );
   }
 }
