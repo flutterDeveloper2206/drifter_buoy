@@ -347,14 +347,14 @@ class _MapSearchInputCard extends StatelessWidget {
               onChanged: onChanged,
               maxLines: 1,
               textAlignVertical: TextAlignVertical.center,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: const Color(0xFF31363A),
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w600,
               ),
               decoration: InputDecoration(
                 isDense: true,
                 hintText: 'Search with Buoy ID',
-                hintStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
+                hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: const Color(0xFF9A9FA4),
                   fontWeight: FontWeight.w600,
                 ),

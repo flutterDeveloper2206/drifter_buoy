@@ -223,7 +223,7 @@ class _TabItem extends StatelessWidget {
           alignment: Alignment.center,
           child: Text(
             label,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
               color: selected ? Colors.white : const Color(0xFF6B6B6B),
               fontWeight: FontWeight.w700,
             ),
@@ -254,7 +254,7 @@ class _BuoyHeaderCard extends StatelessWidget {
             children: [
               Text(
                 _overviewCardDisplayId(data.id),
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: const Color(0xFF2A2F34),
                   fontWeight: FontWeight.w700,
                 ),
@@ -270,7 +270,7 @@ class _BuoyHeaderCard extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 data.isActive ? 'Active' : 'Offline',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: data.isActive
                       ? const Color(0xFF22BE61)
                       : const Color(0xFFE74C3C),
@@ -286,7 +286,7 @@ class _BuoyHeaderCard extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 'Last Update : ${data.lastUpdate}',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: const Color(0xFF2184D2),
                   fontWeight: FontWeight.w700,
                 ),
@@ -326,7 +326,7 @@ class _MetricsCard extends StatelessWidget {
             children: [
               Text(
                 'Metrics',
-                style: textTheme.headlineSmall?.copyWith(
+                style: textTheme.titleMedium?.copyWith(
                   color: const Color(0xFF2E3238),
                   fontWeight: FontWeight.w700,
                 ),
@@ -425,7 +425,7 @@ class _TrajectoryCard extends StatelessWidget {
             children: [
               Text(
                 'Trajectory View',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: const Color(0xFF2E3238),
                   fontWeight: FontWeight.w700,
                 ),
@@ -484,7 +484,7 @@ class _DeviceActionsCard extends StatelessWidget {
         children: [
           Text(
             'Device Actions',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
               color: const Color(0xFF2E3238),
               fontWeight: FontWeight.w700,
             ),
@@ -505,7 +505,7 @@ class _DeviceActionsCard extends StatelessWidget {
                   const SizedBox(width: 6),
                   Text(
                     'Export Data',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: const Color(0xFF2568B8),
                       fontWeight: FontWeight.w700,
                     ),

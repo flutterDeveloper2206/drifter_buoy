@@ -220,7 +220,7 @@ class _DateRangeCard extends StatelessWidget {
                 ),
                 borderRadius: BorderRadius.circular(10),
                 dropdownColor: Colors.white,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: const Color(0xFF353A3F),
                   fontWeight: FontWeight.w600,
                 ),

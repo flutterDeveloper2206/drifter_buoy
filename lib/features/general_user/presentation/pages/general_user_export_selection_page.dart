@@ -229,9 +229,18 @@ class _SearchBar extends StatelessWidget {
           Expanded(
             child: TextField(
               onChanged: onChanged,
-              decoration: const InputDecoration(
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: const Color(0xFF31363A),
+                fontWeight: FontWeight.w600,
+              ),
+              decoration: InputDecoration(
                 hintText: 'Search with Buoy ID',
+                hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: const Color(0xFF9A9FA4),
+                  fontWeight: FontWeight.w600,
+                ),
                 border: InputBorder.none,
+                isDense: true,
               ),
             ),
           ),
@@ -339,7 +348,7 @@ class _BuoySelectableCard extends StatelessWidget {
                 children: [
                   Text(
                     item.id,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: const Color(0xFF2A2F34),
                       fontWeight: FontWeight.w700,
                     ),
@@ -362,7 +371,7 @@ class _BuoySelectableCard extends StatelessWidget {
                 const SizedBox(width: 4),
                 Text(
                   item.isActive ? 'Active' : 'Offline',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: item.isActive
                         ? const Color(0xFF22BE61)
                         : const Color(0xFFE74C3C),

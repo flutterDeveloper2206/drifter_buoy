@@ -130,7 +130,7 @@ class _DateRangeCard extends StatelessWidget {
         children: [
           Text(
             'Select Date Range',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
               color: const Color(0xFF30353A),
               fontWeight: FontWeight.w700,
             ),
@@ -155,7 +155,7 @@ class _DateRangeCard extends StatelessWidget {
                 ),
                 borderRadius: BorderRadius.circular(10),
                 dropdownColor: Colors.white,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: const Color(0xFF353A3F),
                   fontWeight: FontWeight.w600,
                 ),
@@ -228,7 +228,7 @@ class _BatteryChartCard extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 'Battery',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: const Color(0xFF34393E),
                   fontWeight: FontWeight.w700,
                 ),
@@ -238,7 +238,7 @@ class _BatteryChartCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             batteryValue,
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
               color: const Color(0xFF2C3136),
               fontWeight: FontWeight.w700,
             ),
