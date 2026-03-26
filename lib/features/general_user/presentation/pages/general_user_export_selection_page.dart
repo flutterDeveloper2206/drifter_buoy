@@ -30,7 +30,7 @@ class GeneralUserExportSelectionPage extends StatelessWidget {
                 builder: (context, state) {
                   if (state.status == GeneralUserExportSelectionStatus.loading ||
                       state.status == GeneralUserExportSelectionStatus.initial) {
-                    return const AppLoader();
+                    return const GeneralUserExportSelectionShimmer();
                   }
 
                   if (state.status == GeneralUserExportSelectionStatus.error) {
@@ -146,20 +146,6 @@ class GeneralUserExportSelectionPage extends StatelessWidget {
                       ),
                       AppGeneralUserBottomNav(
                         selectedTab: GeneralUserBottomNavTab.export,
-                        onTap: (tab) {
-                          switch (tab) {
-                            case GeneralUserBottomNavTab.home:
-                              context.go(AppRoutes.dashboardPath);
-                            case GeneralUserBottomNavTab.buoys:
-                              context.go(AppRoutes.buoysPath);
-                            case GeneralUserBottomNavTab.map:
-                              context.go(AppRoutes.mapPath);
-                            case GeneralUserBottomNavTab.export:
-                              break;
-                            case GeneralUserBottomNavTab.setup:
-                              context.go(AppRoutes.setupPath);
-                          }
-                        },
                       ),
                     ],
                   );

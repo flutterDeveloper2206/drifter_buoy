@@ -342,7 +342,12 @@ class _BrandFooter extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('🪷', style: Theme.of(context).textTheme.titleLarge),
+        Image.asset(
+          'assets/icons/ic_azista.png',
+          width: 38,
+          height: 38,
+          fit: BoxFit.contain,
+        ),
         const SizedBox(height: 2),
         Text(
           'Azista',

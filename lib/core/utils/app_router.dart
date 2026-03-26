@@ -66,6 +66,35 @@ import 'package:go_router/go_router.dart';
 class AppRouter {
   AppRouter._();
 
+  static CustomTransitionPage<void> _tabTransitionPage({
+    required GoRouterState state,
+    required Widget child,
+  }) {
+    return CustomTransitionPage<void>(
+      key: state.pageKey,
+      child: child,
+      transitionDuration: const Duration(milliseconds: 240),
+      reverseTransitionDuration: const Duration(milliseconds: 200),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInCubic,
+        );
+        return FadeTransition(
+          opacity: curved,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0.02, 0),
+              end: Offset.zero,
+            ).animate(curved),
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+
   static final GoRouter router = GoRouter(
     navigatorKey: NavigationService.navigatorKey,
     initialLocation: AppRoutes.splashPath,
@@ -111,37 +140,46 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.dashboardPath,
         name: AppRoutes.dashboardName,
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final extra = state.extra;
           final isAdmin = extra is bool ? extra : false;
-          return BlocProvider<GeneralUserDashboardBloc>(
-            create: (_) =>
-                sl<GeneralUserDashboardBloc>()
-                  ..add(LoadGeneralUserDashboard(isAdmin: isAdmin)),
-            child: const GeneralUserDashboardPage(),
+          return _tabTransitionPage(
+            state: state,
+            child: BlocProvider<GeneralUserDashboardBloc>(
+              create: (_) =>
+                  sl<GeneralUserDashboardBloc>()
+                    ..add(LoadGeneralUserDashboard(isAdmin: isAdmin)),
+              child: const GeneralUserDashboardPage(),
+            ),
           );
         },
       ),
       GoRoute(
         path: AppRoutes.buoysPath,
         name: AppRoutes.buoysName,
-        builder: (context, state) {
-          return BlocProvider<GeneralUserBuoysBloc>(
-            create: (_) =>
-                sl<GeneralUserBuoysBloc>()..add(const LoadGeneralUserBuoys()),
-            child: const GeneralUserBuoysPage(),
+        pageBuilder: (context, state) {
+          return _tabTransitionPage(
+            state: state,
+            child: BlocProvider<GeneralUserBuoysBloc>(
+              create: (_) =>
+                  sl<GeneralUserBuoysBloc>()..add(const LoadGeneralUserBuoys()),
+              child: const GeneralUserBuoysPage(),
+            ),
           );
         },
       ),
       GoRoute(
         path: AppRoutes.mapPath,
         name: AppRoutes.mapName,
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final openSearch = state.uri.queryParameters['search'] == '1';
-          return BlocProvider<GeneralUserMapBloc>(
-            create: (_) =>
-                sl<GeneralUserMapBloc>()..add(const LoadGeneralUserMap()),
-            child: GeneralUserMapPage(initialSearchOpen: openSearch),
+          return _tabTransitionPage(
+            state: state,
+            child: BlocProvider<GeneralUserMapBloc>(
+              create: (_) =>
+                  sl<GeneralUserMapBloc>()..add(const LoadGeneralUserMap()),
+              child: GeneralUserMapPage(initialSearchOpen: openSearch),
+            ),
           );
         },
       ),
@@ -259,12 +297,15 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.exportSelectionPath,
         name: AppRoutes.exportSelectionName,
-        builder: (context, state) {
-          return BlocProvider<GeneralUserExportSelectionBloc>(
-            create: (_) =>
-                sl<GeneralUserExportSelectionBloc>()
-                  ..add(const LoadGeneralUserExportSelection()),
-            child: const GeneralUserExportSelectionPage(),
+        pageBuilder: (context, state) {
+          return _tabTransitionPage(
+            state: state,
+            child: BlocProvider<GeneralUserExportSelectionBloc>(
+              create: (_) =>
+                  sl<GeneralUserExportSelectionBloc>()
+                    ..add(const LoadGeneralUserExportSelection()),
+              child: const GeneralUserExportSelectionPage(),
+            ),
           );
         },
       ),
@@ -293,8 +334,11 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.setupPath,
         name: AppRoutes.setupName,
-        builder: (context, state) {
-          return const GeneralUserSetupPage();
+        pageBuilder: (context, state) {
+          return _tabTransitionPage(
+            state: state,
+            child: const GeneralUserSetupPage(),
+          );
         },
       ),
       GoRoute(

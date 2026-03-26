@@ -3,10 +3,10 @@ import 'dart:math' as math;
 import 'package:drifter_buoy/core/constants/app_routes.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_icon_circle_button.dart';
-import 'package:drifter_buoy/core/utils/widgets/app_loader.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/metrics/general_user_metrics_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/metrics/general_user_metrics_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/metrics/general_user_metrics_state.dart';
+import 'package:drifter_buoy/features/general_user/presentation/widgets/general_user_loading_shimmers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -28,7 +28,7 @@ class GeneralUserMetricsPage extends StatelessWidget {
                     builder: (context, state) {
                       if (state.status == GeneralUserMetricsStatus.loading ||
                           state.status == GeneralUserMetricsStatus.initial) {
-                        return const AppLoader();
+                        return const GeneralUserMetricsShimmer();
                       }
 
                       if (state.status == GeneralUserMetricsStatus.error) {
