@@ -1,5 +1,6 @@
 import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_shimmer.dart';
+import 'package:drifter_buoy/core/utils/widgets/app_elevated_button.dart';
 import 'package:drifter_buoy/features/sample_feature/presentation/bloc/items_bloc.dart';
 import 'package:drifter_buoy/features/sample_feature/presentation/bloc/items_event.dart';
 import 'package:drifter_buoy/features/sample_feature/presentation/bloc/items_state.dart';
@@ -98,7 +99,8 @@ class ItemsPage extends StatelessWidget {
               onPressed: () => Navigator.of(dialogContext).pop(false),
               child: const Text('Cancel'),
             ),
-            ElevatedButton(
+            AppElevatedButton(
+              loading: false,
               onPressed: () {
                 final title = titleController.text.trim();
                 final body = bodyController.text.trim();

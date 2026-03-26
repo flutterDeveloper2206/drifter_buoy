@@ -1,8 +1,15 @@
 import 'package:drifter_buoy/core/constants/app_routes.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_flushbar.dart';
+import 'package:drifter_buoy/core/utils/widgets/app_elevated_button.dart';
+import 'package:drifter_buoy/core/utils/injection_container.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+
+import 'package:drifter_buoy/features/general_user/presentation/bloc/forgot_password/general_user_forgot_password_bloc.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/forgot_password/general_user_forgot_password_event.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/forgot_password/general_user_forgot_password_state.dart';
 
 class GeneralUserForgotPasswordPage extends StatefulWidget {
   const GeneralUserForgotPasswordPage({super.key});
@@ -42,8 +49,21 @@ class _GeneralUserForgotPasswordPageState
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    return Scaffold(
-      body: Stack(
+    return BlocProvider(
+      create: (_) => sl<GeneralUserForgotPasswordBloc>(),
+      child: BlocListener<GeneralUserForgotPasswordBloc,
+          GeneralUserForgotPasswordState>(
+        listener: (context, state) {
+          if (state is GeneralUserForgotPasswordCodeRequested) {
+            AppFlushbar.success(state.message);
+          } else if (state is GeneralUserForgotPasswordError) {
+            AppFlushbar.error(state.message);
+          } else if (state is GeneralUserForgotPasswordVerified) {
+            context.go(AppRoutes.createPasswordPath);
+          }
+        },
+        child: Scaffold(
+          body: Stack(
         children: [
           const _ForgotPasswordBackground(),
           SafeArea(
@@ -122,17 +142,53 @@ class _GeneralUserForgotPasswordPageState
                     alignment: Alignment.centerRight,
                     child: TextButton(
                       onPressed: () {
-                        AppFlushbar.info(
-                          'Verification code sent successfully.',
-                          context: context,
-                        );
+                        final blocState =
+                            context.read<GeneralUserForgotPasswordBloc>().state;
+                        final isBusy = blocState is
+                                GeneralUserForgotPasswordRequestingCode ||
+                            blocState is GeneralUserForgotPasswordVerifyingCode;
+                        if (isBusy) return;
+
+                        final email = _emailController.text.trim();
+                        if (email.isEmpty) {
+                          AppFlushbar.error('Email is required');
+                          return;
+                        }
+
+                        context
+                            .read<GeneralUserForgotPasswordBloc>()
+                            .add(
+                              RequestVerificationCodeRequested(
+                                emailAddress: email,
+                              ),
+                            );
                       },
-                      child: Text(
-                        'Request Verification Code',
-                        style: textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF37414A),
-                        ),
+                      child: BlocBuilder<GeneralUserForgotPasswordBloc,
+                          GeneralUserForgotPasswordState>(
+                        builder: (context, state) {
+                          final isRequesting =
+                              state is GeneralUserForgotPasswordRequestingCode;
+                          if (isRequesting) {
+                            return SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                valueColor: const AlwaysStoppedAnimation<Color>(
+                                  Color(0xFF37414A),
+                                ),
+                              ),
+                            );
+                          }
+
+                          return Text(
+                            'Request Verification Code',
+                            style: textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF37414A),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ),
@@ -178,21 +234,61 @@ class _GeneralUserForgotPasswordPageState
                   SizedBox(
                     width: double.infinity,
                     height: 56,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF256BBB),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        textStyle: textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      onPressed: () {
-                        context.go(AppRoutes.createPasswordPath);
+                    child:
+                        BlocBuilder<GeneralUserForgotPasswordBloc,
+                            GeneralUserForgotPasswordState>(
+                      builder: (context, state) {
+                        final isRequesting =
+                            state is GeneralUserForgotPasswordRequestingCode;
+                        final isVerifying =
+                            state is GeneralUserForgotPasswordVerifyingCode;
+                        final isDisabled = isRequesting || isVerifying;
+
+                        return AppElevatedButton(
+                          loading: isVerifying,
+                          onPressed: isDisabled
+                              ? null
+                              : () {
+                                  final email =
+                                      _emailController.text.trim();
+                                  if (email.isEmpty) {
+                                    AppFlushbar.error('Email is required');
+                                    return;
+                                  }
+
+                                  final otp = _otpControllers
+                                      .map((c) => c.text.trim())
+                                      .join();
+                                  if (otp.length != 6 ||
+                                      otp.contains(RegExp(r'\D'))) {
+                                    AppFlushbar.error(
+                                      'Please enter a valid 6-digit OTP.',
+                                    );
+                                    return;
+                                  }
+
+                                  context
+                                      .read<GeneralUserForgotPasswordBloc>()
+                                      .add(
+                                        VerifyVerificationCodeRequested(
+                                          emailAddress: email,
+                                          verificationCode: otp,
+                                        ),
+                                      );
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF256BBB),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            textStyle: textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          child: const Text('Verify & Continue'),
+                        );
                       },
-                      child: const Text('Verify & Continue'),
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -219,6 +315,8 @@ class _GeneralUserForgotPasswordPageState
             ),
           ),
         ],
+      ),
+        ),
       ),
     );
   }

@@ -8,7 +8,7 @@ class AppLogger {
       methodCount: 0,
       errorMethodCount: 8,
       lineLength: 90,
-      colors: true,
+      colors: false,
       printEmojis: false,
       dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
     ),

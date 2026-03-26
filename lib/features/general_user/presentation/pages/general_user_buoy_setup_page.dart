@@ -1,4 +1,5 @@
 import 'package:drifter_buoy/core/constants/app_routes.dart';
+import 'package:drifter_buoy/core/utils/widgets/app_elevated_button.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_flushbar.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_icon_circle_button.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_loader.dart';
@@ -114,7 +115,8 @@ class GeneralUserBuoySetupPage extends StatelessWidget {
                             SizedBox(
                               width: double.infinity,
                               height: 54,
-                              child: ElevatedButton(
+                              child: AppElevatedButton(
+                                loading: saving,
                                 onPressed: saving
                                     ? null
                                     : () => context
@@ -127,7 +129,7 @@ class GeneralUserBuoySetupPage extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                 ),
-                                child: Text(saving ? 'Saving...' : 'Save Set Up'),
+                                child: const Text('Save Set Up'),
                               ),
                             ),
                           ],

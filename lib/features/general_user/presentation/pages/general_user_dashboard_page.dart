@@ -1,7 +1,9 @@
 import 'package:drifter_buoy/core/constants/app_routes.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_general_user_bottom_nav.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_loader.dart';
+import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/dashboard/general_user_dashboard_bloc.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/dashboard/general_user_dashboard_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/dashboard/general_user_dashboard_state.dart';
 import 'package:drifter_buoy/features/general_user/presentation/widgets/dummy_buoy_map_view.dart';
 import 'package:flutter/material.dart';
@@ -17,13 +19,30 @@ class GeneralUserDashboardPage extends StatelessWidget {
 
     return BlocBuilder<GeneralUserDashboardBloc, GeneralUserDashboardState>(
       builder: (context, state) {
-        if (state.status == GeneralUserDashboardStatus.loading ||
-            state.status == GeneralUserDashboardStatus.initial) {
+        if (state is GeneralUserDashboardLoading ||
+            state is GeneralUserDashboardInitial) {
           return const Scaffold(
             backgroundColor: Color(0xFFD9DEE2),
             body: AppLoader(),
           );
         }
+
+        if (state is GeneralUserDashboardError) {
+          return Scaffold(
+            backgroundColor: const Color(0xFFD9DEE2),
+            body: AppErrorView(
+              message: state.message,
+              onRetry: () {
+                context
+                    .read<GeneralUserDashboardBloc>()
+                    .add(const LoadGeneralUserDashboard(isAdmin: false));
+              },
+            ),
+          );
+        }
+
+        final isAdmin =
+            (state as GeneralUserDashboardLoaded).isAdmin;
 
         return Scaffold(
           backgroundColor: const Color(0xFFD9DEE2),
@@ -187,6 +206,7 @@ class GeneralUserDashboardPage extends StatelessWidget {
                         context.push(AppRoutes.setupPath);
                     }
                   },
+                  showSetup: isAdmin,
                 ),
               ],
             ),

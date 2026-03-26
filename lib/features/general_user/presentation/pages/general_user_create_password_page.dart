@@ -1,5 +1,6 @@
 import 'package:drifter_buoy/core/constants/app_routes.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_flushbar.dart';
+import 'package:drifter_buoy/core/utils/widgets/app_elevated_button.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -149,7 +150,15 @@ class _GeneralUserCreatePasswordPageState
                   SizedBox(
                     width: double.infinity,
                     height: 56,
-                    child: ElevatedButton(
+                    child: AppElevatedButton(
+                      loading: false,
+                      onPressed: () {
+                        AppFlushbar.success(
+                          'Password updated successfully.',
+                          context: context,
+                        );
+                        context.go(AppRoutes.loginPath);
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF256BBB),
                         foregroundColor: Colors.white,
@@ -160,13 +169,6 @@ class _GeneralUserCreatePasswordPageState
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      onPressed: () {
-                        AppFlushbar.success(
-                          'Password updated successfully.',
-                          context: context,
-                        );
-                        context.go(AppRoutes.loginPath);
-                      },
                       child: const Text('Submit'),
                     ),
                   ),

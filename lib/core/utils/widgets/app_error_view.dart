@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'app_elevated_button.dart';
+
 class AppErrorView extends StatelessWidget {
   final String message;
   final VoidCallback? onRetry;
@@ -17,7 +19,11 @@ class AppErrorView extends StatelessWidget {
             Text(message, textAlign: TextAlign.center),
             if (onRetry != null) ...[
               const SizedBox(height: 12),
-              ElevatedButton(onPressed: onRetry, child: const Text('Retry')),
+              AppElevatedButton(
+                loading: false,
+                onPressed: onRetry,
+                child: const Text('Retry'),
+              ),
             ],
           ],
         ),

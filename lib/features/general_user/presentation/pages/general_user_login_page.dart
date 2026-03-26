@@ -1,6 +1,14 @@
 import 'package:drifter_buoy/core/constants/app_routes.dart';
+import 'package:drifter_buoy/core/utils/injection_container.dart';
+import 'package:drifter_buoy/core/utils/widgets/app_elevated_button.dart';
+import 'package:drifter_buoy/core/utils/widgets/app_flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import 'package:drifter_buoy/features/general_user/presentation/bloc/login/general_user_login_bloc.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/login/general_user_login_event.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/login/general_user_login_state.dart';
 
 class GeneralUserLoginPage extends StatefulWidget {
   const GeneralUserLoginPage({super.key});
@@ -14,7 +22,6 @@ class _GeneralUserLoginPageState extends State<GeneralUserLoginPage> {
   late final TextEditingController _emailController;
   late final TextEditingController _passwordController;
   late final ValueNotifier<bool> _obscurePasswordNotifier;
-  bool _submitted = false;
 
   @override
   void initState() {
@@ -37,9 +44,25 @@ class _GeneralUserLoginPageState extends State<GeneralUserLoginPage> {
     final textTheme = Theme.of(context).textTheme;
     final viewInsets = MediaQuery.of(context).viewInsets;
 
-    return Scaffold(
-      resizeToAvoidBottomInset: true,
-      body: Stack(
+    return BlocProvider(
+      create: (_) => sl<GeneralUserLoginBloc>(),
+      child: BlocListener<GeneralUserLoginBloc, GeneralUserLoginState>(
+        listener: (context, state) {
+          if (state is GeneralUserLoginAuthenticated) {
+            context.go(AppRoutes.dashboardPath, extra: state.isAdmin);
+            return;
+          }
+
+          if (state is GeneralUserLoginError) {
+            final msg = state.message.trim().isEmpty
+                ? 'Incorrect username or password. Please try again.'
+                : state.message;
+            AppFlushbar.error(msg);
+          }
+        },
+        child: Scaffold(
+          resizeToAvoidBottomInset: true,
+          body: Stack(
         children: [
           const _LoginBackground(),
           SafeArea(
@@ -71,9 +94,7 @@ class _GeneralUserLoginPageState extends State<GeneralUserLoginPage> {
                         },
                         child: Form(
                           key: _formKey,
-                          autovalidateMode: _submitted
-                              ? AutovalidateMode.onUserInteraction
-                              : AutovalidateMode.disabled,
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -121,7 +142,7 @@ class _GeneralUserLoginPageState extends State<GeneralUserLoginPage> {
                               ),
                               const SizedBox(height: 24),
                               Text(
-                                'Email Address',
+                                'Email or Username',
                                 style: textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.w600,
                                   color: const Color(0xFF3F4750),
@@ -151,7 +172,7 @@ class _GeneralUserLoginPageState extends State<GeneralUserLoginPage> {
                                     controller: _passwordController,
                                     obscureText: obscure,
                                     textInputAction: TextInputAction.done,
-                                    onFieldSubmitted: (_) => _onLoginTap(),
+                                    onFieldSubmitted: (_) => _onLoginTap(context),
                                     decoration: _fieldDecoration.copyWith(
                                       suffixIcon: IconButton(
                                         onPressed: () {
@@ -188,18 +209,29 @@ class _GeneralUserLoginPageState extends State<GeneralUserLoginPage> {
                               SizedBox(
                                 width: double.infinity,
                                 height: 56,
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF256BBB),
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    textStyle: textTheme.headlineSmall
-                                        ?.copyWith(fontWeight: FontWeight.w600),
-                                  ),
-                                  onPressed: _onLoginTap,
-                                  child: const Text('Log In'),
+                                child: BlocBuilder<GeneralUserLoginBloc,
+                                    GeneralUserLoginState>(
+                                  builder: (context, state) {
+                                    final isLoading =
+                                        state is GeneralUserLoginLoading;
+                                    return AppElevatedButton(
+                                      loading: isLoading,
+                                      onPressed: isLoading
+                                          ? null
+                                          : () => _onLoginTap(context),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor:
+                                            const Color(0xFF256BBB),
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        textStyle: textTheme.headlineSmall
+                                            ?.copyWith(fontWeight: FontWeight.w600),
+                                      ),
+                                      child: const Text('Log In'),
+                                    );
+                                  },
                                 ),
                               ),
                               const SizedBox(height: 28),
@@ -216,6 +248,8 @@ class _GeneralUserLoginPageState extends State<GeneralUserLoginPage> {
             ),
           ),
         ],
+      ),
+        ),
       ),
     );
   }
@@ -244,33 +278,32 @@ class _GeneralUserLoginPageState extends State<GeneralUserLoginPage> {
     );
   }
 
-  void _onLoginTap() {
-    setState(() {
-      _submitted = true;
-    });
-
+  void _onLoginTap(BuildContext innerContext) {
     final isValid = _formKey.currentState?.validate() ?? false;
-    if (!isValid) {
-      return;
-    }
+    if (!isValid) return;
 
-    FocusScope.of(context).unfocus();
-    final normalizedEmail = _emailController.text.trim().toLowerCase();
-    final isAdmin = normalizedEmail.contains('admin');
-    context.go(AppRoutes.dashboardPath, extra: isAdmin);
+    FocusScope.of(innerContext).unfocus();
+
+    innerContext.read<GeneralUserLoginBloc>().add(
+          GeneralUserLoginRequested(
+            userName: _emailController.text.trim(),
+            password: _passwordController.text,
+          ),
+        );
   }
 
   String? _validateEmail(String? value) {
-    final email = value?.trim() ?? '';
-    if (email.isEmpty) {
-      return 'Email is required';
+    final input = value?.trim() ?? '';
+    if (input.isEmpty) return 'Email or Username is required';
+
+    // If user typed something like an email, validate format; otherwise treat as username.
+    if (input.contains('@')) {
+      const emailPattern =
+          r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$';
+      final isValid = RegExp(emailPattern).hasMatch(input);
+      if (!isValid) return 'Enter a valid email address';
     }
 
-    const emailPattern = r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$';
-    final isValid = RegExp(emailPattern).hasMatch(email);
-    if (!isValid) {
-      return 'Enter a valid email address';
-    }
     return null;
   }
 

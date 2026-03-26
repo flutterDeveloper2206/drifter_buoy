@@ -29,7 +29,7 @@ class AppRoutes {
   static const String mapBuoyDetailsName = 'map-buoy-details';
 
   /// Opens the main map with the in-place search bar (`/map?search=1`).
-  static String get mapPathOpenSearch => '${mapPath}?search=1';
+  static String get mapPathOpenSearch => '$mapPath?search=1';
 
   static const String buoyOverviewPath = '/buoy-overview';
   static const String buoyOverviewName = 'buoy-overview';

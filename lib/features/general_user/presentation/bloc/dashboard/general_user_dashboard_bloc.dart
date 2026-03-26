@@ -5,7 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 class GeneralUserDashboardBloc
     extends Bloc<GeneralUserDashboardEvent, GeneralUserDashboardState> {
-  GeneralUserDashboardBloc() : super(const GeneralUserDashboardState.initial()) {
+  GeneralUserDashboardBloc() : super(const GeneralUserDashboardInitial()) {
     on<LoadGeneralUserDashboard>(_onLoadGeneralUserDashboard);
   }
 
@@ -14,20 +14,9 @@ class GeneralUserDashboardBloc
     Emitter<GeneralUserDashboardState> emit,
   ) async {
     AppLogger.i('LoadGeneralUserDashboard event triggered');
-    emit(
-      state.copyWith(
-        status: GeneralUserDashboardStatus.loading,
-        isAdmin: event.isAdmin,
-        message: '',
-      ),
-    );
+    emit(GeneralUserDashboardLoading(isAdmin: event.isAdmin));
 
     await Future<void>.delayed(const Duration(milliseconds: 120));
-    emit(
-      state.copyWith(
-        status: GeneralUserDashboardStatus.loaded,
-        isAdmin: event.isAdmin,
-      ),
-    );
+    emit(GeneralUserDashboardLoaded(isAdmin: event.isAdmin));
   }
 }

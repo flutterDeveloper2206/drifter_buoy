@@ -3,6 +3,7 @@ import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_general_user_bottom_nav.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_icon_circle_button.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_loader.dart';
+import 'package:drifter_buoy/core/utils/widgets/app_elevated_button.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/export_selection/general_user_export_selection_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/export_selection/general_user_export_selection_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/export_selection/general_user_export_selection_state.dart';
@@ -114,13 +115,14 @@ class GeneralUserExportSelectionPage extends StatelessWidget {
                         child: SizedBox(
                           width: double.infinity,
                           height: 56,
-                          child: ElevatedButton(
+                          child: AppElevatedButton(
+                            loading: false,
                             onPressed: state.selectedCount == 0
                                 ? null
                                 : () => context.push(
-                                    AppRoutes.exportPath,
-                                    extra: state.selectedCount,
-                                  ),
+                                      AppRoutes.exportPath,
+                                      extra: state.selectedCount,
+                                    ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF206BBE),
                               foregroundColor: Colors.white,
@@ -135,9 +137,9 @@ class GeneralUserExportSelectionPage extends StatelessWidget {
                               'Continue to Export',
                               style: Theme.of(context).textTheme.headlineSmall
                                   ?.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
                         ),

@@ -1,7 +1,5 @@
 import 'package:equatable/equatable.dart';
 
-enum GeneralUserProfileStatus { initial, loading, loaded, error }
-
 class GeneralUserProfileData extends Equatable {
   final String fullName;
   final String email;
@@ -30,45 +28,96 @@ class GeneralUserProfileData extends Equatable {
   List<Object> get props => [fullName, email, role, phone];
 }
 
-class GeneralUserProfileState extends Equatable {
-  final GeneralUserProfileStatus status;
-  final GeneralUserProfileData? data;
+abstract class GeneralUserProfileState extends Equatable {
+  const GeneralUserProfileState();
+
+  GeneralUserProfileData? get data;
+
+  bool get isLoggingOut;
+
+  bool get logoutSuccess;
+
+  String get message;
+}
+
+class GeneralUserProfileInitial extends GeneralUserProfileState {
+  const GeneralUserProfileInitial();
+
+  @override
+  GeneralUserProfileData? get data => null;
+
+  @override
+  bool get isLoggingOut => false;
+
+  @override
+  bool get logoutSuccess => false;
+
+  @override
+  String get message => '';
+
+  @override
+  List<Object?> get props => const [];
+}
+
+class GeneralUserProfileLoading extends GeneralUserProfileState {
+  const GeneralUserProfileLoading();
+
+  @override
+  GeneralUserProfileData? get data => null;
+
+  @override
+  bool get isLoggingOut => false;
+
+  @override
+  bool get logoutSuccess => false;
+
+  @override
+  String get message => '';
+
+  @override
+  List<Object?> get props => const [];
+}
+
+class GeneralUserProfileLoaded extends GeneralUserProfileState {
+  @override
+  final GeneralUserProfileData data;
+  @override
   final bool isLoggingOut;
+  @override
   final bool logoutSuccess;
+  @override
   final String message;
 
-  const GeneralUserProfileState({
-    required this.status,
+  const GeneralUserProfileLoaded({
     required this.data,
     required this.isLoggingOut,
     required this.logoutSuccess,
     required this.message,
   });
 
-  const GeneralUserProfileState.initial()
-    : status = GeneralUserProfileStatus.initial,
-      data = null,
-      isLoggingOut = false,
-      logoutSuccess = false,
-      message = '';
+  @override
+  List<Object?> get props => [data, isLoggingOut, logoutSuccess, message];
+}
 
-  GeneralUserProfileState copyWith({
-    GeneralUserProfileStatus? status,
-    GeneralUserProfileData? data,
-    bool clearData = false,
-    bool? isLoggingOut,
-    bool? logoutSuccess,
-    String? message,
-  }) {
-    return GeneralUserProfileState(
-      status: status ?? this.status,
-      data: clearData ? null : (data ?? this.data),
-      isLoggingOut: isLoggingOut ?? this.isLoggingOut,
-      logoutSuccess: logoutSuccess ?? this.logoutSuccess,
-      message: message ?? this.message,
-    );
-  }
+class GeneralUserProfileError extends GeneralUserProfileState {
+  @override
+  GeneralUserProfileData? get data => null;
 
   @override
-  List<Object?> get props => [status, data, isLoggingOut, logoutSuccess, message];
+  final bool isLoggingOut;
+
+  @override
+  final bool logoutSuccess;
+
+  @override
+  final String message;
+
+  const GeneralUserProfileError({
+    required this.message,
+    this.isLoggingOut = false,
+    this.logoutSuccess = false,
+  });
+
+  @override
+  List<Object?> get props => [message, isLoggingOut, logoutSuccess];
 }

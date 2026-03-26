@@ -2,6 +2,7 @@ import 'package:drifter_buoy/core/constants/app_routes.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_export_format_card.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_flushbar.dart';
+import 'package:drifter_buoy/core/utils/widgets/app_elevated_button.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_icon_circle_button.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_loader.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/export/general_user_export_bloc.dart';
@@ -132,13 +133,16 @@ class GeneralUserExportPage extends StatelessWidget {
                           child: SizedBox(
                             width: double.infinity,
                             height: 56,
-                            child: ElevatedButton(
+                            child: AppElevatedButton(
+                              loading: isExporting,
                               onPressed: isExporting
                                   ? null
                                   : () {
-                                      context.read<GeneralUserExportBloc>().add(
-                                        const SubmitGeneralUserExport(),
-                                      );
+                                      context
+                                          .read<GeneralUserExportBloc>()
+                                          .add(
+                                            const SubmitGeneralUserExport(),
+                                          );
                                     },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF206BBE),
@@ -152,7 +156,7 @@ class GeneralUserExportPage extends StatelessWidget {
                                 elevation: 0,
                               ),
                               child: Text(
-                                isExporting ? 'Please wait...' : 'Export Data',
+                                'Export Data',
                                 style: Theme.of(context).textTheme.headlineSmall
                                     ?.copyWith(
                                       color: Colors.white,

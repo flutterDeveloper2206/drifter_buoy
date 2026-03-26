@@ -1,35 +1,61 @@
 import 'package:equatable/equatable.dart';
 
-enum GeneralUserDashboardStatus { initial, loading, loaded, error }
+abstract class GeneralUserDashboardState extends Equatable {
+  const GeneralUserDashboardState();
 
-class GeneralUserDashboardState extends Equatable {
-  final GeneralUserDashboardStatus status;
-  final bool isAdmin;
-  final String message;
+  bool get isAdmin;
 
-  const GeneralUserDashboardState({
-    required this.status,
-    required this.isAdmin,
-    required this.message,
-  });
+  String get message;
+}
 
-  const GeneralUserDashboardState.initial()
-    : status = GeneralUserDashboardStatus.initial,
-      isAdmin = false,
-      message = '';
-
-  GeneralUserDashboardState copyWith({
-    GeneralUserDashboardStatus? status,
-    bool? isAdmin,
-    String? message,
-  }) {
-    return GeneralUserDashboardState(
-      status: status ?? this.status,
-      isAdmin: isAdmin ?? this.isAdmin,
-      message: message ?? this.message,
-    );
-  }
+class GeneralUserDashboardInitial extends GeneralUserDashboardState {
+  const GeneralUserDashboardInitial();
 
   @override
-  List<Object> get props => [status, isAdmin, message];
+  bool get isAdmin => false;
+
+  @override
+  String get message => '';
+
+  @override
+  List<Object?> get props => const [];
+}
+
+class GeneralUserDashboardLoading extends GeneralUserDashboardState {
+  const GeneralUserDashboardLoading({required this.isAdmin});
+
+  @override
+  final bool isAdmin;
+
+  @override
+  String get message => '';
+
+  @override
+  List<Object?> get props => [isAdmin];
+}
+
+class GeneralUserDashboardLoaded extends GeneralUserDashboardState {
+  const GeneralUserDashboardLoaded({required this.isAdmin});
+
+  @override
+  final bool isAdmin;
+
+  @override
+  String get message => '';
+
+  @override
+  List<Object?> get props => [isAdmin];
+}
+
+class GeneralUserDashboardError extends GeneralUserDashboardState {
+  const GeneralUserDashboardError({required this.message});
+
+  @override
+  bool get isAdmin => false;
+
+  @override
+  final String message;
+
+  @override
+  List<Object?> get props => [message];
 }

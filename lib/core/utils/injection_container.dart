@@ -1,4 +1,6 @@
 import 'package:drifter_buoy/core/constants/app_constants.dart';
+import 'package:drifter_buoy/core/device/login_device_info_service.dart';
+import 'package:drifter_buoy/core/storage/auth_session_store.dart';
 import 'package:drifter_buoy/core/network/api_service.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoys/general_user_buoys_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/alerts/general_user_alerts_bloc.dart';
@@ -6,6 +8,8 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/buoy_overvi
 import 'package:drifter_buoy/features/general_user/presentation/bloc/dashboard/general_user_dashboard_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/export/general_user_export_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/export_selection/general_user_export_selection_bloc.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/login/general_user_login_bloc.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/forgot_password/general_user_forgot_password_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/profile/general_user_profile_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/map/general_user_map_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/map_buoy_details/general_user_map_buoy_details_bloc.dart';
@@ -16,6 +20,12 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_
 import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_detail/general_user_setup_detail_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoy_setup/general_user_buoy_setup_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/self_test_debug/general_user_self_test_debug_bloc.dart';
+import 'package:drifter_buoy/features/general_user/data/datasources/general_user_auth_remote_data_source.dart';
+import 'package:drifter_buoy/features/general_user/data/repositories/general_user_auth_repository_impl.dart';
+import 'package:drifter_buoy/features/general_user/domain/repositories/general_user_auth_repository.dart';
+import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_login.dart';
+import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_request_verification_code.dart';
+import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_verify_verification_code.dart';
 import 'package:drifter_buoy/features/sample_feature/data/datasources/item_remote_data_source.dart';
 import 'package:drifter_buoy/features/sample_feature/data/repositories/item_repository_impl.dart';
 import 'package:drifter_buoy/features/sample_feature/domain/repositories/item_repository.dart';
@@ -28,9 +38,76 @@ import 'package:get_it/get_it.dart';
 final GetIt sl = GetIt.instance;
 
 Future<void> initDependencies() async {
+  if (!sl.isRegistered<AuthSessionStore>()) {
+    sl.registerLazySingleton<AuthSessionStore>(
+      () => AuthSessionStore(),
+    );
+  }
+
   if (!sl.isRegistered<ApiService>()) {
     sl.registerLazySingleton<ApiService>(
-      () => ApiService(baseUrl: AppConstants.baseUrl),
+      () => ApiService(
+        baseUrl: AppConstants.baseUrl,
+        authSessionStore: sl<AuthSessionStore>(),
+      ),
+    );
+  }
+
+  if (!sl.isRegistered<LoginDeviceInfoService>()) {
+    sl.registerLazySingleton<LoginDeviceInfoService>(
+      () => LoginDeviceInfoService(),
+    );
+  }
+
+  if (!sl.isRegistered<GeneralUserAuthRemoteDataSource>()) {
+    sl.registerLazySingleton<GeneralUserAuthRemoteDataSource>(
+      () => GeneralUserAuthRemoteDataSource(apiService: sl()),
+    );
+  }
+
+  if (!sl.isRegistered<GeneralUserAuthRepository>()) {
+    sl.registerLazySingleton<GeneralUserAuthRepository>(
+      () => GeneralUserAuthRepositoryImpl(remoteDataSource: sl()),
+    );
+  }
+
+  if (!sl.isRegistered<GeneralUserLogin>()) {
+    sl.registerLazySingleton<GeneralUserLogin>(
+      () => GeneralUserLogin(
+        repository: sl(),
+        deviceInfoService: sl(),
+        authSessionStore: sl(),
+      ),
+    );
+  }
+
+  if (!sl.isRegistered<GeneralUserLoginBloc>()) {
+    sl.registerFactory<GeneralUserLoginBloc>(
+      () => GeneralUserLoginBloc(login: sl()),
+    );
+  }
+
+  if (!sl.isRegistered<GeneralUserRequestVerificationCode>()) {
+    sl.registerLazySingleton<GeneralUserRequestVerificationCode>(
+      () => GeneralUserRequestVerificationCode(sl()),
+    );
+  }
+
+  if (!sl.isRegistered<GeneralUserVerifyVerificationCode>()) {
+    sl.registerLazySingleton<GeneralUserVerifyVerificationCode>(
+      () => GeneralUserVerifyVerificationCode(
+        repository: sl(),
+        authSessionStore: sl(),
+      ),
+    );
+  }
+
+  if (!sl.isRegistered<GeneralUserForgotPasswordBloc>()) {
+    sl.registerFactory<GeneralUserForgotPasswordBloc>(
+      () => GeneralUserForgotPasswordBloc(
+        requestCode: sl(),
+        verifyCode: sl(),
+      ),
     );
   }
 
@@ -111,7 +188,9 @@ Future<void> initDependencies() async {
   }
 
   if (!sl.isRegistered<GeneralUserProfileBloc>()) {
-    sl.registerFactory<GeneralUserProfileBloc>(() => GeneralUserProfileBloc());
+    sl.registerFactory<GeneralUserProfileBloc>(
+      () => GeneralUserProfileBloc(authSessionStore: sl()),
+    );
   }
 
   if (!sl.isRegistered<GeneralUserDashboardBloc>()) {

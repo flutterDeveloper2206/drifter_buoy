@@ -3,6 +3,7 @@ import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_flushbar.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_icon_circle_button.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_loader.dart';
+import 'package:drifter_buoy/core/utils/widgets/app_elevated_button.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/profile/general_user_profile_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/profile/general_user_profile_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/profile/general_user_profile_state.dart';
@@ -45,13 +46,12 @@ class GeneralUserProfilePage extends StatelessWidget {
               Expanded(
                 child: BlocBuilder<GeneralUserProfileBloc, GeneralUserProfileState>(
                   builder: (context, state) {
-                    if (state.status == GeneralUserProfileStatus.loading ||
-                        state.status == GeneralUserProfileStatus.initial) {
+                    if (state is GeneralUserProfileLoading ||
+                        state is GeneralUserProfileInitial) {
                       return const AppLoader();
                     }
 
-                    if (state.status == GeneralUserProfileStatus.error ||
-                        state.data == null) {
+                    if (state is GeneralUserProfileError || state.data == null) {
                       return AppErrorView(
                         message: state.message.isNotEmpty
                             ? state.message
@@ -98,18 +98,15 @@ class GeneralUserProfilePage extends StatelessWidget {
                           SizedBox(
                             width: double.infinity,
                             height: 56,
-                            child: ElevatedButton.icon(
+                            child: AppElevatedButton(
+                              loading: state.isLoggingOut,
                               onPressed: state.isLoggingOut
                                   ? null
                                   : () {
                                       context.read<GeneralUserProfileBloc>().add(
-                                        const RequestGeneralUserLogout(),
-                                      );
+                                            const RequestGeneralUserLogout(),
+                                          );
                                     },
-                              icon: const Icon(Icons.logout_rounded),
-                              label: Text(
-                                state.isLoggingOut ? 'Logging out...' : 'Log Out',
-                              ),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFC62828),
                                 foregroundColor: Colors.white,
@@ -120,6 +117,7 @@ class GeneralUserProfilePage extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
+                              child: const Text('Log Out'),
                             ),
                           ),
                         ],

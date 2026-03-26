@@ -45,6 +45,8 @@ dependencies:
   go_router: ^17.1.0
   flutter_map: ^8.2.2
   latlong2: ^0.9.1
+  device_info_plus: ^10.1.0
+  shared_preferences: ^2.5.4
 
 dev_dependencies:
   flutter_test:
