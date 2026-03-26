@@ -1,9 +1,9 @@
 import 'package:drifter_buoy/core/constants/app_routes.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_general_user_bottom_nav.dart';
-import 'package:drifter_buoy/core/utils/widgets/app_loader.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/dashboard/general_user_dashboard_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/dashboard/general_user_dashboard_state.dart';
 import 'package:drifter_buoy/features/general_user/presentation/widgets/dummy_buoy_map_view.dart';
+import 'package:drifter_buoy/features/general_user/presentation/widgets/general_user_loading_shimmers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -21,7 +21,7 @@ class GeneralUserDashboardPage extends StatelessWidget {
             state.status == GeneralUserDashboardStatus.initial) {
           return const Scaffold(
             backgroundColor: Color(0xFFD9DEE2),
-            body: AppLoader(),
+            body: SafeArea(child: GeneralUserDashboardShimmer()),
           );
         }
 
@@ -173,20 +173,6 @@ class GeneralUserDashboardPage extends StatelessWidget {
                 ),
                 AppGeneralUserBottomNav(
                   selectedTab: GeneralUserBottomNavTab.home,
-                  onTap: (tab) {
-                    switch (tab) {
-                      case GeneralUserBottomNavTab.home:
-                        context.go(AppRoutes.dashboardPath);
-                      case GeneralUserBottomNavTab.buoys:
-                        context.go(AppRoutes.buoysPath);
-                      case GeneralUserBottomNavTab.map:
-                        context.go(AppRoutes.mapPath);
-                      case GeneralUserBottomNavTab.export:
-                        context.push(AppRoutes.exportSelectionPath);
-                      case GeneralUserBottomNavTab.setup:
-                        context.push(AppRoutes.setupPath);
-                    }
-                  },
                 ),
               ],
             ),

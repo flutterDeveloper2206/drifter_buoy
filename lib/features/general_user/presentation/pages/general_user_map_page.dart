@@ -2,7 +2,6 @@ import 'package:drifter_buoy/core/constants/app_routes.dart';
 import 'package:drifter_buoy/core/utils/injection_container.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_icon_circle_button.dart';
-import 'package:drifter_buoy/core/utils/widgets/app_loader.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_map_legend_item.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_settings_tiles.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/map/general_user_map_bloc.dart';
@@ -12,6 +11,7 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/map_filters
 import 'package:drifter_buoy/features/general_user/presentation/bloc/map_filters/general_user_map_filters_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/map_filters/general_user_map_filters_state.dart';
 import 'package:drifter_buoy/features/general_user/presentation/widgets/dummy_buoy_map_view.dart';
+import 'package:drifter_buoy/features/general_user/presentation/widgets/general_user_loading_shimmers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -227,7 +227,7 @@ class _GeneralUserMapPageState extends State<GeneralUserMapPage> {
   Widget _buildMapLayer(BuildContext context, GeneralUserMapState state) {
     if (state.status == GeneralUserMapStatus.loading ||
         state.status == GeneralUserMapStatus.initial) {
-      return const AppLoader();
+      return const GeneralUserMapShimmer();
     }
 
     if (state.status == GeneralUserMapStatus.error) {
@@ -554,8 +554,8 @@ class _MapFilterSettingsSheet extends StatelessWidget {
             state.status == GeneralUserMapFiltersStatus.initial) {
           return _MapFiltersBottomSheetContainer(
             child: const Padding(
-              padding: EdgeInsets.symmetric(vertical: 48),
-              child: AppLoader(),
+              padding: EdgeInsets.fromLTRB(16, 8, 16, 10),
+              child: GeneralUserMapFiltersShimmer(),
             ),
           );
         }

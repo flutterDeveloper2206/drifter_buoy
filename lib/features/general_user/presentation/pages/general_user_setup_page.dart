@@ -158,20 +158,6 @@ class _GeneralUserSetupPageState extends State<GeneralUserSetupPage> {
             ),
             AppGeneralUserBottomNav(
               selectedTab: GeneralUserBottomNavTab.setup,
-              onTap: (tab) {
-                switch (tab) {
-                  case GeneralUserBottomNavTab.home:
-                    context.go(AppRoutes.dashboardPath);
-                  case GeneralUserBottomNavTab.buoys:
-                    context.go(AppRoutes.buoysPath);
-                  case GeneralUserBottomNavTab.map:
-                    context.go(AppRoutes.mapPath);
-                  case GeneralUserBottomNavTab.export:
-                    context.go(AppRoutes.exportSelectionPath);
-                  case GeneralUserBottomNavTab.setup:
-                    break;
-                }
-              },
             ),
           ],
         ),

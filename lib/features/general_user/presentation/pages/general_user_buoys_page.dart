@@ -3,10 +3,10 @@ import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_flushbar.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_general_user_bottom_nav.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_info_metric_item.dart';
-import 'package:drifter_buoy/core/utils/widgets/app_loader.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoys/general_user_buoys_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoys/general_user_buoys_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoys/general_user_buoys_state.dart';
+import 'package:drifter_buoy/features/general_user/presentation/widgets/general_user_loading_shimmers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -95,7 +95,7 @@ class _GeneralUserBuoysPageState extends State<GeneralUserBuoysPage> {
                   builder: (context, state) {
                     if (state.status == GeneralUserBuoysStatus.loading ||
                         state.status == GeneralUserBuoysStatus.initial) {
-                      return const AppLoader();
+                      return const GeneralUserBuoysShimmer();
                     }
 
                     if (state.status == GeneralUserBuoysStatus.error) {
@@ -183,20 +183,6 @@ class _GeneralUserBuoysPageState extends State<GeneralUserBuoysPage> {
                         ),
                         AppGeneralUserBottomNav(
                           selectedTab: GeneralUserBottomNavTab.buoys,
-                          onTap: (tab) {
-                            switch (tab) {
-                              case GeneralUserBottomNavTab.home:
-                                context.go(AppRoutes.dashboardPath);
-                              case GeneralUserBottomNavTab.buoys:
-                                break;
-                              case GeneralUserBottomNavTab.map:
-                                context.go(AppRoutes.mapPath);
-                              case GeneralUserBottomNavTab.export:
-                                context.push(AppRoutes.exportSelectionPath);
-                              case GeneralUserBottomNavTab.setup:
-                                context.push(AppRoutes.setupPath);
-                            }
-                          },
                         ),
                       ],
                     );
