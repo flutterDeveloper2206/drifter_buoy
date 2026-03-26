@@ -9,7 +9,12 @@ abstract class GeneralUserMapEvent extends Equatable {
 }
 
 class LoadGeneralUserMap extends GeneralUserMapEvent {
-  const LoadGeneralUserMap();
+  final List<DummyBuoy>? preloadedBuoys;
+
+  const LoadGeneralUserMap({this.preloadedBuoys});
+
+  @override
+  List<Object?> get props => [preloadedBuoys];
 }
 
 class ToggleGeneralUserMapPanel extends GeneralUserMapEvent {

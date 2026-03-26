@@ -55,6 +55,8 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_
 import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_view/general_user_trajectory_view_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_filters/general_user_trajectory_filters_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_filters/general_user_trajectory_filters_event.dart';
+import 'package:drifter_buoy/features/general_user/data/models/user_map_dashboard_get_buoy_map_dashboard_response.dart';
+import 'package:drifter_buoy/features/general_user/presentation/widgets/dummy_buoy_map_view.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_metrics_page.dart';
 import 'package:drifter_buoy/features/sample_feature/presentation/bloc/items_bloc.dart';
 import 'package:drifter_buoy/features/sample_feature/presentation/bloc/items_event.dart';
@@ -62,6 +64,7 @@ import 'package:drifter_buoy/features/sample_feature/presentation/pages/items_pa
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:latlong2/latlong.dart';
 
 class AppRouter {
   AppRouter._();
@@ -173,11 +176,13 @@ class AppRouter {
         name: AppRoutes.mapName,
         pageBuilder: (context, state) {
           final openSearch = state.uri.queryParameters['search'] == '1';
+          final preloaded = _toPreloadedMapBuoys(state.extra);
           return _tabTransitionPage(
             state: state,
             child: BlocProvider<GeneralUserMapBloc>(
               create: (_) =>
-                  sl<GeneralUserMapBloc>()..add(const LoadGeneralUserMap()),
+                  sl<GeneralUserMapBloc>()
+                    ..add(LoadGeneralUserMap(preloadedBuoys: preloaded)),
               child: GeneralUserMapPage(initialSearchOpen: openSearch),
             ),
           );
@@ -283,13 +288,10 @@ class AppRouter {
           final selectedBuoyCount = extra is int && extra > 0 ? extra : 0;
 
           return BlocProvider<GeneralUserExportBloc>(
-            create: (_) =>
-                sl<GeneralUserExportBloc>()
-                  ..add(
-                    LoadGeneralUserExport(
-                      selectedBuoyCount: selectedBuoyCount,
-                    ),
-                  ),
+            create: (_) => sl<GeneralUserExportBloc>()
+              ..add(
+                LoadGeneralUserExport(selectedBuoyCount: selectedBuoyCount),
+              ),
             child: const GeneralUserExportPage(),
           );
         },
@@ -326,7 +328,8 @@ class AppRouter {
         builder: (context, state) {
           return BlocProvider<GeneralUserProfileBloc>(
             create: (_) =>
-                sl<GeneralUserProfileBloc>()..add(const LoadGeneralUserProfile()),
+                sl<GeneralUserProfileBloc>()
+                  ..add(const LoadGeneralUserProfile()),
             child: const GeneralUserProfilePage(),
           );
         },
@@ -359,7 +362,8 @@ class AppRouter {
         builder: (context, state) {
           return BlocProvider<GeneralUserBuoySetupBloc>(
             create: (_) =>
-                sl<GeneralUserBuoySetupBloc>()..add(const LoadGeneralUserBuoySetup()),
+                sl<GeneralUserBuoySetupBloc>()
+                  ..add(const LoadGeneralUserBuoySetup()),
             child: const GeneralUserBuoySetupPage(),
           );
         },
@@ -393,4 +397,51 @@ class AppRouter {
       );
     },
   );
+}
+
+List<DummyBuoy>? _toPreloadedMapBuoys(dynamic extra) {
+  if (extra is! List) {
+    return null;
+  }
+
+  final items = extra
+      .map((e) {
+        if (e is UserMapDashboardGetBuoyMapDashboardItem) {
+          return e;
+        }
+        if (e is Map<String, dynamic>) {
+          return UserMapDashboardGetBuoyMapDashboardItem.fromJson(e);
+        }
+        if (e is Map) {
+          return UserMapDashboardGetBuoyMapDashboardItem.fromJson(
+            Map<String, dynamic>.from(e),
+          );
+        }
+        return null;
+      })
+      .whereType<UserMapDashboardGetBuoyMapDashboardItem>()
+      .toList(growable: false);
+
+  if (items.isEmpty) {
+    return null;
+  }
+
+  return items
+      .map(
+        (e) => DummyBuoy(
+          id: e.buoyId,
+          position: LatLng(e.latitude, e.longitude),
+          status: _statusFromApi(e.buoyStatus),
+        ),
+      )
+      .toList(growable: false);
+}
+
+BuoyStatus _statusFromApi(String status) {
+  final normalized = status.trim().toLowerCase();
+  if (normalized == 'active') return BuoyStatus.active;
+  if (normalized == 'battery low' || normalized == 'batterylow') {
+    return BuoyStatus.batteryLow;
+  }
+  return BuoyStatus.offline;
 }

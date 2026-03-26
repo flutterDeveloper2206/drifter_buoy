@@ -6,6 +6,7 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/dashboard/g
 import 'package:drifter_buoy/features/general_user/presentation/bloc/dashboard/general_user_dashboard_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/dashboard/general_user_dashboard_state.dart';
 import 'package:drifter_buoy/features/general_user/data/models/user_map_dashboard_get_buoy_dashboard_response.dart';
+import 'package:drifter_buoy/features/general_user/data/models/user_map_dashboard_get_buoy_map_dashboard_response.dart';
 import 'package:drifter_buoy/features/general_user/presentation/widgets/dummy_buoy_map_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -44,7 +45,6 @@ class GeneralUserDashboardPage extends StatelessWidget {
         }
 
         final loadedState = state as GeneralUserDashboardLoaded;
-        final isAdmin = loadedState.isAdmin;
         final dashboardData = loadedState.data;
         final summary = dashboardData.summary;
 
@@ -175,7 +175,10 @@ class GeneralUserDashboardPage extends StatelessWidget {
                                     const Spacer(),
                                     IconButton(
                                       onPressed: () {
-                                        context.go(AppRoutes.mapPath);
+                                        context.go(
+                                          AppRoutes.mapPath,
+                                          extra: loadedState.mapData,
+                                        );
                                       },
                                       icon: const Icon(
                                         Icons.arrow_forward,
@@ -186,7 +189,10 @@ class GeneralUserDashboardPage extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(height: 2),
-                              _MapPreviewCard(dashboardData: dashboardData),
+                              _MapPreviewCard(
+                                dashboardData: dashboardData,
+                                mapData: loadedState.mapData,
+                              ),
                             ],
                           ),
                         ),
@@ -196,6 +202,24 @@ class GeneralUserDashboardPage extends StatelessWidget {
                 ),
                 AppGeneralUserBottomNav(
                   selectedTab: GeneralUserBottomNavTab.home,
+                  onTap: (tab) {
+                    switch (tab) {
+                      case GeneralUserBottomNavTab.home:
+                        context.go(AppRoutes.dashboardPath);
+                      case GeneralUserBottomNavTab.buoys:
+                        context.go(AppRoutes.buoysPath);
+                      case GeneralUserBottomNavTab.map:
+                        context.go(
+                          AppRoutes.mapPath,
+                          extra: loadedState.mapData,
+                        );
+                      case GeneralUserBottomNavTab.export:
+                        context.push(AppRoutes.exportSelectionPath);
+                      case GeneralUserBottomNavTab.setup:
+                        context.push(AppRoutes.setupPath);
+                    }
+                  },
+                  showSetup: loadedState.isAdmin,
                 ),
               ],
             ),
@@ -263,13 +287,27 @@ class _StatItem extends StatelessWidget {
 
 class _MapPreviewCard extends StatelessWidget {
   final UserMapDashboardGetBuoyDashboardResult dashboardData;
+  final List<UserMapDashboardGetBuoyMapDashboardItem> mapData;
 
-  const _MapPreviewCard({required this.dashboardData});
+  const _MapPreviewCard({
+    required this.dashboardData,
+    required this.mapData,
+  });
 
   @override
   Widget build(BuildContext context) {
     final summary = dashboardData.summary;
-    final locations = dashboardData.buoyLocations;
+    final locations = mapData.isNotEmpty
+        ? mapData
+            .map(
+              (e) => UserMapDashboardGetBuoyDashboardLocation(
+                buoyId: e.buoyId,
+                latitude: e.latitude,
+                longitude: e.longitude,
+              ),
+            )
+            .toList(growable: false)
+        : dashboardData.buoyLocations;
 
     // Assign marker colors using the server summary counts.
     final activeCount = summary.activeBuoys.clamp(0, locations.length);

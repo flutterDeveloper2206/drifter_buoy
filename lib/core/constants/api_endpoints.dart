@@ -16,6 +16,9 @@ class ApiEndpoints {
   static const String getBuoyDashboardUrl =
       'http://4.213.34.231:5025/api/User/UserMapDashboard/GetBuoyDashboard';
 
+  static const String getBuoyMapDashboardUrl =
+      'http://4.213.34.231:5025/api/User/UserMapDashboard/GetBuoyMapDashboard';
+
   static const String updateUserProfileUrl =
       'http://4.213.34.231:5025/api/Admin/User/UpdateUserProfile';
 }

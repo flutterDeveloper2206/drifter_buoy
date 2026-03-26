@@ -20,6 +20,21 @@ class GeneralUserMapBloc
     Emitter<GeneralUserMapState> emit,
   ) async {
     AppLogger.i('LoadGeneralUserMap event triggered');
+
+    if (event.preloadedBuoys != null) {
+      emit(
+        state.copyWith(
+          status: GeneralUserMapStatus.loaded,
+          buoys: event.preloadedBuoys,
+          message: '',
+        ),
+      );
+      AppLogger.i(
+        'LoadGeneralUserMap from preloaded data: ${event.preloadedBuoys!.length} buoys',
+      );
+      return;
+    }
+
     emit(state.copyWith(status: GeneralUserMapStatus.loading, message: ''));
 
     try {

@@ -36,6 +36,7 @@ import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_verify_verification_code.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_reset_password.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_buoy_dashboard.dart';
+import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_buoy_map_dashboard.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_update_user_profile.dart';
 import 'package:drifter_buoy/features/sample_feature/data/datasources/item_remote_data_source.dart';
 import 'package:drifter_buoy/features/sample_feature/data/repositories/item_repository_impl.dart';
@@ -242,9 +243,16 @@ Future<void> initDependencies() async {
       );
     }
 
+    if (!sl.isRegistered<GeneralUserGetBuoyMapDashboard>()) {
+      sl.registerLazySingleton<GeneralUserGetBuoyMapDashboard>(
+        () => GeneralUserGetBuoyMapDashboard(repository: sl()),
+      );
+    }
+
     sl.registerFactory<GeneralUserDashboardBloc>(
       () => GeneralUserDashboardBloc(
         getBuoyDashboard: sl(),
+        getBuoyMapDashboard: sl(),
       ),
     );
   }
