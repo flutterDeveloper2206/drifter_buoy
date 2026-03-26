@@ -79,9 +79,12 @@ class _GeneralUserSetupPageState extends State<GeneralUserSetupPage> {
       return _allDevices;
     }
     return _allDevices
-        .where((d) => d.id.toLowerCase().replaceAll(' ', '').contains(
-              q.replaceAll(' ', ''),
-            ))
+        .where(
+          (d) => d.id
+              .toLowerCase()
+              .replaceAll(' ', '')
+              .contains(q.replaceAll(' ', '')),
+        )
         .toList(growable: false);
   }
 
@@ -212,17 +215,17 @@ class _SetupSearchBar extends StatelessWidget {
               onChanged: onChanged,
               maxLines: 1,
               textAlignVertical: TextAlignVertical.center,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: const Color(0xFF31363A),
-                    fontWeight: FontWeight.w600,
-                  ),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: const Color(0xFF31363A),
+                fontWeight: FontWeight.w600,
+              ),
               decoration: InputDecoration(
                 isDense: true,
                 hintText: 'Search with Buoy ID',
-                hintStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: const Color(0xFF9A9FA4),
-                      fontWeight: FontWeight.w600,
-                    ),
+                hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: const Color(0xFF9A9FA4),
+                  fontWeight: FontWeight.w600,
+                ),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(vertical: 14),
               ),
@@ -255,10 +258,7 @@ class _SetupSearchBar extends StatelessWidget {
 }
 
 class _SetupDeviceCard extends StatelessWidget {
-  const _SetupDeviceCard({
-    required this.item,
-    required this.onTap,
-  });
+  const _SetupDeviceCard({required this.item, required this.onTap});
 
   final _SetupDeviceItem item;
   final VoidCallback onTap;
@@ -295,7 +295,7 @@ class _SetupDeviceCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         item.id,
-                        style: textTheme.titleLarge?.copyWith(
+                        style: textTheme.titleMedium?.copyWith(
                           color: const Color(0xFF1D2329),
                           fontWeight: FontWeight.w700,
                         ),

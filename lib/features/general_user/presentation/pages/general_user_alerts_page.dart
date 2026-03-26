@@ -46,13 +46,13 @@ class GeneralUserAlertsPage extends StatelessWidget {
                       children: [
                         Text(
                           '${state.unreadCount.toString().padLeft(2, '0')} Alerts & Notifications',
-                          style: Theme.of(context).textTheme.headlineSmall
+                          style: Theme.of(context).textTheme.titleMedium
                               ?.copyWith(
                                 color: const Color(0xFF2A2F34),
                                 fontWeight: FontWeight.w700,
                               ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 20),
                         Expanded(
                           child: ListView.separated(
                             itemCount: state.alerts.length,
@@ -136,7 +136,7 @@ class _AlertCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   alert.title,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: const Color(0xFF2A2F34),
                     fontWeight: FontWeight.w700,
                   ),
@@ -149,7 +149,7 @@ class _AlertCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             alert.message,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
               color: const Color(0xFF545B61),
               height: 1.25,
               fontWeight: FontWeight.w600,

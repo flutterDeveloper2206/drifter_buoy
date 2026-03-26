@@ -310,7 +310,7 @@ class _SummaryItem extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           title,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
             color: const Color(0xFF3C4146),
             fontWeight: FontWeight.w600,
           ),
@@ -368,23 +368,34 @@ class _SearchCard extends StatelessWidget {
             child: TextField(
               controller: controller,
               onChanged: onChanged,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              maxLines: 1,
+              textAlignVertical: TextAlignVertical.center,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: const Color(0xFF30363B),
                 fontWeight: FontWeight.w600,
               ),
               decoration: InputDecoration(
                 hintText: 'Search with Buoy ID',
-                hintStyle: Theme.of(context).textTheme.titleLarge?.copyWith(
+                hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: const Color(0xFF9A9FA4),
                   fontWeight: FontWeight.w600,
                 ),
                 border: InputBorder.none,
                 isDense: true,
-                contentPadding: const EdgeInsets.fromLTRB(16, 0, 0, 0),
+                contentPadding: const EdgeInsets.fromLTRB(16, 0, 8, 0),
+                suffixIconConstraints: const BoxConstraints(
+                  minWidth: 0,
+                  minHeight: 0,
+                ),
                 suffixIcon: onClearTap == null
                     ? null
                     : IconButton(
                         onPressed: onClearTap,
+                        style: IconButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          visualDensity: VisualDensity.compact,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
                         icon: const Icon(
                           Icons.close_rounded,
                           size: 20,
@@ -545,7 +556,7 @@ class _BuoyCard extends StatelessWidget {
               children: [
                 Text(
                   buoy.id,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: const Color(0xFF292E33),
                     fontWeight: FontWeight.w700,
                   ),
@@ -555,7 +566,7 @@ class _BuoyCard extends StatelessWidget {
                 const SizedBox(width: 4),
                 Text(
                   statusLabel,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: statusColor,
                     fontWeight: FontWeight.w700,
                   ),
@@ -565,7 +576,7 @@ class _BuoyCard extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               'Last Update : ${buoy.lastUpdate}',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 color: const Color(0xFF747A80),
                 fontWeight: FontWeight.w600,
               ),
