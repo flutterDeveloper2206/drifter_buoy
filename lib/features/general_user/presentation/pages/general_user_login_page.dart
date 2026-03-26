@@ -26,8 +26,8 @@ class _GeneralUserLoginPageState extends State<GeneralUserLoginPage> {
   @override
   void initState() {
     super.initState();
-    _emailController = TextEditingController(text: 'mailid@example.com');
-    _passwordController = TextEditingController(text: '**********');
+    _emailController = TextEditingController(text: 'DBTesting@123');
+    _passwordController = TextEditingController(text: 'Azista@123');
     _obscurePasswordNotifier = ValueNotifier<bool>(true);
   }
 
@@ -297,12 +297,12 @@ class _GeneralUserLoginPageState extends State<GeneralUserLoginPage> {
     if (input.isEmpty) return 'Email or Username is required';
 
     // If user typed something like an email, validate format; otherwise treat as username.
-    if (input.contains('@')) {
-      const emailPattern =
-          r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$';
-      final isValid = RegExp(emailPattern).hasMatch(input);
-      if (!isValid) return 'Enter a valid email address';
-    }
+    // if (input.contains('@')) {
+    //   const emailPattern =
+    //       r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$';
+    //   final isValid = RegExp(emailPattern).hasMatch(input);
+    //   if (!isValid) return 'Enter a valid email address';
+    // }
 
     return null;
   }
