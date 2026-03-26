@@ -5,6 +5,7 @@ import 'package:drifter_buoy/features/general_user/data/models/user_authenticate
 import 'package:drifter_buoy/core/utils/typedefs.dart';
 import 'package:drifter_buoy/features/general_user/data/models/user_authenticate_request_verification_code_response.dart';
 import 'package:drifter_buoy/features/general_user/data/models/user_authenticate_verify_verification_code_response.dart';
+import 'package:drifter_buoy/features/general_user/data/models/user_authenticate_reset_password_response.dart';
 
 class GeneralUserAuthRepositoryImpl implements GeneralUserAuthRepository {
   GeneralUserAuthRepositoryImpl({
@@ -45,6 +46,19 @@ class GeneralUserAuthRepositoryImpl implements GeneralUserAuthRepository {
     return _remoteDataSource.verifyVerificationCode(
       emailAddress: emailAddress,
       verificationCode: verificationCode,
+    );
+  }
+
+  @override
+  ResultFuture<UserAuthenticateResetPasswordResponse> resetPassword({
+    required String resetToken,
+    required String newPassword,
+    required String confirmPassword,
+  }) {
+    return _remoteDataSource.resetPassword(
+      resetToken: resetToken,
+      newPassword: newPassword,
+      confirmPassword: confirmPassword,
     );
   }
 }

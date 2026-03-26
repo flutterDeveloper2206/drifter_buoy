@@ -4,6 +4,9 @@ class AppRoutes {
   static const String splashPath = '/';
   static const String splashName = 'splash';
 
+  static const String noInternetPath = '/no-internet';
+  static const String noInternetName = 'no-internet';
+
   static const String loginPath = '/login';
   static const String loginName = 'login';
 

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drifter_buoy/core/constants/api_endpoints.dart';
 import 'package:drifter_buoy/core/network/api_service.dart';
 import 'package:drifter_buoy/core/device/login_device_info.dart';
@@ -5,6 +7,7 @@ import 'package:drifter_buoy/core/utils/typedefs.dart';
 import 'package:drifter_buoy/features/general_user/data/models/user_authenticate_login_response.dart';
 import 'package:drifter_buoy/features/general_user/data/models/user_authenticate_request_verification_code_response.dart';
 import 'package:drifter_buoy/features/general_user/data/models/user_authenticate_verify_verification_code_response.dart';
+import 'package:drifter_buoy/features/general_user/data/models/user_authenticate_reset_password_response.dart';
 import 'package:dio/dio.dart';
 
 class GeneralUserAuthRemoteDataSource {
@@ -77,6 +80,37 @@ class GeneralUserAuthRemoteDataSource {
           throw Exception('Invalid verify verification code response format');
         }
         return UserAuthenticateVerifyVerificationCodeResponse.fromJson(data);
+      },
+    );
+  }
+
+  ResultFuture<UserAuthenticateResetPasswordResponse> resetPassword({
+    required String resetToken,
+    required String newPassword,
+    required String confirmPassword,
+  }) {
+    final formData = FormData.fromMap({
+      'resetToken': resetToken,
+      'newPassword': newPassword,
+      'confirmPassword': confirmPassword,
+    });
+
+    return _apiService.post<UserAuthenticateResetPasswordResponse>(
+      ApiEndpoints.resetPasswordUrl,
+      data: formData,
+      parser: (dynamic data) {
+        if (data is String) {
+          final decoded = jsonDecode(data);
+          if (decoded is Map<String, dynamic>) {
+            return UserAuthenticateResetPasswordResponse.fromJson(decoded);
+          }
+        }
+
+        if (data is! Map<String, dynamic>) {
+          throw Exception('Invalid reset password response format');
+        }
+
+        return UserAuthenticateResetPasswordResponse.fromJson(data);
       },
     );
   }

@@ -36,6 +36,10 @@ class GeneralUserProfileBloc
       emit(
         GeneralUserProfileLoaded(
           data: GeneralUserProfileData(
+            userId: result.userId,
+            firstName: result.firstName,
+            middleName: result.middleName,
+            lastName: result.lastName,
             fullName: result.fullName,
             email: result.emailAddress,
             role: result.roleName,

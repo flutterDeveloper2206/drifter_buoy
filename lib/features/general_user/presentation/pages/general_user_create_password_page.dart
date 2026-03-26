@@ -1,8 +1,13 @@
 import 'package:drifter_buoy/core/constants/app_routes.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_flushbar.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_elevated_button.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
+import 'package:drifter_buoy/features/general_user/presentation/bloc/create_password/general_user_create_password_bloc.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/create_password/general_user_create_password_event.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/create_password/general_user_create_password_state.dart';
 
 class GeneralUserCreatePasswordPage extends StatefulWidget {
   const GeneralUserCreatePasswordPage({super.key});
@@ -41,146 +46,214 @@ class _GeneralUserCreatePasswordPageState
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    return Scaffold(
-      body: Stack(
-        children: [
-          const _CreatePasswordBackground(),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0, end: 1),
-                duration: const Duration(milliseconds: 700),
-                curve: Curves.easeOutCubic,
-                builder: (context, progress, child) {
-                  final offsetY = (1 - progress) * 16;
-                  return Opacity(
-                    opacity: progress,
-                    child: Transform.translate(offset: Offset(0, offsetY), child: child),
-                  );
-                },
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                  const SizedBox(height: 12),
-                  IconButton(
-                    onPressed: () {
-                      context.go(AppRoutes.forgotPasswordPath);
-                    },
-                    icon: const Icon(Icons.arrow_back, size: 24),
-                  ),
-                  const SizedBox(height: 150),
-                  Text(
-                    'Create New Psssoword',
-                    style: textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF2B2F33),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Create new password to Sign In',
-                    style: textTheme.titleMedium?.copyWith(
-                      color: const Color(0xFF30363C),
-                    ),
-                  ),
-                  const SizedBox(height: 22),
-                  Text(
-                    'New Password',
-                    style: textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF3F4750),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  ValueListenableBuilder<bool>(
-                    valueListenable: _obscureNewPasswordNotifier,
-                    builder: (context, obscure, _) {
-                      return TextField(
-                        controller: _newPasswordController,
-                        obscureText: obscure,
-                        decoration: _fieldDecoration.copyWith(
-                          suffixIcon: IconButton(
-                            onPressed: () {
-                              _obscureNewPasswordNotifier.value = !obscure;
-                            },
-                            icon: Icon(
-                              obscure
-                                  ? Icons.visibility_outlined
-                                  : Icons.visibility_off_outlined,
-                              color: const Color(0xFF3A4046),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    'Confirm New Password',
-                    style: textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF3F4750),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  ValueListenableBuilder<bool>(
-                    valueListenable: _obscureConfirmPasswordNotifier,
-                    builder: (context, obscure, _) {
-                      return TextField(
-                        controller: _confirmPasswordController,
-                        obscureText: obscure,
-                        decoration: _fieldDecoration.copyWith(
-                          suffixIcon: IconButton(
-                            onPressed: () {
-                              _obscureConfirmPasswordNotifier.value = !obscure;
-                            },
-                            icon: Icon(
-                              obscure
-                                  ? Icons.visibility_outlined
-                                  : Icons.visibility_off_outlined,
-                              color: const Color(0xFF3A4046),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: AppElevatedButton(
-                      loading: false,
-                      onPressed: () {
-                        AppFlushbar.success(
-                          'Password updated successfully.',
-                          context: context,
-                        );
-                        context.go(AppRoutes.loginPath);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF256BBB),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        textStyle: textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+    return BlocListener<
+      GeneralUserCreatePasswordBloc,
+      GeneralUserCreatePasswordState
+    >(
+      listener: (context, state) {
+        if (state is GeneralUserCreatePasswordSuccess) {
+          AppFlushbar.success(state.message);
+          context.go(AppRoutes.loginPath);
+        } else if (state is GeneralUserCreatePasswordError) {
+          AppFlushbar.error(state.message);
+        }
+      },
+      child: Scaffold(
+        body: Stack(
+          children: [
+            const _CreatePasswordBackground(),
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0, end: 1),
+                  duration: const Duration(milliseconds: 700),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, progress, child) {
+                    final offsetY = (1 - progress) * 16;
+                    return Opacity(
+                      opacity: progress,
+                      child: Transform.translate(
+                        offset: Offset(0, offsetY),
+                        child: child,
                       ),
-                      child: const Text('Submit'),
-                    ),
-                  ),
-                  const Spacer(),
-                  const Center(child: _BrandFooter()),
-                  const SizedBox(height: 18),
-                  ],
+                    );
+                  },
+                  child:
+                      BlocBuilder<
+                        GeneralUserCreatePasswordBloc,
+                        GeneralUserCreatePasswordState
+                      >(
+                        builder: (context, state) {
+                          final isLoading =
+                              state is GeneralUserCreatePasswordLoading;
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 12),
+                              IconButton(
+                                onPressed: isLoading
+                                    ? null
+                                    : () {
+                                        context.go(
+                                          AppRoutes.forgotPasswordPath,
+                                        );
+                                      },
+                                icon: const Icon(Icons.arrow_back, size: 24),
+                              ),
+                              const SizedBox(height: 150),
+                              Text(
+                                'Create New Psssoword',
+                                style: textTheme.headlineMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF2B2F33),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Create new password to Sign In',
+                                style: textTheme.titleMedium?.copyWith(
+                                  color: const Color(0xFF30363C),
+                                ),
+                              ),
+                              const SizedBox(height: 22),
+                              Text(
+                                'New Password',
+                                style: textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF3F4750),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              ValueListenableBuilder<bool>(
+                                valueListenable: _obscureNewPasswordNotifier,
+                                builder: (context, obscure, _) {
+                                  return TextField(
+                                    enabled: !isLoading,
+                                    controller: _newPasswordController,
+                                    obscureText: obscure,
+                                    decoration: _fieldDecoration.copyWith(
+                                      suffixIcon: IconButton(
+                                        onPressed: isLoading
+                                            ? null
+                                            : () {
+                                                _obscureNewPasswordNotifier
+                                                        .value =
+                                                    !obscure;
+                                              },
+                                        icon: Icon(
+                                          obscure
+                                              ? Icons.visibility_outlined
+                                              : Icons.visibility_off_outlined,
+                                          color: const Color(0xFF3A4046),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                              const SizedBox(height: 14),
+                              Text(
+                                'Confirm New Password',
+                                style: textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF3F4750),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              ValueListenableBuilder<bool>(
+                                valueListenable:
+                                    _obscureConfirmPasswordNotifier,
+                                builder: (context, obscure, _) {
+                                  return TextField(
+                                    enabled: !isLoading,
+                                    controller: _confirmPasswordController,
+                                    obscureText: obscure,
+                                    decoration: _fieldDecoration.copyWith(
+                                      suffixIcon: IconButton(
+                                        onPressed: isLoading
+                                            ? null
+                                            : () {
+                                                _obscureConfirmPasswordNotifier
+                                                        .value =
+                                                    !obscure;
+                                              },
+                                        icon: Icon(
+                                          obscure
+                                              ? Icons.visibility_outlined
+                                              : Icons.visibility_off_outlined,
+                                          color: const Color(0xFF3A4046),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                              const SizedBox(height: 24),
+                              SizedBox(
+                                width: double.infinity,
+                                height: 56,
+                                child: AppElevatedButton(
+                                  loading: isLoading,
+                                  onPressed: isLoading
+                                      ? null
+                                      : () => _onSubmit(context),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF256BBB),
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    textStyle: textTheme.headlineSmall
+                                        ?.copyWith(fontWeight: FontWeight.w600),
+                                  ),
+                                  child: const Text('Submit'),
+                                ),
+                              ),
+                              const Spacer(),
+                              const Center(child: _BrandFooter()),
+                              const SizedBox(height: 18),
+                            ],
+                          );
+                        },
+                      ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _onSubmit(BuildContext innerContext) {
+    final newPassword = _newPasswordController.text.trim();
+    final confirmPassword = _confirmPasswordController.text.trim();
+
+    if (newPassword.isEmpty) {
+      AppFlushbar.error('New password is required');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      AppFlushbar.error('Password must be at least 6 characters');
+      return;
+    }
+
+    if (confirmPassword.isEmpty) {
+      AppFlushbar.error('Confirm password is required');
+      return;
+    }
+
+    if (newPassword != confirmPassword) {
+      AppFlushbar.error('Passwords do not match');
+      return;
+    }
+
+    innerContext.read<GeneralUserCreatePasswordBloc>().add(
+      GeneralUserCreatePasswordRequested(
+        newPassword: newPassword,
+        confirmPassword: confirmPassword,
       ),
     );
   }

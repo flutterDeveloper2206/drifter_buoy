@@ -5,6 +5,7 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/buoys/gener
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoys/general_user_buoys_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/alerts/general_user_alerts_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/alerts/general_user_alerts_event.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/create_password/general_user_create_password_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_create_password_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_alerts_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/dashboard/general_user_dashboard_bloc.dart';
@@ -32,6 +33,7 @@ import 'package:drifter_buoy/features/general_user/presentation/pages/general_us
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_map_buoy_details_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_map_filters_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_map_page.dart';
+import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_no_internet_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_splash_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_trajectory_filters_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_trajectory_view_page.dart';
@@ -76,6 +78,13 @@ class AppRouter {
         },
       ),
       GoRoute(
+        path: AppRoutes.noInternetPath,
+        name: AppRoutes.noInternetName,
+        builder: (context, state) {
+          return const GeneralUserNoInternetPage();
+        },
+      ),
+      GoRoute(
         path: AppRoutes.loginPath,
         name: AppRoutes.loginName,
         builder: (context, state) {
@@ -93,7 +102,10 @@ class AppRouter {
         path: AppRoutes.createPasswordPath,
         name: AppRoutes.createPasswordName,
         builder: (context, state) {
-          return const GeneralUserCreatePasswordPage();
+          return BlocProvider<GeneralUserCreatePasswordBloc>(
+            create: (_) => sl<GeneralUserCreatePasswordBloc>(),
+            child: const GeneralUserCreatePasswordPage(),
+          );
         },
       ),
       GoRoute(

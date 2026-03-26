@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:drifter_buoy/features/general_user/data/models/user_map_dashboard_get_buoy_dashboard_response.dart';
 
 abstract class GeneralUserDashboardState extends Equatable {
   const GeneralUserDashboardState();
@@ -35,27 +36,35 @@ class GeneralUserDashboardLoading extends GeneralUserDashboardState {
 }
 
 class GeneralUserDashboardLoaded extends GeneralUserDashboardState {
-  const GeneralUserDashboardLoaded({required this.isAdmin});
+  const GeneralUserDashboardLoaded({
+    required this.isAdmin,
+    required this.data,
+  });
 
   @override
   final bool isAdmin;
+
+  final UserMapDashboardGetBuoyDashboardResult data;
 
   @override
   String get message => '';
 
   @override
-  List<Object?> get props => [isAdmin];
+  List<Object?> get props => [isAdmin, data];
 }
 
 class GeneralUserDashboardError extends GeneralUserDashboardState {
-  const GeneralUserDashboardError({required this.message});
+  const GeneralUserDashboardError({
+    required this.message,
+    required this.isAdmin,
+  });
 
   @override
-  bool get isAdmin => false;
+  final bool isAdmin;
 
   @override
   final String message;
 
   @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [message, isAdmin];
 }

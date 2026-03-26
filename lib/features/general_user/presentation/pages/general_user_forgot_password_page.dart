@@ -28,7 +28,7 @@ class _GeneralUserForgotPasswordPageState
   @override
   void initState() {
     super.initState();
-    _emailController = TextEditingController(text: 'mailid@example.com');
+    _emailController = TextEditingController(text: '');
     _otpControllers = List.generate(6, (_) => TextEditingController());
     _otpFocusNodes = List.generate(6, (_) => FocusNode());
   }
@@ -140,56 +140,55 @@ class _GeneralUserForgotPasswordPageState
                   const SizedBox(height: 10),
                   Align(
                     alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () {
-                        final blocState =
-                            context.read<GeneralUserForgotPasswordBloc>().state;
-                        final isBusy = blocState is
-                                GeneralUserForgotPasswordRequestingCode ||
-                            blocState is GeneralUserForgotPasswordVerifyingCode;
-                        if (isBusy) return;
+                    child:
+                        BlocBuilder<GeneralUserForgotPasswordBloc,
+                            GeneralUserForgotPasswordState>(
+                      builder: (context, state) {
+                        final isRequesting =
+                            state is GeneralUserForgotPasswordRequestingCode;
+                        final isBusy = isRequesting ||
+                            state is GeneralUserForgotPasswordVerifyingCode;
 
-                        final email = _emailController.text.trim();
-                        if (email.isEmpty) {
-                          AppFlushbar.error('Email is required');
-                          return;
-                        }
+                        return TextButton(
+                          onPressed: isBusy
+                              ? null
+                              : () {
+                                  final email = _emailController.text.trim();
+                                  if (email.isEmpty) {
+                                    AppFlushbar.error('Email is required');
+                                    return;
+                                  }
 
-                        context
-                            .read<GeneralUserForgotPasswordBloc>()
-                            .add(
-                              RequestVerificationCodeRequested(
-                                emailAddress: email,
-                              ),
-                            );
-                      },
-                      child: BlocBuilder<GeneralUserForgotPasswordBloc,
-                          GeneralUserForgotPasswordState>(
-                        builder: (context, state) {
-                          final isRequesting =
-                              state is GeneralUserForgotPasswordRequestingCode;
-                          if (isRequesting) {
-                            return SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                valueColor: const AlwaysStoppedAnimation<Color>(
-                                  Color(0xFF37414A),
+                                  context
+                                      .read<GeneralUserForgotPasswordBloc>()
+                                      .add(
+                                        RequestVerificationCodeRequested(
+                                          emailAddress: email,
+                                        ),
+                                      );
+                                },
+                          child: isRequesting
+                              ? SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    valueColor:
+                                        const AlwaysStoppedAnimation<Color>(
+                                      Color(0xFF37414A),
+                                    ),
+                                  ),
+                                )
+                              : Text(
+                                  'Request Verification Code',
+                                  style:
+                                      textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF37414A),
+                                  ),
                                 ),
-                              ),
-                            );
-                          }
-
-                          return Text(
-                            'Request Verification Code',
-                            style: textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: const Color(0xFF37414A),
-                            ),
-                          );
-                        },
-                      ),
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(height: 4),

@@ -10,7 +10,9 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/export/gene
 import 'package:drifter_buoy/features/general_user/presentation/bloc/export_selection/general_user_export_selection_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/login/general_user_login_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/forgot_password/general_user_forgot_password_bloc.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/create_password/general_user_create_password_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/profile/general_user_profile_bloc.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/profile_update/general_user_update_profile_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/map/general_user_map_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/map_buoy_details/general_user_map_buoy_details_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/map_filters/general_user_map_filters_bloc.dart';
@@ -21,11 +23,20 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_detai
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoy_setup/general_user_buoy_setup_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/self_test_debug/general_user_self_test_debug_bloc.dart';
 import 'package:drifter_buoy/features/general_user/data/datasources/general_user_auth_remote_data_source.dart';
+import 'package:drifter_buoy/features/general_user/data/datasources/general_user_profile_remote_data_source.dart';
+import 'package:drifter_buoy/features/general_user/data/datasources/general_user_dashboard_remote_data_source.dart';
 import 'package:drifter_buoy/features/general_user/data/repositories/general_user_auth_repository_impl.dart';
+import 'package:drifter_buoy/features/general_user/data/repositories/general_user_profile_repository_impl.dart';
+import 'package:drifter_buoy/features/general_user/data/repositories/general_user_dashboard_repository_impl.dart';
 import 'package:drifter_buoy/features/general_user/domain/repositories/general_user_auth_repository.dart';
+import 'package:drifter_buoy/features/general_user/domain/repositories/general_user_profile_repository.dart';
+import 'package:drifter_buoy/features/general_user/domain/repositories/general_user_dashboard_repository.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_login.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_request_verification_code.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_verify_verification_code.dart';
+import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_reset_password.dart';
+import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_buoy_dashboard.dart';
+import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_update_user_profile.dart';
 import 'package:drifter_buoy/features/sample_feature/data/datasources/item_remote_data_source.dart';
 import 'package:drifter_buoy/features/sample_feature/data/repositories/item_repository_impl.dart';
 import 'package:drifter_buoy/features/sample_feature/domain/repositories/item_repository.dart';
@@ -107,6 +118,23 @@ Future<void> initDependencies() async {
       () => GeneralUserForgotPasswordBloc(
         requestCode: sl(),
         verifyCode: sl(),
+      ),
+    );
+  }
+
+  if (!sl.isRegistered<GeneralUserResetPassword>()) {
+    sl.registerLazySingleton<GeneralUserResetPassword>(
+      () => GeneralUserResetPassword(
+        repository: sl(),
+        authSessionStore: sl(),
+      ),
+    );
+  }
+
+  if (!sl.isRegistered<GeneralUserCreatePasswordBloc>()) {
+    sl.registerFactory<GeneralUserCreatePasswordBloc>(
+      () => GeneralUserCreatePasswordBloc(
+        resetPassword: sl(),
       ),
     );
   }
@@ -194,8 +222,62 @@ Future<void> initDependencies() async {
   }
 
   if (!sl.isRegistered<GeneralUserDashboardBloc>()) {
+    if (!sl.isRegistered<GeneralUserDashboardRemoteDataSource>()) {
+      sl.registerLazySingleton<GeneralUserDashboardRemoteDataSource>(
+        () => GeneralUserDashboardRemoteDataSource(apiService: sl()),
+      );
+    }
+
+    if (!sl.isRegistered<GeneralUserDashboardRepository>()) {
+      sl.registerLazySingleton<GeneralUserDashboardRepository>(
+        () => GeneralUserDashboardRepositoryImpl(
+          remoteDataSource: sl(),
+        ),
+      );
+    }
+
+    if (!sl.isRegistered<GeneralUserGetBuoyDashboard>()) {
+      sl.registerLazySingleton<GeneralUserGetBuoyDashboard>(
+        () => GeneralUserGetBuoyDashboard(repository: sl()),
+      );
+    }
+
     sl.registerFactory<GeneralUserDashboardBloc>(
-      () => GeneralUserDashboardBloc(),
+      () => GeneralUserDashboardBloc(
+        getBuoyDashboard: sl(),
+      ),
+    );
+  }
+
+  // Profile update (Admin/User/UpdateUserProfile)
+  if (!sl.isRegistered<GeneralUserProfileRemoteDataSource>()) {
+    sl.registerLazySingleton<GeneralUserProfileRemoteDataSource>(
+      () => GeneralUserProfileRemoteDataSource(apiService: sl()),
+    );
+  }
+
+  if (!sl.isRegistered<GeneralUserProfileRepository>()) {
+    sl.registerLazySingleton<GeneralUserProfileRepository>(
+      () => GeneralUserProfileRepositoryImpl(
+        remoteDataSource: sl(),
+      ),
+    );
+  }
+
+  if (!sl.isRegistered<GeneralUserUpdateUserProfile>()) {
+    sl.registerLazySingleton<GeneralUserUpdateUserProfile>(
+      () => GeneralUserUpdateUserProfile(
+        repository: sl(),
+        authSessionStore: sl(),
+      ),
+    );
+  }
+
+  if (!sl.isRegistered<GeneralUserUpdateProfileBloc>()) {
+    sl.registerFactory<GeneralUserUpdateProfileBloc>(
+      () => GeneralUserUpdateProfileBloc(
+        updateUserProfile: sl(),
+      ),
     );
   }
 

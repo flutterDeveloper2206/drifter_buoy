@@ -1,6 +1,7 @@
 import 'package:drifter_buoy/features/general_user/data/models/user_authenticate_login_response.dart';
 import 'package:drifter_buoy/features/general_user/data/models/user_authenticate_request_verification_code_response.dart';
 import 'package:drifter_buoy/features/general_user/data/models/user_authenticate_verify_verification_code_response.dart';
+import 'package:drifter_buoy/features/general_user/data/models/user_authenticate_reset_password_response.dart';
 import 'package:drifter_buoy/core/device/login_device_info.dart';
 import 'package:drifter_buoy/core/utils/typedefs.dart';
 
@@ -20,6 +21,12 @@ abstract class GeneralUserAuthRepository {
       verifyVerificationCode({
     required String emailAddress,
     required String verificationCode,
+  });
+
+  ResultFuture<UserAuthenticateResetPasswordResponse> resetPassword({
+    required String resetToken,
+    required String newPassword,
+    required String confirmPassword,
   });
 }
 
