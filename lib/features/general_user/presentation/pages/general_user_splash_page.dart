@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:drifter_buoy/core/constants/app_assets.dart';
 import 'package:drifter_buoy/core/constants/app_routes.dart';
 import 'package:drifter_buoy/core/network/network_connection_checker.dart';
 import 'package:drifter_buoy/core/storage/auth_session_store.dart';
@@ -108,6 +109,7 @@ class _GeneralUserSplashPageState extends State<GeneralUserSplashPage> {
 
     return Scaffold(
       body: Stack(
+        fit: StackFit.expand,
         children: [
           const _SplashBackground(),
           SafeArea(
@@ -141,18 +143,11 @@ class _GeneralUserSplashPageState extends State<GeneralUserSplashPage> {
                                 ],
                               ),
                               child: Center(
-                                child: Container(
-                                  width: 78,
-                                  height: 78,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFF2E6FB6),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.waves_rounded,
-                                    color: Colors.white,
-                                    size: 44,
-                                  ),
+                                child: Image.asset(
+                                  AppAssets.icLogo,
+                                  width: 88,
+                                  height: 88,
+                                  fit: BoxFit.contain,
                                 ),
                               ),
                             ),
@@ -196,101 +191,15 @@ class _SplashBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFFC5D4DE), Color(0xFFCFDEE7), Color(0xFFDCE6ED)],
-            ),
-          ),
-        ),
-        Positioned(
-          top: 120,
-          left: -60,
-          child: _CloudPatch(width: 180, height: 90),
-        ),
-        Positioned(
-          top: 160,
-          right: -40,
-          child: _CloudPatch(width: 220, height: 95),
-        ),
-        Positioned(
-          top: 240,
-          left: 80,
-          child: _CloudPatch(width: 160, height: 70),
-        ),
-        Align(
-          alignment: Alignment.bottomCenter,
-          child: SizedBox(
-            height: 230,
-            width: double.infinity,
-            child: CustomPaint(painter: _WaterPainter()),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _CloudPatch extends StatelessWidget {
-  final double width;
-  final double height;
-
-  const _CloudPatch({required this.width, required this.height});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(100),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white.withValues(alpha: 0.26),
-            Colors.white.withValues(alpha: 0.06),
-          ],
-        ),
+    return Positioned.fill(
+      child: Image.asset(
+        AppAssets.imgBg,
+        fit: BoxFit.cover,
+        alignment: Alignment.center,
+        filterQuality: FilterQuality.high,
       ),
     );
   }
-}
-
-class _WaterPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final basePaint = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [Color(0xD5D7E2EA), Color(0xE3DEE8EF)],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), basePaint);
-
-    final ripplePaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2
-      ..color = const Color(0x88B9CAD6);
-
-    for (double y = 22; y < size.height; y += 16) {
-      final path = Path()..moveTo(0, y);
-
-      for (double x = 0; x <= size.width; x += 24) {
-        path.quadraticBezierTo(x + 12, y - 2, x + 24, y);
-      }
-
-      canvas.drawPath(path, ripplePaint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _BrandFooter extends StatelessWidget {
@@ -302,7 +211,7 @@ class _BrandFooter extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Image.asset(
-          'assets/icons/ic_azista.png',
+          AppAssets.icAzista,
           width: 38,
           height: 38,
           fit: BoxFit.contain,

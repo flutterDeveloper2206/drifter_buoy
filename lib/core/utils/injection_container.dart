@@ -25,18 +25,26 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/self_test_d
 import 'package:drifter_buoy/features/general_user/data/datasources/general_user_auth_remote_data_source.dart';
 import 'package:drifter_buoy/features/general_user/data/datasources/general_user_profile_remote_data_source.dart';
 import 'package:drifter_buoy/features/general_user/data/datasources/general_user_dashboard_remote_data_source.dart';
+import 'package:drifter_buoy/features/general_user/data/datasources/general_user_export_selection_remote_data_source.dart';
+import 'package:drifter_buoy/features/general_user/data/datasources/general_user_buoys_remote_data_source.dart';
 import 'package:drifter_buoy/features/general_user/data/repositories/general_user_auth_repository_impl.dart';
 import 'package:drifter_buoy/features/general_user/data/repositories/general_user_profile_repository_impl.dart';
 import 'package:drifter_buoy/features/general_user/data/repositories/general_user_dashboard_repository_impl.dart';
+import 'package:drifter_buoy/features/general_user/data/repositories/general_user_export_selection_repository_impl.dart';
+import 'package:drifter_buoy/features/general_user/data/repositories/general_user_buoys_repository_impl.dart';
 import 'package:drifter_buoy/features/general_user/domain/repositories/general_user_auth_repository.dart';
 import 'package:drifter_buoy/features/general_user/domain/repositories/general_user_profile_repository.dart';
 import 'package:drifter_buoy/features/general_user/domain/repositories/general_user_dashboard_repository.dart';
+import 'package:drifter_buoy/features/general_user/domain/repositories/general_user_export_selection_repository.dart';
+import 'package:drifter_buoy/features/general_user/domain/repositories/general_user_buoys_repository.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_login.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_request_verification_code.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_verify_verification_code.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_reset_password.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_buoy_dashboard.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_buoy_map_dashboard.dart';
+import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_all_buoys_status_for_export.dart';
+import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_all_buoys_data_overview_view.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_update_user_profile.dart';
 import 'package:drifter_buoy/features/sample_feature/data/datasources/item_remote_data_source.dart';
 import 'package:drifter_buoy/features/sample_feature/data/repositories/item_repository_impl.dart';
@@ -206,11 +214,36 @@ Future<void> initDependencies() async {
     sl.registerFactory<GeneralUserExportBloc>(() => GeneralUserExportBloc());
   }
 
-  if (!sl.isRegistered<GeneralUserExportSelectionBloc>()) {
-    sl.registerFactory<GeneralUserExportSelectionBloc>(
-      () => GeneralUserExportSelectionBloc(),
+  if (!sl.isRegistered<GeneralUserExportSelectionRemoteDataSource>()) {
+    sl.registerLazySingleton<GeneralUserExportSelectionRemoteDataSource>(
+      () => GeneralUserExportSelectionRemoteDataSource(apiService: sl()),
     );
   }
+
+  if (!sl.isRegistered<GeneralUserExportSelectionRepository>()) {
+    sl.registerLazySingleton<GeneralUserExportSelectionRepository>(
+      () => GeneralUserExportSelectionRepositoryImpl(
+        remoteDataSource: sl(),
+      ),
+    );
+  }
+
+  if (!sl.isRegistered<GeneralUserGetAllBuoysStatusForExport>()) {
+    sl.registerLazySingleton<GeneralUserGetAllBuoysStatusForExport>(
+      () => GeneralUserGetAllBuoysStatusForExport(repository: sl()),
+    );
+  }
+
+  // Re-register factory to avoid stale closures during hot-reload/dev cycles.
+  if (sl.isRegistered<GeneralUserExportSelectionBloc>()) {
+    sl.unregister<GeneralUserExportSelectionBloc>();
+  }
+
+  sl.registerFactory<GeneralUserExportSelectionBloc>(
+    () => GeneralUserExportSelectionBloc(
+      getAllBuoysStatusForExport: sl(),
+    ),
+  );
 
   if (!sl.isRegistered<GeneralUserAlertsBloc>()) {
     sl.registerFactory<GeneralUserAlertsBloc>(() => GeneralUserAlertsBloc());
@@ -289,9 +322,33 @@ Future<void> initDependencies() async {
     );
   }
 
-  if (!sl.isRegistered<GeneralUserBuoysBloc>()) {
-    sl.registerFactory<GeneralUserBuoysBloc>(() => GeneralUserBuoysBloc());
+  if (!sl.isRegistered<GeneralUserBuoysRemoteDataSource>()) {
+    sl.registerLazySingleton<GeneralUserBuoysRemoteDataSource>(
+      () => GeneralUserBuoysRemoteDataSource(apiService: sl()),
+    );
   }
+
+  if (!sl.isRegistered<GeneralUserBuoysRepository>()) {
+    sl.registerLazySingleton<GeneralUserBuoysRepository>(
+      () => GeneralUserBuoysRepositoryImpl(remoteDataSource: sl()),
+    );
+  }
+
+  if (!sl.isRegistered<GeneralUserGetAllBuoysDataOverviewView>()) {
+    sl.registerLazySingleton<GeneralUserGetAllBuoysDataOverviewView>(
+      () => GeneralUserGetAllBuoysDataOverviewView(repository: sl()),
+    );
+  }
+
+  if (sl.isRegistered<GeneralUserBuoysBloc>()) {
+    sl.unregister<GeneralUserBuoysBloc>();
+  }
+
+  sl.registerFactory<GeneralUserBuoysBloc>(
+    () => GeneralUserBuoysBloc(
+      getAllBuoysDataOverviewView: sl(),
+    ),
+  );
 
   if (!sl.isRegistered<GeneralUserMetricsBloc>()) {
     sl.registerFactory<GeneralUserMetricsBloc>(() => GeneralUserMetricsBloc());

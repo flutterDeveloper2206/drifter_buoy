@@ -1,8 +1,7 @@
 import 'package:drifter_buoy/core/constants/app_routes.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_general_user_bottom_nav.dart';
-import 'package:drifter_buoy/core/utils/widgets/app_icon_circle_button.dart';
-import 'package:drifter_buoy/core/utils/widgets/app_loader.dart';
+import 'package:drifter_buoy/core/utils/widgets/app_general_user_main_app_bar.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_elevated_button.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/export_selection/general_user_export_selection_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/export_selection/general_user_export_selection_event.dart';
@@ -23,136 +22,151 @@ class GeneralUserExportSelectionPage extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
+            const AppGeneralUserMainAppBar(),
             const _Header(),
             Expanded(
-              child: BlocBuilder<
-                GeneralUserExportSelectionBloc,
-                GeneralUserExportSelectionState
-              >(
-                builder: (context, state) {
-                  if (state.status == GeneralUserExportSelectionStatus.loading ||
-                      state.status == GeneralUserExportSelectionStatus.initial) {
-                    return const GeneralUserExportSelectionShimmer();
-                  }
+              child:
+                  BlocBuilder<
+                    GeneralUserExportSelectionBloc,
+                    GeneralUserExportSelectionState
+                  >(
+                    builder: (context, state) {
+                      if (state.status ==
+                              GeneralUserExportSelectionStatus.loading ||
+                          state.status ==
+                              GeneralUserExportSelectionStatus.initial) {
+                        return const GeneralUserExportSelectionShimmer();
+                      }
 
-                  if (state.status == GeneralUserExportSelectionStatus.error) {
-                    return AppErrorView(
-                      message: state.message,
-                      onRetry: () {
-                        context.read<GeneralUserExportSelectionBloc>().add(
-                          const LoadGeneralUserExportSelection(),
-                        );
-                      },
-                    );
-                  }
-
-                  final queryTrimmed = state.query.trim();
-                  final isSearching = queryTrimmed.isNotEmpty;
-                  final showSelectAll =
-                      !isSearching && state.filteredItems.isNotEmpty;
-
-                  return Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                        child: _SearchBar(
-                          onChanged: (value) {
+                      if (state.status ==
+                          GeneralUserExportSelectionStatus.error) {
+                        return AppErrorView(
+                          message: state.message,
+                          onRetry: () {
                             context.read<GeneralUserExportSelectionBloc>().add(
-                              UpdateGeneralUserExportSelectionQuery(value),
+                              const LoadGeneralUserExportSelection(),
                             );
                           },
-                        ),
-                      ),
-                      if (showSelectAll)
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                          child: _SelectAllRow(
-                            selected: state.allFilteredSelected,
-                            onTap: () {
-                              context.read<GeneralUserExportSelectionBloc>().add(
-                                const ToggleGeneralUserExportSelectionAll(),
-                              );
-                            },
+                        );
+                      }
+
+                      final queryTrimmed = state.query.trim();
+                      final isSearching = queryTrimmed.isNotEmpty;
+                      final showSelectAll =
+                          !isSearching && state.filteredItems.isNotEmpty;
+
+                      return Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                            child: _SearchBar(
+                              onChanged: (value) {
+                                context
+                                    .read<GeneralUserExportSelectionBloc>()
+                                    .add(
+                                      UpdateGeneralUserExportSelectionQuery(
+                                        value,
+                                      ),
+                                    );
+                              },
+                              onSearchTap: () => FocusScope.of(context).unfocus(),
+                            ),
                           ),
-                        ),
-                      Expanded(
-                        child: state.filteredItems.isEmpty
-                            ? _ExportSelectionEmptyView(
-                                isSearching: isSearching,
-                                query: queryTrimmed,
-                              )
-                            : ListView.separated(
-                                padding: const EdgeInsets.fromLTRB(
-                                  16,
-                                  0,
-                                  16,
-                                  8,
-                                ),
-                                itemCount: state.filteredItems.length,
-                                separatorBuilder: (_, __) =>
-                                    const SizedBox(height: 8),
-                                itemBuilder: (context, index) {
-                                  final item = state.filteredItems[index];
-                                  final selected = state.selectedIds.contains(
-                                    item.id,
-                                  );
-                                  return _BuoySelectableCard(
-                                    item: item,
-                                    selected: selected,
-                                    onTap: () {
-                                      context
-                                          .read<GeneralUserExportSelectionBloc>()
-                                          .add(
-                                            ToggleGeneralUserExportSelectionItem(
-                                              item.id,
-                                            ),
-                                          );
-                                    },
-                                  );
+                          if (showSelectAll)
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                              child: _SelectAllRow(
+                                selected: state.allFilteredSelected,
+                                onTap: () {
+                                  context
+                                      .read<GeneralUserExportSelectionBloc>()
+                                      .add(
+                                        const ToggleGeneralUserExportSelectionAll(),
+                                      );
                                 },
                               ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-                        child: SizedBox(
-                          width: double.infinity,
-                          height: 56,
-                          child: AppElevatedButton(
-                            loading: false,
-                            onPressed: state.selectedCount == 0
-                                ? null
-                                : () => context.push(
-                                      AppRoutes.exportPath,
-                                      extra: state.selectedCount,
-                                    ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF206BBE),
-                              foregroundColor: Colors.white,
-                              disabledBackgroundColor: const Color(
-                                0xFF206BBE,
-                              ).withValues(alpha: 0.55),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
                             ),
-                            child: Text(
-                              'Continue to Export',
-                              style: Theme.of(context).textTheme.headlineSmall
-                                  ?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
+                          Expanded(
+                            child: state.filteredItems.isEmpty
+                                ? _ExportSelectionEmptyView(
+                                    isSearching: isSearching,
+                                    query: queryTrimmed,
+                                  )
+                                : ListView.separated(
+                                    padding: const EdgeInsets.fromLTRB(
+                                      16,
+                                      0,
+                                      16,
+                                      8,
+                                    ),
+                                    itemCount: state.filteredItems.length,
+                                    separatorBuilder: (_, __) =>
+                                        const SizedBox(height: 8),
+                                    itemBuilder: (context, index) {
+                                      final item = state.filteredItems[index];
+                                      final selected = state.selectedIds
+                                          .contains(item.id);
+                                      return _BuoySelectableCard(
+                                        item: item,
+                                        selected: selected,
+                                        onTap: () {
+                                          context
+                                              .read<
+                                                GeneralUserExportSelectionBloc
+                                              >()
+                                              .add(
+                                                ToggleGeneralUserExportSelectionItem(
+                                                  item.id,
+                                                ),
+                                              );
+                                        },
+                                      );
+                                    },
+                                  ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+                            child: SizedBox(
+                              width: double.infinity,
+                              height: 56,
+                              child: AppElevatedButton(
+                                loading: false,
+                                onPressed: state.selectedCount == 0
+                                    ? null
+                                    : () => context.push(
+                                        AppRoutes.exportPath,
+                                        extra: state.selectedCount,
+                                      ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF206BBE),
+                                  foregroundColor: Colors.white,
+                                  disabledBackgroundColor: const Color(
+                                    0xFF206BBE,
+                                  ).withValues(alpha: 0.55),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                child: Text(
+                                  'Continue to Export',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineSmall
+                                      ?.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ),
-                      AppGeneralUserBottomNav(
-                        selectedTab: GeneralUserBottomNavTab.export,
-                      ),
-                    ],
-                  );
-                },
-              ),
+                          AppGeneralUserBottomNav(
+                            selectedTab: GeneralUserBottomNavTab.export,
+                          ),
+                        ],
+                      );
+                    },
+                  ),
             ),
           ],
         ),
@@ -167,32 +181,16 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-      child: Row(
-        children: [
-          AppIconCircleButton(
-            onTap: () {
-              if (GoRouter.of(context).canPop()) {
-                context.pop();
-              } else {
-                context.go(AppRoutes.dashboardPath);
-              }
-            },
-            icon: Icons.arrow_back,
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          'Export',
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+            color: const Color(0xFF242A2F),
+            fontWeight: FontWeight.w700,
           ),
-          Expanded(
-            child: Center(
-              child: Text(
-                'Export',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: const Color(0xFF262C31),
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 48),
-        ],
+        ),
       ),
     );
   }
@@ -200,25 +198,33 @@ class _Header extends StatelessWidget {
 
 class _SearchBar extends StatelessWidget {
   final ValueChanged<String> onChanged;
+  final VoidCallback? onSearchTap;
 
-  const _SearchBar({required this.onChanged});
+  const _SearchBar({required this.onChanged, this.onSearchTap});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 56,
+      height: 52,
+      padding: const EdgeInsets.fromLTRB(16, 0, 5, 0),
       decoration: BoxDecoration(
-        color: const Color(0xFFF2F2F2),
-        borderRadius: BorderRadius.circular(28),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(26),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          const SizedBox(width: 14),
-          const Icon(Icons.search_rounded, color: Color(0xFF8A9095)),
-          const SizedBox(width: 8),
           Expanded(
             child: TextField(
               onChanged: onChanged,
+              maxLines: 1,
+              textAlignVertical: TextAlignVertical.center,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: const Color(0xFF31363A),
                 fontWeight: FontWeight.w600,
@@ -231,6 +237,27 @@ class _SearchBar extends StatelessWidget {
                 ),
                 border: InputBorder.none,
                 isDense: true,
+                contentPadding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+            ),
+          ),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onSearchTap,
+              customBorder: const CircleBorder(),
+              child: Ink(
+                width: 42,
+                height: 42,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color(0xFF206BBE),
+                ),
+                child: const Icon(
+                  Icons.search_rounded,
+                  color: Colors.white,
+                  size: 24,
+                ),
               ),
             ),
           ),
@@ -315,6 +342,12 @@ class _BuoySelectableCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final statusColor = item.isActive
+        ? const Color(0xFF22BE61)
+        : const Color(0xFFE74C3C);
+    final statusIcon = item.isActive ? Icons.wifi : Icons.wifi_off;
+    final statusLabel = item.isActive ? 'Active' : 'Offline';
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -357,14 +390,12 @@ class _BuoySelectableCard extends StatelessWidget {
             const SizedBox(width: 10),
             Row(
               children: [
-                const Icon(Icons.wifi, color: Color(0xFF22BE61), size: 18),
+                Icon(statusIcon, color: statusColor, size: 18),
                 const SizedBox(width: 4),
                 Text(
-                  item.isActive ? 'Active' : 'Offline',
+                  statusLabel,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: item.isActive
-                        ? const Color(0xFF22BE61)
-                        : const Color(0xFFE74C3C),
+                    color: statusColor,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -397,10 +428,7 @@ class _ExportCircularCheckbox extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: selected ? _accent : Colors.transparent,
-        border: Border.all(
-          color: selected ? _accent : _ring,
-          width: 2,
-        ),
+        border: Border.all(color: selected ? _accent : _ring, width: 2),
       ),
       child: selected
           ? const Icon(Icons.check_rounded, size: 15, color: Colors.white)

@@ -26,7 +26,7 @@ class GeneralUserProfileHeader extends StatelessWidget {
             child: Center(
               child: Text(
                 'Profile',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       color: const Color(0xFF262C31),
                       fontWeight: FontWeight.w700,
                     ),

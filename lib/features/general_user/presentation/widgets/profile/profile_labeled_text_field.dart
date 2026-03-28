@@ -23,29 +23,37 @@ class GeneralUserProfileLabeledTextField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF3F4750),
-              ),
+          style: textTheme.bodySmall?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF3F4750),
+          ),
         ),
         const SizedBox(height: 8),
         TextField(
           enabled: enabled,
           controller: controller,
           keyboardType: keyboardType,
+          style: textTheme.bodyMedium?.copyWith(
+            color: const Color(0xFF23282D),
+            fontWeight: FontWeight.w600,
+          ),
           decoration: InputDecoration(
             filled: true,
             fillColor: const Color(0xFFF2F2F2),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 14,
+            ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: Color(0xFFC2C7CC)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide:
-                  const BorderSide(color: Color(0xFF3A86D1), width: 1.1),
+              borderSide: const BorderSide(
+                color: Color(0xFF3A86D1),
+                width: 1.1,
+              ),
             ),
           ),
         ),
@@ -53,4 +61,3 @@ class GeneralUserProfileLabeledTextField extends StatelessWidget {
     );
   }
 }
-

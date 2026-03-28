@@ -1,3 +1,4 @@
+import 'package:drifter_buoy/core/constants/app_assets.dart';
 import 'package:drifter_buoy/core/constants/app_routes.dart';
 import 'package:drifter_buoy/core/utils/injection_container.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
@@ -32,6 +33,8 @@ class _GeneralUserMapPageState extends State<GeneralUserMapPage> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   late bool _mapSearchOpen;
+  DummyBuoy? _selectedBuoy;
+  bool _ignoreNextMapTapHide = false;
 
   @override
   void initState() {
@@ -86,6 +89,23 @@ class _GeneralUserMapPageState extends State<GeneralUserMapPage> {
     }
     final matches = _filterMapBuoysByQuery(state.filteredBuoys, q);
     return matches.isNotEmpty ? matches.first : null;
+  }
+
+  DummyBuoy? _activeSelectedBuoyForState(GeneralUserMapState state) {
+    final searched = _searchSelectedBuoyForState(state);
+    if (searched != null) {
+      return searched;
+    }
+    if (_selectedBuoy == null) {
+      return null;
+    }
+    final stillVisible = state.filteredBuoys.any(
+      (b) =>
+          b.id == _selectedBuoy!.id &&
+          b.position.latitude == _selectedBuoy!.position.latitude &&
+          b.position.longitude == _selectedBuoy!.position.longitude,
+    );
+    return stillVisible ? _selectedBuoy : null;
   }
 
   @override
@@ -207,10 +227,19 @@ class _GeneralUserMapPageState extends State<GeneralUserMapPage> {
                     isBatteryVisible: state.showBatteryLow,
                   ),
                 ),
+                if (_activeSelectedBuoyForState(state) != null)
+                  Positioned(
+                    left: 14,
+                    right: 14,
+                    bottom: state.isFilterPanelExpanded ? 278 : 172,
+                    child: _MapSelectedBuoyCard(
+                      buoy: _activeSelectedBuoyForState(state)!,
+                    ),
+                  ),
                 Align(
                   alignment: Alignment.bottomCenter,
                   child: _FilterPanel(
-                    titleStyle: textTheme.headlineSmall?.copyWith(
+                    titleStyle: textTheme.titleMedium?.copyWith(
                       color: const Color(0xFF2D3238),
                       fontWeight: FontWeight.w700,
                     ),
@@ -249,7 +278,19 @@ class _GeneralUserMapPageState extends State<GeneralUserMapPage> {
             showLabels: true,
             initialZoom: state.zoom,
             buoys: state.filteredBuoys,
-            selectedBuoy: _searchSelectedBuoyForState(state),
+            selectedBuoy: _activeSelectedBuoyForState(state),
+            onMapTap: () {
+              if (_mapSearchOpen) {
+                return;
+              }
+              if (_ignoreNextMapTapHide) {
+                _ignoreNextMapTapHide = false;
+                return;
+              }
+              setState(() {
+                _selectedBuoy = null;
+              });
+            },
             onBuoyTap: (buoy) {
               if (_mapSearchOpen) {
                 _searchController.text = buoy.id;
@@ -258,7 +299,13 @@ class _GeneralUserMapPageState extends State<GeneralUserMapPage> {
                 );
                 _applySearchFromField();
               } else {
-                context.go(AppRoutes.mapBuoyDetailsPath);
+                _ignoreNextMapTapHide = true;
+                setState(() {
+                  _selectedBuoy = buoy;
+                });
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _ignoreNextMapTapHide = false;
+                });
               }
             },
           ),
@@ -291,6 +338,148 @@ class _GeneralUserMapPageState extends State<GeneralUserMapPage> {
     } catch (_) {
       return const LatLng(37.7749, -122.4194);
     }
+  }
+}
+
+class _MapSelectedBuoyCard extends StatelessWidget {
+  const _MapSelectedBuoyCard({required this.buoy});
+
+  final DummyBuoy buoy;
+
+  @override
+  Widget build(BuildContext context) {
+    final statusColor = switch (buoy.status) {
+      BuoyStatus.active => const Color(0xFF2CC66A),
+      BuoyStatus.offline => const Color(0xFFE74C3C),
+      BuoyStatus.batteryLow => const Color(0xFF4F95DA),
+    };
+    final statusLabel = switch (buoy.status) {
+      BuoyStatus.active => 'Active',
+      BuoyStatus.offline => 'Offline',
+      BuoyStatus.batteryLow => 'Battery Low',
+    };
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                buoy.id,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: const Color(0xFF2E2E2E),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const Spacer(),
+              Icon(
+                buoy.status == BuoyStatus.offline
+                    ? Icons.wifi_off
+                    : Icons.wifi_rounded,
+                color: statusColor,
+                size: 20,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                statusLabel,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: statusColor,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Last Update : 10:20 AM',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: const Color(0xFF6A7077),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: _MetricColumn(
+                  icon: Icons.battery_5_bar_rounded,
+                  value: buoy.battery,
+                  label: 'Battery',
+                ),
+              ),
+              Expanded(
+                child: _MetricColumn(
+                  icon: Icons.map_outlined,
+                  value: buoy.gps,
+                  label: 'GPS',
+                ),
+              ),
+              Expanded(
+                child: _MetricColumn(
+                  icon: Icons.signal_cellular_alt_rounded,
+                  value: buoy.signal,
+                  label: 'Signal',
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MetricColumn extends StatelessWidget {
+  const _MetricColumn({
+    required this.icon,
+    required this.value,
+    required this.label,
+  });
+
+  final IconData icon;
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Icon(
+          icon,
+          size: 20,
+          color: const Color(0xFF33383D),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: const Color(0xFF1D2329),
+                fontWeight: FontWeight.w700,
+              ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: const Color(0xFF8A9095),
+                fontWeight: FontWeight.w600,
+              ),
+        ),
+      ],
+    );
   }
 }
 
@@ -467,7 +656,7 @@ class _MapLegendCard extends StatelessWidget {
             color: isOfflineVisible ? const Color(0xFFE74C3C) : disabledColor,
           ),
           AppMapLegendItem(
-            icon: Icons.battery_1_bar,
+            svgAssetPath: AppAssets.icBatteryLow,
             label: 'Battery Low',
             color: isBatteryVisible ? const Color(0xFF4F95DA) : disabledColor,
           ),
@@ -526,16 +715,7 @@ class _FilterPanel extends StatelessWidget {
               ),
             ),
             Text('Toggles and Filters', style: titleStyle),
-            const SizedBox(height: 18),
-            Container(
-              margin: const EdgeInsets.only(top: 6),
-              width: 130,
-              height: 5,
-              decoration: BoxDecoration(
-                color: const Color(0xFF111111),
-                borderRadius: BorderRadius.circular(99),
-              ),
-            ),
+            const SizedBox(height: 12),
           ],
         ),
       ),
@@ -594,7 +774,7 @@ class _MapFilterSettingsSheet extends StatelessWidget {
                 Center(
                   child: Text(
                     'Toggles and Filters',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: const Color(0xFF2D2D2D),
                       fontWeight: FontWeight.w700,
                     ),
@@ -736,7 +916,7 @@ class _SheetSectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       label,
-      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+      style: Theme.of(context).textTheme.titleLarge?.copyWith(
         color: const Color(0xFF333333),
         fontWeight: FontWeight.w700,
       ),

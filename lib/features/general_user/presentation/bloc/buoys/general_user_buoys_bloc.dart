@@ -1,16 +1,23 @@
 import 'package:drifter_buoy/core/utils/app_logger.dart';
+import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_all_buoys_data_overview_view.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoys/general_user_buoys_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoys/general_user_buoys_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class GeneralUserBuoysBloc
     extends Bloc<GeneralUserBuoysEvent, GeneralUserBuoysState> {
-  GeneralUserBuoysBloc() : super(const GeneralUserBuoysState.initial()) {
+  GeneralUserBuoysBloc({
+    required GeneralUserGetAllBuoysDataOverviewView
+    getAllBuoysDataOverviewView,
+  }) : _getAllBuoysDataOverviewView = getAllBuoysDataOverviewView,
+       super(const GeneralUserBuoysState.initial()) {
     on<LoadGeneralUserBuoys>(_onLoadGeneralUserBuoys);
     on<UpdateGeneralUserBuoysQuery>(_onUpdateGeneralUserBuoysQuery);
     on<ClearGeneralUserBuoysQuery>(_onClearGeneralUserBuoysQuery);
     on<ChangeGeneralUserBuoysFilter>(_onChangeGeneralUserBuoysFilter);
   }
+
+  final GeneralUserGetAllBuoysDataOverviewView _getAllBuoysDataOverviewView;
 
   Future<void> _onLoadGeneralUserBuoys(
     LoadGeneralUserBuoys event,
@@ -19,43 +26,56 @@ class GeneralUserBuoysBloc
     AppLogger.i('LoadGeneralUserBuoys event triggered');
     emit(state.copyWith(status: GeneralUserBuoysStatus.loading, message: ''));
 
-    try {
-      await Future<void>.delayed(const Duration(milliseconds: 220));
-      final allBuoys = _dummyBuoys();
-      final filtered = _applyFilters(
-        source: allBuoys,
-        query: state.query,
-        filter: state.selectedFilter,
-      );
+    final result = await _getAllBuoysDataOverviewView();
+    result.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            status: GeneralUserBuoysStatus.error,
+            message: failure.message,
+          ),
+        );
+      },
+      (response) {
+        final root = response.result.isNotEmpty ? response.result.first : null;
+        final summary = root?.summary;
+        final allBuoys = (root?.buoyList ?? const [])
+            .where((item) => item.buoyId.trim().isNotEmpty)
+            .map(
+              (item) => GeneralUserBuoyItem(
+                id: item.buoyId.trim(),
+                lastUpdate: _formatLastReceived(item.lastReceived),
+                battery: _formatBattery(item.batteryVoltage),
+                gps: _formatGps(item.latitude, item.longitude),
+                signal: _formatSignal(item.signalStrength),
+                status: _mapStatus(item.status),
+              ),
+            )
+            .toList(growable: false);
 
-      emit(
-        state.copyWith(
-          status: GeneralUserBuoysStatus.loaded,
-          allBuoys: allBuoys,
-          filteredBuoys: filtered,
-          activeCount: 8,
-          offlineCount: 1,
-          batteryLowCount: 0,
-          totalBuoys: 10,
-          message: '',
-        ),
-      );
-      AppLogger.i(
-        'LoadGeneralUserBuoys success: ${filtered.length} displayed buoys',
-      );
-    } catch (error, stackTrace) {
-      AppLogger.e(
-        'LoadGeneralUserBuoys failed',
-        error: error,
-        stackTrace: stackTrace,
-      );
-      emit(
-        state.copyWith(
-          status: GeneralUserBuoysStatus.error,
-          message: 'Unable to load buoy list. Please try again.',
-        ),
-      );
-    }
+        final filtered = _applyFilters(
+          source: allBuoys,
+          query: state.query,
+          filter: state.selectedFilter,
+        );
+
+        emit(
+          state.copyWith(
+            status: GeneralUserBuoysStatus.loaded,
+            allBuoys: allBuoys,
+            filteredBuoys: filtered,
+            activeCount: summary?.activeBuoys ?? 0,
+            offlineCount: summary?.offlineBuoys ?? 0,
+            batteryLowCount: summary?.batteryLowBuoys ?? 0,
+            totalBuoys: summary?.totalBuoys ?? allBuoys.length,
+            message: '',
+          ),
+        );
+        AppLogger.i(
+          'LoadGeneralUserBuoys success: ${filtered.length} displayed buoys',
+        );
+      },
+    );
   }
 
   void _onUpdateGeneralUserBuoysQuery(
@@ -139,88 +159,94 @@ class GeneralUserBuoysBloc
         .toList(growable: false);
   }
 
-  List<GeneralUserBuoyItem> _dummyBuoys() {
-    return const [
-      GeneralUserBuoyItem(
-        id: 'DB - 01',
-        lastUpdate: '09:20 AM',
-        battery: '11.8 v',
-        gps: '15°40\'51.0"N',
-        signal: '79%',
-        status: GeneralUserBuoyConnectionStatus.active,
-      ),
-      GeneralUserBuoyItem(
-        id: 'DB - 02',
-        lastUpdate: '09:18 AM',
-        battery: '11.6 v',
-        gps: '15°40\'45.2"N',
-        signal: '76%',
-        status: GeneralUserBuoyConnectionStatus.active,
-      ),
-      GeneralUserBuoyItem(
-        id: 'DB - 03',
-        lastUpdate: '09:11 AM',
-        battery: '11.7 v',
-        gps: '15°40\'39.9"N',
-        signal: '78%',
-        status: GeneralUserBuoyConnectionStatus.active,
-      ),
-      GeneralUserBuoyItem(
-        id: 'DB - 04',
-        lastUpdate: '08:58 AM',
-        battery: '11.5 v',
-        gps: '15°40\'31.4"N',
-        signal: '74%',
-        status: GeneralUserBuoyConnectionStatus.active,
-      ),
-      GeneralUserBuoyItem(
-        id: 'DB - 05',
-        lastUpdate: '08:49 AM',
-        battery: '11.8 v',
-        gps: '15°40\'26.0"N',
-        signal: '81%',
-        status: GeneralUserBuoyConnectionStatus.active,
-      ),
-      GeneralUserBuoyItem(
-        id: 'DB - 06',
-        lastUpdate: '08:42 AM',
-        battery: '11.6 v',
-        gps: '15°40\'20.5"N',
-        signal: '75%',
-        status: GeneralUserBuoyConnectionStatus.active,
-      ),
-      GeneralUserBuoyItem(
-        id: 'DB - 07',
-        lastUpdate: '08:31 AM',
-        battery: '11.8 v',
-        gps: '15°40\'15.1"N',
-        signal: '80%',
-        status: GeneralUserBuoyConnectionStatus.active,
-      ),
-      GeneralUserBuoyItem(
-        id: 'DB - 08',
-        lastUpdate: '08:25 AM',
-        battery: '11.7 v',
-        gps: '15°40\'09.0"N',
-        signal: '77%',
-        status: GeneralUserBuoyConnectionStatus.active,
-      ),
-      GeneralUserBuoyItem(
-        id: 'DB - 09',
-        lastUpdate: '08:07 AM',
-        battery: '11.3 v',
-        gps: '15°40\'04.6"N',
-        signal: '39%',
-        status: GeneralUserBuoyConnectionStatus.offline,
-      ),
-      GeneralUserBuoyItem(
-        id: 'DB - 10',
-        lastUpdate: '07:52 AM',
-        battery: '11.4 v',
-        gps: '15°39\'58.3"N',
-        signal: '58%',
-        status: GeneralUserBuoyConnectionStatus.active,
-      ),
-    ];
+}
+
+GeneralUserBuoyConnectionStatus _mapStatus(String rawStatus) {
+  final status = rawStatus.trim().toLowerCase();
+  if (status == 'active') {
+    return GeneralUserBuoyConnectionStatus.active;
   }
+  if (status == 'offline') {
+    return GeneralUserBuoyConnectionStatus.offline;
+  }
+  if (status == 'battery low' ||
+      status == 'batterylow' ||
+      status == 'low battery') {
+    return GeneralUserBuoyConnectionStatus.batteryLow;
+  }
+  return GeneralUserBuoyConnectionStatus.offline;
+}
+
+String _formatLastReceived(String raw) {
+  final value = raw.trim();
+  if (value.isEmpty) {
+    return '--';
+  }
+
+  final match = RegExp(
+    r'^(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{2}):(\d{2})$',
+  ).firstMatch(value);
+  if (match == null) {
+    return value;
+  }
+
+  final year = int.tryParse(match.group(1) ?? '');
+  final month = int.tryParse(match.group(2) ?? '');
+  final day = int.tryParse(match.group(3) ?? '');
+  final hour24 = int.tryParse(match.group(4) ?? '');
+  final minute = int.tryParse(match.group(5) ?? '');
+  if (year == null ||
+      month == null ||
+      day == null ||
+      hour24 == null ||
+      minute == null ||
+      month < 1 ||
+      month > 12 ||
+      hour24 < 0 ||
+      hour24 > 23) {
+    return value;
+  }
+
+  const monthNames = <String>[
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  final period = hour24 >= 12 ? 'PM' : 'AM';
+  final hour12 = hour24 % 12 == 0 ? 12 : hour24 % 12;
+  final dd = day.toString().padLeft(2, '0');
+  final mm = minute.toString().padLeft(2, '0');
+  return '$dd ${monthNames[month - 1]} $year, $hour12:$mm $period';
+}
+
+String _formatBattery(double batteryVoltage) {
+  if (batteryVoltage <= 0) {
+    return '--';
+  }
+  return '${batteryVoltage.toStringAsFixed(1)} v';
+}
+
+String _formatGps(double latitude, double longitude) {
+  if (latitude == 0 && longitude == 0) {
+    return '--';
+  }
+  final latDir = latitude >= 0 ? 'N' : 'S';
+  final lonDir = longitude >= 0 ? 'E' : 'W';
+  final lat = latitude.abs().toStringAsFixed(2);
+  final lon = longitude.abs().toStringAsFixed(2);
+  return '$lat$latDir\n$lon$lonDir';
+}
+
+String _formatSignal(String signalStrength) {
+  final value = signalStrength.trim();
+  return value.isEmpty ? '--' : value;
 }

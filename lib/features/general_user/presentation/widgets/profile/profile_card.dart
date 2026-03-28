@@ -22,7 +22,7 @@ class GeneralUserProfileCard extends StatelessWidget {
             backgroundColor: const Color(0xFF206BBE),
             child: Text(
               data.initials,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.w700,
                   ),
@@ -35,7 +35,7 @@ class GeneralUserProfileCard extends StatelessWidget {
               children: [
                 Text(
                   data.fullName,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         color: const Color(0xFF2A2F34),
                         fontWeight: FontWeight.w700,
                       ),
@@ -43,7 +43,7 @@ class GeneralUserProfileCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   data.email,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: const Color(0xFF616870),
                         fontWeight: FontWeight.w600,
                       ),

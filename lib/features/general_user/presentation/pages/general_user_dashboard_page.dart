@@ -1,5 +1,7 @@
+import 'package:drifter_buoy/core/constants/app_assets.dart';
 import 'package:drifter_buoy/core/constants/app_routes.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_general_user_bottom_nav.dart';
+import 'package:drifter_buoy/core/utils/widgets/app_general_user_main_app_bar.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_shimmer.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/dashboard/general_user_dashboard_bloc.dart';
@@ -10,6 +12,7 @@ import 'package:drifter_buoy/features/general_user/data/models/user_map_dashboar
 import 'package:drifter_buoy/features/general_user/presentation/widgets/dummy_buoy_map_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -26,20 +29,38 @@ class GeneralUserDashboardPage extends StatelessWidget {
             state is GeneralUserDashboardInitial) {
           return Scaffold(
             backgroundColor: Color(0xFFD9DEE2),
-            body: _DashboardShimmer(),
+            body: SafeArea(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const AppGeneralUserMainAppBar(),
+                  Expanded(child: _DashboardShimmer()),
+                ],
+              ),
+            ),
           );
         }
 
         if (state is GeneralUserDashboardError) {
           return Scaffold(
             backgroundColor: const Color(0xFFD9DEE2),
-            body: AppErrorView(
-              message: state.message,
-              onRetry: () {
-                context.read<GeneralUserDashboardBloc>().add(
-                  LoadGeneralUserDashboard(isAdmin: state.isAdmin),
-                );
-              },
+            body: SafeArea(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const AppGeneralUserMainAppBar(),
+                  Expanded(
+                    child: AppErrorView(
+                      message: state.message,
+                      onRetry: () {
+                        context.read<GeneralUserDashboardBloc>().add(
+                          LoadGeneralUserDashboard(isAdmin: state.isAdmin),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         }
@@ -53,43 +74,13 @@ class GeneralUserDashboardPage extends StatelessWidget {
           body: SafeArea(
             child: Column(
               children: [
+                const AppGeneralUserMainAppBar(),
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Container(
-                              width: 30,
-                              height: 30,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF1D86CB),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.waves_rounded,
-                                size: 19,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const Spacer(),
-                            IconButton(
-                              icon: const Icon(Icons.notifications_none),
-                              onPressed: () {
-                                context.push(AppRoutes.alertsPath);
-                              },
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.menu),
-                              onPressed: () {
-                                context.push(AppRoutes.profilePath);
-                              },
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
                         Text(
                           'Dashboard',
                           style: textTheme.headlineMedium?.copyWith(
@@ -138,7 +129,7 @@ class GeneralUserDashboardPage extends StatelessWidget {
                               ),
                               Expanded(
                                 child: _StatItem(
-                                  icon: Icons.battery_1_bar,
+                                  svgAssetPath: AppAssets.icBatteryLow,
                                   iconColor: Color(0xFF4F95DA),
                                   title: 'Battery Low',
                                   value: summary.batteryLowBuoys.toString(),
@@ -231,25 +222,35 @@ class GeneralUserDashboardPage extends StatelessWidget {
 }
 
 class _StatItem extends StatelessWidget {
-  final IconData icon;
+  final IconData? icon;
+  final String? svgAssetPath;
   final Color iconColor;
   final String title;
   final String value;
   final String total;
 
   const _StatItem({
-    required this.icon,
+    this.icon,
+    this.svgAssetPath,
     required this.iconColor,
     required this.title,
     required this.value,
     required this.total,
-  });
+  }) : assert(icon != null || svgAssetPath != null);
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Icon(icon, color: iconColor, size: 20),
+        if (svgAssetPath != null)
+          SvgPicture.asset(
+            svgAssetPath!,
+            width: 20,
+            height: 20,
+            colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+          )
+        else
+          Icon(icon, color: iconColor, size: 20),
         const SizedBox(height: 6),
         Text(
           title,
@@ -361,121 +362,83 @@ class _MapPreviewCard extends StatelessWidget {
 class _DashboardShimmer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              height: 20,
+              width: MediaQuery.of(context).size.width * 0.45,
+              color: Colors.white,
+            ),
+            const SizedBox(height: 6),
+            Container(
+              height: 14,
+              width: MediaQuery.of(context).size.width * 0.65,
+              color: Colors.white,
+            ),
+            const SizedBox(height: 20),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF2F2F2),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Row(
                 children: [
-                  const SizedBox(
-                    width: 30,
-                    height: 30,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
+                  Expanded(child: _StatShimmerItem()),
+                  Expanded(child: _StatShimmerItem()),
+                  Expanded(child: _StatShimmerItem()),
+                ],
+              ),
+            ),
+            const SizedBox(height: 28),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF2F2F2),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        height: 18,
+                        width: MediaQuery.of(context).size.width * 0.48,
                         color: Colors.white,
-                        shape: BoxShape.circle,
                       ),
-                    ),
+                      const Spacer(),
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ],
                   ),
-                  const Spacer(),
-                  Container(
-                    width: 28,
-                    height: 28,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Container(
-                    width: 28,
-                    height: 28,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: const SizedBox(
+                      width: double.infinity,
+                      height: 360,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(color: Colors.white),
+                      ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-              Container(
-                height: 20,
-                width: MediaQuery.of(context).size.width * 0.45,
-                color: Colors.white,
-              ),
-              const SizedBox(height: 6),
-              Container(
-                height: 14,
-                width: MediaQuery.of(context).size.width * 0.65,
-                color: Colors.white,
-              ),
-              const SizedBox(height: 20),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 16,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF2F2F2),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Row(
-                  children: [
-                    Expanded(child: _StatShimmerItem()),
-                    Expanded(child: _StatShimmerItem()),
-                    Expanded(child: _StatShimmerItem()),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 28),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF2F2F2),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          height: 18,
-                          width: MediaQuery.of(context).size.width * 0.48,
-                          color: Colors.white,
-                        ),
-                        const Spacer(),
-                        Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: const SizedBox(
-                        width: double.infinity,
-                        height: 360,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(color: Colors.white),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

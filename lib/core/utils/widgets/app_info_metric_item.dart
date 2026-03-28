@@ -23,17 +23,26 @@ class AppInfoMetricItem extends StatelessWidget {
       children: [
         Icon(icon, size: 18, color: iconColor),
         const SizedBox(height: 4),
-        Text(
-          value,
-          style: textTheme.titleMedium?.copyWith(
-            color: const Color(0xFF2C2C2C),
-            fontWeight: FontWeight.w700,
+        SizedBox(
+          height: 34,
+          child: Center(
+            child: Text(
+              value,
+              style: textTheme.titleSmall?.copyWith(
+                color: const Color(0xFF2C2C2C),
+                fontWeight: FontWeight.w700,
+                height: 1.15,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
           ),
         ),
         const SizedBox(height: 2),
         Text(
           label,
-          style: textTheme.titleMedium?.copyWith(
+          style: textTheme.bodySmall?.copyWith(
             color: const Color(0xFF616161),
             fontWeight: FontWeight.w600,
           ),

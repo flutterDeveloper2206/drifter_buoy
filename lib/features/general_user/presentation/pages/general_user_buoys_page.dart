@@ -2,6 +2,7 @@ import 'package:drifter_buoy/core/constants/app_routes.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_flushbar.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_general_user_bottom_nav.dart';
+import 'package:drifter_buoy/core/utils/widgets/app_general_user_main_app_bar.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_info_metric_item.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoys/general_user_buoys_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoys/general_user_buoys_event.dart';
@@ -46,37 +47,7 @@ class _GeneralUserBuoysPageState extends State<GeneralUserBuoysPage> {
           },
           child: Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.waves_rounded,
-                      size: 34,
-                      color: Color(0xFF1179BF),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      onPressed: () {
-                        context.push(AppRoutes.alertsPath);
-                      },
-                      icon: const Icon(
-                        Icons.notifications_none_rounded,
-                        color: Color(0xFF2A2F34),
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () {
-                        context.push(AppRoutes.profilePath);
-                      },
-                      icon: const Icon(
-                        Icons.menu_rounded,
-                        color: Color(0xFF2A2F34),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              const AppGeneralUserMainAppBar(),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
                 child: Align(
@@ -542,7 +513,7 @@ class _BuoyCard extends StatelessWidget {
               children: [
                 Text(
                   buoy.id,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     color: const Color(0xFF292E33),
                     fontWeight: FontWeight.w700,
                   ),
@@ -552,7 +523,7 @@ class _BuoyCard extends StatelessWidget {
                 const SizedBox(width: 4),
                 Text(
                   statusLabel,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     color: statusColor,
                     fontWeight: FontWeight.w700,
                   ),
@@ -562,7 +533,7 @@ class _BuoyCard extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               'Last Update : ${buoy.lastUpdate}',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: const Color(0xFF747A80),
                 fontWeight: FontWeight.w600,
               ),
