@@ -21,14 +21,14 @@ class AppInfoMetricItem extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 18, color: iconColor),
+        Icon(icon, size: 16, color: iconColor),
         const SizedBox(height: 4),
         SizedBox(
-          height: 34,
+          height: 32,
           child: Center(
             child: Text(
               value,
-              style: textTheme.titleSmall?.copyWith(
+              style: textTheme.labelMedium?.copyWith(
                 color: const Color(0xFF2C2C2C),
                 fontWeight: FontWeight.w700,
                 height: 1.15,
@@ -42,7 +42,7 @@ class AppInfoMetricItem extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           label,
-          style: textTheme.bodySmall?.copyWith(
+          style: textTheme.labelSmall?.copyWith(
             color: const Color(0xFF616161),
             fontWeight: FontWeight.w600,
           ),

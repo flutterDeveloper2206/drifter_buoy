@@ -54,7 +54,7 @@ class _GeneralUserBuoysPageState extends State<GeneralUserBuoysPage> {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     "Buoy's",
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       color: const Color(0xFF242A2F),
                       fontWeight: FontWeight.w700,
                     ),
@@ -152,13 +152,13 @@ class _GeneralUserBuoysPageState extends State<GeneralUserBuoysPage> {
                                   },
                                 ),
                         ),
-                        AppGeneralUserBottomNav(
-                          selectedTab: GeneralUserBottomNavTab.buoys,
-                        ),
                       ],
                     );
                   },
                 ),
+              ),
+              const AppGeneralUserBottomNavForSession(
+                selectedTab: GeneralUserBottomNavTab.buoys,
               ),
             ],
           ),
@@ -279,7 +279,7 @@ class _SummaryItem extends StatelessWidget {
           children: [
             Text(
               '$value',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 color: const Color(0xFF252A2F),
                 fontWeight: FontWeight.w700,
               ),
@@ -513,17 +513,17 @@ class _BuoyCard extends StatelessWidget {
               children: [
                 Text(
                   buoy.id,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
                     color: const Color(0xFF292E33),
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 const Spacer(),
-                Icon(statusIcon, size: 18, color: statusColor),
+                Icon(statusIcon, size: 16, color: statusColor),
                 const SizedBox(width: 4),
                 Text(
                   statusLabel,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
                     color: statusColor,
                     fontWeight: FontWeight.w700,
                   ),
@@ -579,20 +579,51 @@ class _EmptyBuoysView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final message = query.trim().isEmpty
-        ? 'No buoys available for selected filter.'
-        : 'No buoys match "$query".';
+    final textTheme = Theme.of(context).textTheme;
+    final trimmed = query.trim();
+    final isSearching = trimmed.isNotEmpty;
+    final title = isSearching
+        ? 'No buoys match "$trimmed".'
+        : 'No buoys available for selected filter.';
+    final subtitle = isSearching
+        ? 'Try a different Buoy ID.'
+        : 'Try another status filter or search by Buoy ID.';
+    final icon = isSearching
+        ? Icons.search_off_rounded
+        : Icons.filter_alt_off_outlined;
 
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Text(
-          message,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            color: const Color(0xFF5E656C),
-            fontWeight: FontWeight.w600,
-          ),
-          textAlign: TextAlign.center,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(32, 24, 32, 24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 56,
+              color: const Color(0xFF5E656C).withValues(alpha: 0.55),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: textTheme.titleLarge?.copyWith(
+                color: const Color(0xFF5E656C),
+                fontWeight: FontWeight.w600,
+                height: 1.3,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: textTheme.titleMedium?.copyWith(
+                color: const Color(0xFF8A9095),
+                fontWeight: FontWeight.w600,
+                height: 1.35,
+              ),
+            ),
+          ],
         ),
       ),
     );

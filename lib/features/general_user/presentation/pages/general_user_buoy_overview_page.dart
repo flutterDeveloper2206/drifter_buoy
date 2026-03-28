@@ -97,7 +97,7 @@ class GeneralUserBuoyOverviewPage extends StatelessWidget {
                                       data.id,
                                       style: Theme.of(context)
                                           .textTheme
-                                          .headlineSmall
+                                          .titleMedium
                                           ?.copyWith(
                                             color: const Color(0xFF2A2F34),
                                             fontWeight: FontWeight.w700,

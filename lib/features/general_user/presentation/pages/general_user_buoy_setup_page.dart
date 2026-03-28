@@ -1,4 +1,5 @@
 import 'package:drifter_buoy/core/constants/app_routes.dart';
+import 'package:drifter_buoy/core/theme/app_typography.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_elevated_button.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_flushbar.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_icon_circle_button.dart';
@@ -56,7 +57,7 @@ class GeneralUserBuoySetupPage extends StatelessWidget {
                           children: [
                             Text(
                               'Station Information',
-                              style: Theme.of(context).textTheme.headlineSmall
+                              style: Theme.of(context).textTheme.titleMedium
                                   ?.copyWith(
                                     color: const Color(0xFF2E3238),
                                     fontWeight: FontWeight.w700,
@@ -170,7 +171,7 @@ class _Header extends StatelessWidget {
             child: Center(
               child: Text(
                 'Buoy Set Up',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: const Color(0xFF262C31),
                   fontWeight: FontWeight.w700,
                 ),
@@ -204,15 +205,17 @@ class _Field extends StatelessWidget {
         children: [
           Text(
             label,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: const Color(0xFF4A4A4A),
-              fontWeight: FontWeight.w600,
+            style: Theme.of(context).textTheme.compactFieldLabel(
+              const Color(0xFF4A4A4A),
             ),
           ),
           const SizedBox(height: 6),
           TextFormField(
             initialValue: value,
             onChanged: onChanged,
+            style: Theme.of(context).textTheme.compactFieldInput(
+              const Color(0xFF2E3238),
+            ),
             decoration: InputDecoration(
               filled: true,
               fillColor: const Color(0xFFECECEC),

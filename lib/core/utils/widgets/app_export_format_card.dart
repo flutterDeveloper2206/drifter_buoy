@@ -47,7 +47,7 @@ class AppExportFormatCard extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 title,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: const Color(0xFF2A2F34),
                   fontWeight: FontWeight.w700,
                 ),

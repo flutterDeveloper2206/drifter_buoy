@@ -58,7 +58,7 @@ class GeneralUserExportPage extends StatelessWidget {
                       child: Center(
                         child: Text(
                           'Export',
-                          style: Theme.of(context).textTheme.headlineSmall
+                          style: Theme.of(context).textTheme.titleMedium
                               ?.copyWith(
                                 color: const Color(0xFF262C31),
                                 fontWeight: FontWeight.w700,
@@ -157,7 +157,7 @@ class GeneralUserExportPage extends StatelessWidget {
                               ),
                               child: Text(
                                 'Export Data',
-                                style: Theme.of(context).textTheme.headlineSmall
+                                style: Theme.of(context).textTheme.titleMedium
                                     ?.copyWith(
                                       color: Colors.white,
                                       fontWeight: FontWeight.w700,
@@ -199,7 +199,7 @@ class _DateRangeCard extends StatelessWidget {
         children: [
           Text(
             'Select Date Range',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
               color: const Color(0xFF30353A),
               fontWeight: FontWeight.w500,
             ),
@@ -298,7 +298,7 @@ class _ExportFormatCardSection extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Text(
               'Select Export Format',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 color: const Color(0xFF30353A),
                 fontWeight: FontWeight.w700,
               ),

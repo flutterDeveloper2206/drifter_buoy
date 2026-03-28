@@ -112,142 +112,168 @@ class _GeneralUserMapPageState extends State<GeneralUserMapPage> {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      body: BlocListener<GeneralUserMapBloc, GeneralUserMapState>(
-        listenWhen: (previous, current) {
-          return previous.zoom != current.zoom &&
-              current.status == GeneralUserMapStatus.loaded;
-        },
-        listener: (_, state) {
-          final currentCenter = _safeMapCenter();
-          _mapController.move(currentCenter, state.zoom);
-        },
-        child: BlocBuilder<GeneralUserMapBloc, GeneralUserMapState>(
-          builder: (context, state) {
-            return Stack(
-              fit: StackFit.expand,
-              children: [
-                Positioned.fill(child: _buildMapLayer(context, state)),
-                if (!_mapSearchOpen)
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    top: 0,
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(
-                        16,
-                        MediaQuery.paddingOf(context).top + 10,
-                        16,
-                        0,
-                      ),
-                      child: Row(
-                        children: [
-                          AppIconCircleButton(
-                            onTap: () => context.go(AppRoutes.dashboardPath),
-                            icon: Icons.arrow_back,
-                          ),
-                          const Spacer(),
-                          AppIconCircleButton(
-                            onTap: () {
-                              setState(() {
-                                _mapSearchOpen = true;
-                              });
-                              WidgetsBinding.instance.addPostFrameCallback((_) {
-                                if (mounted) {
-                                  _searchFocusNode.requestFocus();
-                                }
-                              });
-                            },
-                            icon: Icons.search,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                if (_mapSearchOpen)
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    top: 0,
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(
-                        14,
-                        MediaQuery.paddingOf(context).top + 12,
-                        14,
-                        0,
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          AppIconCircleButton(
-                            onTap: _closeMapSearch,
-                            icon: Icons.close,
-                            iconSize: 26,
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: _MapSearchInputCard(
-                              controller: _searchController,
-                              focusNode: _searchFocusNode,
-                              onChanged: (_) => _applySearchFromField(),
-                              onSearchTap: () {
-                                _applySearchFromField();
-                                FocusScope.of(context).unfocus();
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                Positioned(
-                  top: MediaQuery.paddingOf(context).top + 95,
-                  right: 16,
-                  child: _MapZoomControl(
-                    onZoomIn: state.canZoomIn
-                        ? () => context.read<GeneralUserMapBloc>().add(
-                            const ZoomInMap(),
-                          )
-                        : null,
-                    onZoomOut: state.canZoomOut
-                        ? () => context.read<GeneralUserMapBloc>().add(
-                            const ZoomOutMap(),
-                          )
-                        : null,
-                  ),
-                ),
-                Positioned(
-                  left: 40,
-                  right: 40,
-                  bottom: state.isFilterPanelExpanded ? 220 : 124,
-                  child: _MapLegendCard(
-                    isActiveVisible: state.showActive,
-                    isOfflineVisible: state.showOffline,
-                    isBatteryVisible: state.showBatteryLow,
-                  ),
-                ),
-                if (_activeSelectedBuoyForState(state) != null)
-                  Positioned(
-                    left: 14,
-                    right: 14,
-                    bottom: state.isFilterPanelExpanded ? 278 : 172,
-                    child: _MapSelectedBuoyCard(
-                      buoy: _activeSelectedBuoyForState(state)!,
-                    ),
-                  ),
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: _FilterPanel(
-                    titleStyle: textTheme.titleMedium?.copyWith(
-                      color: const Color(0xFF2D3238),
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ],
-            );
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          return;
+        }
+        if (_mapSearchOpen) {
+          setState(() {
+            _mapSearchOpen = false;
+          });
+          FocusScope.of(context).unfocus();
+          return;
+        }
+        context.go(AppRoutes.dashboardPath);
+      },
+      child: Scaffold(
+        resizeToAvoidBottomInset: false,
+        body: BlocListener<GeneralUserMapBloc, GeneralUserMapState>(
+          listenWhen: (previous, current) {
+            return previous.zoom != current.zoom &&
+                current.status == GeneralUserMapStatus.loaded;
           },
+          listener: (_, state) {
+            final currentCenter = _safeMapCenter();
+            _mapController.move(currentCenter, state.zoom);
+          },
+          child: BlocBuilder<GeneralUserMapBloc, GeneralUserMapState>(
+            builder: (context, state) {
+              return Stack(
+                fit: StackFit.expand,
+                children: [
+                  Positioned.fill(child: _buildMapLayer(context, state)),
+                  if (!_mapSearchOpen)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      top: 0,
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          16,
+                          MediaQuery.paddingOf(context).top + 10,
+                          16,
+                          0,
+                        ),
+                        child: Row(
+                          children: [
+                            AppIconCircleButton(
+                              onTap: () => context.go(AppRoutes.dashboardPath),
+                              icon: Icons.arrow_back,
+                            ),
+                            const Spacer(),
+                            AppIconCircleButton(
+                              onTap: () {
+                                setState(() {
+                                  _mapSearchOpen = true;
+                                });
+                                WidgetsBinding.instance.addPostFrameCallback((
+                                  _,
+                                ) {
+                                  if (mounted) {
+                                    _searchFocusNode.requestFocus();
+                                  }
+                                });
+                              },
+                              icon: Icons.search,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  if (_mapSearchOpen)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      top: 0,
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          14,
+                          MediaQuery.paddingOf(context).top + 12,
+                          14,
+                          0,
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            AppIconCircleButton(
+                              onTap: _closeMapSearch,
+                              icon: Icons.close,
+                              iconSize: 26,
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: _MapSearchInputCard(
+                                controller: _searchController,
+                                focusNode: _searchFocusNode,
+                                onChanged: (_) => _applySearchFromField(),
+                                onSearchTap: () {
+                                  _applySearchFromField();
+                                  FocusScope.of(context).unfocus();
+                                },
+                                onClearTap:
+                                    _searchController.text.trim().isNotEmpty
+                                    ? () {
+                                        _searchController.clear();
+                                        setState(() {});
+                                        _applySearchFromField();
+                                      }
+                                    : null,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  Positioned(
+                    top: MediaQuery.paddingOf(context).top + 95,
+                    right: 16,
+                    child: _MapZoomControl(
+                      onZoomIn: state.canZoomIn
+                          ? () => context.read<GeneralUserMapBloc>().add(
+                              const ZoomInMap(),
+                            )
+                          : null,
+                      onZoomOut: state.canZoomOut
+                          ? () => context.read<GeneralUserMapBloc>().add(
+                              const ZoomOutMap(),
+                            )
+                          : null,
+                    ),
+                  ),
+                  Positioned(
+                    left: 40,
+                    right: 40,
+                    bottom: state.isFilterPanelExpanded ? 220 : 124,
+                    child: _MapLegendCard(
+                      isActiveVisible: state.showActive,
+                      isOfflineVisible: state.showOffline,
+                      isBatteryVisible: state.showBatteryLow,
+                    ),
+                  ),
+                  if (_activeSelectedBuoyForState(state) != null)
+                    Positioned(
+                      left: 14,
+                      right: 14,
+                      bottom: state.isFilterPanelExpanded ? 278 : 172,
+                      child: _MapSelectedBuoyCard(
+                        buoy: _activeSelectedBuoyForState(state)!,
+                      ),
+                    ),
+                  Align(
+                    alignment: Alignment.bottomCenter,
+                    child: _FilterPanel(
+                      titleStyle: textTheme.titleMedium?.copyWith(
+                        color: const Color(0xFF2D3238),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
@@ -457,26 +483,22 @@ class _MetricColumn extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Icon(
-          icon,
-          size: 20,
-          color: const Color(0xFF33383D),
-        ),
+        Icon(icon, size: 20, color: const Color(0xFF33383D)),
         const SizedBox(height: 6),
         Text(
           value,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: const Color(0xFF1D2329),
-                fontWeight: FontWeight.w700,
-              ),
+            color: const Color(0xFF1D2329),
+            fontWeight: FontWeight.w700,
+          ),
         ),
         const SizedBox(height: 4),
         Text(
           label,
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                color: const Color(0xFF8A9095),
-                fontWeight: FontWeight.w600,
-              ),
+            color: const Color(0xFF8A9095),
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ],
     );
@@ -502,12 +524,14 @@ class _MapSearchInputCard extends StatelessWidget {
   final FocusNode focusNode;
   final ValueChanged<String> onChanged;
   final VoidCallback onSearchTap;
+  final VoidCallback? onClearTap;
 
   const _MapSearchInputCard({
     required this.controller,
     required this.focusNode,
     required this.onChanged,
     required this.onSearchTap,
+    required this.onClearTap,
   });
 
   @override
@@ -548,7 +572,26 @@ class _MapSearchInputCard extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                 ),
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                contentPadding: const EdgeInsets.fromLTRB(0, 12, 0, 12),
+                suffixIconConstraints: const BoxConstraints(
+                  minWidth: 0,
+                  minHeight: 0,
+                ),
+                suffixIcon: onClearTap == null
+                    ? null
+                    : IconButton(
+                        onPressed: onClearTap,
+                        style: IconButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          visualDensity: VisualDensity.compact,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        icon: const Icon(
+                          Icons.close_rounded,
+                          size: 20,
+                          color: Color(0xFF8F9498),
+                        ),
+                      ),
               ),
             ),
           ),
@@ -841,15 +884,6 @@ class _MapFilterSettingsSheet extends StatelessWidget {
                   onTap: () {
                     context.read<GeneralUserMapFiltersBloc>().add(
                       const ToggleSignalStrengthFilter(),
-                    );
-                  },
-                ),
-                AppCheckboxSettingTile(
-                  label: 'Location / Zone',
-                  selected: state.locationZoneEnabled,
-                  onTap: () {
-                    context.read<GeneralUserMapFiltersBloc>().add(
-                      const ToggleLocationZoneFilter(),
                     );
                   },
                 ),

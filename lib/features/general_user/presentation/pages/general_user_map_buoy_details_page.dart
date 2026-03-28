@@ -244,7 +244,7 @@ class _BuoyDetailsCard extends StatelessWidget {
                 children: [
                   Text(
                     detail.buoy.id,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: const Color(0xFF2E2E2E),
                       fontWeight: FontWeight.w700,
                     ),

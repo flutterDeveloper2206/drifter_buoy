@@ -31,13 +31,6 @@ class AppIconCircleButton extends StatelessWidget {
           decoration: BoxDecoration(
             color: backgroundColor,
             shape: BoxShape.circle,
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x29000000),
-                blurRadius: 8,
-                offset: Offset(0, 3),
-              ),
-            ],
           ),
           child: Icon(icon, size: iconSize, color: iconColor),
         ),

@@ -1,8 +1,11 @@
 import 'package:drifter_buoy/core/constants/app_assets.dart';
 import 'package:drifter_buoy/core/constants/app_routes.dart';
+import 'package:drifter_buoy/core/storage/auth_session_store.dart';
+import 'package:drifter_buoy/core/utils/injection_container.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_general_user_bottom_nav.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_general_user_main_app_bar.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_shimmer.dart';
+import 'package:drifter_buoy/core/utils/widgets/app_elevated_button.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/dashboard/general_user_dashboard_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/dashboard/general_user_dashboard_event.dart';
@@ -11,6 +14,7 @@ import 'package:drifter_buoy/features/general_user/data/models/user_map_dashboar
 import 'package:drifter_buoy/features/general_user/data/models/user_map_dashboard_get_buoy_map_dashboard_response.dart';
 import 'package:drifter_buoy/features/general_user/presentation/widgets/dummy_buoy_map_view.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
@@ -25,194 +29,269 @@ class GeneralUserDashboardPage extends StatelessWidget {
 
     return BlocBuilder<GeneralUserDashboardBloc, GeneralUserDashboardState>(
       builder: (context, state) {
-        if (state is GeneralUserDashboardLoading ||
-            state is GeneralUserDashboardInitial) {
-          return Scaffold(
-            backgroundColor: Color(0xFFD9DEE2),
-            body: SafeArea(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const AppGeneralUserMainAppBar(),
-                  Expanded(child: _DashboardShimmer()),
-                ],
-              ),
+        final showSetup = switch (state) {
+          GeneralUserDashboardInitial() =>
+            sl<AuthSessionStore>().cachedIsAdmin ?? false,
+          _ => state.isAdmin,
+        };
+
+        Widget body;
+        if (state is GeneralUserDashboardLoaded) {
+          final loadedState = state;
+          final dashboardData = loadedState.data;
+          final summary = dashboardData.summary;
+          body = SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Dashboard',
+                  style: textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF23282D),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Last Update : 10:20 AM',
+                  style: textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF1F88D1),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF2F2F2),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _StatItem(
+                          icon: Icons.wifi,
+                          iconColor: Color(0xFF4AAF5D),
+                          title: 'Active Buoys',
+                          value: summary.activeBuoys.toString(),
+                          total: '/${summary.totalBuoys}',
+                        ),
+                      ),
+                      Expanded(
+                        child: _StatItem(
+                          icon: Icons.wifi_off,
+                          iconColor: Color(0xFFE85A54),
+                          title: 'Offline Buoys',
+                          value: summary.offlineBuoys.toString(),
+                          total: '/${summary.totalBuoys}',
+                        ),
+                      ),
+                      Expanded(
+                        child: _StatItem(
+                          svgAssetPath: AppAssets.icBatteryLow,
+                          iconColor: Color(0xFF4F95DA),
+                          title: 'Battery Low',
+                          value: summary.batteryLowBuoys.toString(),
+                          total: '/${summary.totalBuoys}',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 28),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF2F2F2),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 2,
+                          vertical: 2,
+                        ),
+                        child: Row(
+                          children: [
+                            Text(
+                              "Buoy's Map View",
+                              style: textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF2E343A),
+                              ),
+                            ),
+                            const Spacer(),
+                            IconButton(
+                              onPressed: () {
+                                context.go(
+                                  AppRoutes.mapPath,
+                                  extra: loadedState.mapData,
+                                );
+                              },
+                              icon: const Icon(Icons.arrow_forward, size: 24),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      _MapPreviewCard(
+                        dashboardData: dashboardData,
+                        mapData: loadedState.mapData,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           );
+        } else if (state is GeneralUserDashboardError) {
+          body = AppErrorView(
+            message: state.message,
+            onRetry: () {
+              context.read<GeneralUserDashboardBloc>().add(
+                LoadGeneralUserDashboard(isAdmin: state.isAdmin),
+              );
+            },
+          );
+        } else {
+          body = _DashboardShimmer();
         }
 
-        if (state is GeneralUserDashboardError) {
-          return Scaffold(
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, result) async {
+            if (didPop) {
+              return;
+            }
+            final shouldExit = await showDialog<bool>(
+              context: context,
+              barrierColor: Colors.black.withValues(alpha: 0.45),
+              builder: (dialogContext) {
+                final dialogTextTheme = Theme.of(dialogContext).textTheme;
+                return Dialog(
+                  backgroundColor: const Color(0xFFF2F2F2),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  insetPadding: const EdgeInsets.symmetric(
+                    horizontal: 28,
+                    vertical: 24,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'Exit app',
+                          textAlign: TextAlign.center,
+                          style: dialogTextTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF23282D),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Are you sure you want to exit?',
+                          textAlign: TextAlign.center,
+                          style: dialogTextTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            height: 1.35,
+                            color: const Color(0xFF545B61),
+                          ),
+                        ),
+                        const SizedBox(height: 22),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: OutlinedButton(
+                            onPressed: () =>
+                                Navigator.of(dialogContext).pop(false),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF37414A),
+                              side: const BorderSide(color: Color(0xFFC2C7CC)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              textStyle: dialogTextTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            child: const Text('Close'),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: AppElevatedButton(
+                            loading: false,
+                            onPressed: () =>
+                                Navigator.of(dialogContext).pop(true),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFC62828),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              textStyle: dialogTextTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            child: const Text('Exit'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            );
+            if (shouldExit == true && context.mounted) {
+              await SystemNavigator.pop();
+            }
+          },
+          child: Scaffold(
             backgroundColor: const Color(0xFFD9DEE2),
             body: SafeArea(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const AppGeneralUserMainAppBar(),
-                  Expanded(
-                    child: AppErrorView(
-                      message: state.message,
-                      onRetry: () {
-                        context.read<GeneralUserDashboardBloc>().add(
-                          LoadGeneralUserDashboard(isAdmin: state.isAdmin),
-                        );
-                      },
-                    ),
+                  Expanded(child: body),
+                  AppGeneralUserBottomNav(
+                    selectedTab: GeneralUserBottomNavTab.home,
+                    onTap: (tab) {
+                      switch (tab) {
+                        case GeneralUserBottomNavTab.home:
+                          context.go(AppRoutes.dashboardPath);
+                        case GeneralUserBottomNavTab.buoys:
+                          context.go(AppRoutes.buoysPath);
+                        case GeneralUserBottomNavTab.map:
+                          if (state is GeneralUserDashboardLoaded) {
+                            context.go(AppRoutes.mapPath, extra: state.mapData);
+                          } else {
+                            context.go(AppRoutes.mapPath);
+                          }
+                        case GeneralUserBottomNavTab.export:
+                          context.push(AppRoutes.exportSelectionPath);
+                        case GeneralUserBottomNavTab.setup:
+                          context.push(AppRoutes.setupPath);
+                      }
+                    },
+                    showSetup: showSetup,
                   ),
                 ],
               ),
-            ),
-          );
-        }
-
-        final loadedState = state as GeneralUserDashboardLoaded;
-        final dashboardData = loadedState.data;
-        final summary = dashboardData.summary;
-
-        return Scaffold(
-          backgroundColor: const Color(0xFFD9DEE2),
-          body: SafeArea(
-            child: Column(
-              children: [
-                const AppGeneralUserMainAppBar(),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Dashboard',
-                          style: textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF23282D),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Last Update : 10:20 AM',
-                          style: textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF1F88D1),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 16,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF2F2F2),
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: _StatItem(
-                                  icon: Icons.wifi,
-                                  iconColor: Color(0xFF4AAF5D),
-                                  title: 'Active Buoys',
-                                  value: summary.activeBuoys.toString(),
-                                  total: '/${summary.totalBuoys}',
-                                ),
-                              ),
-                              Expanded(
-                                child: _StatItem(
-                                  icon: Icons.wifi_off,
-                                  iconColor: Color(0xFFE85A54),
-                                  title: 'Offline Buoys',
-                                  value: summary.offlineBuoys.toString(),
-                                  total: '/${summary.totalBuoys}',
-                                ),
-                              ),
-                              Expanded(
-                                child: _StatItem(
-                                  svgAssetPath: AppAssets.icBatteryLow,
-                                  iconColor: Color(0xFF4F95DA),
-                                  title: 'Battery Low',
-                                  value: summary.batteryLowBuoys.toString(),
-                                  total: '/${summary.totalBuoys}',
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 28),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF2F2F2),
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: Column(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 2,
-                                  vertical: 2,
-                                ),
-                                child: Row(
-                                  children: [
-                                    Text(
-                                      "Buoy's Map View",
-                                      style: textTheme.titleLarge?.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                        color: const Color(0xFF2E343A),
-                                      ),
-                                    ),
-                                    const Spacer(),
-                                    IconButton(
-                                      onPressed: () {
-                                        context.go(
-                                          AppRoutes.mapPath,
-                                          extra: loadedState.mapData,
-                                        );
-                                      },
-                                      icon: const Icon(
-                                        Icons.arrow_forward,
-                                        size: 24,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              _MapPreviewCard(
-                                dashboardData: dashboardData,
-                                mapData: loadedState.mapData,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                AppGeneralUserBottomNav(
-                  selectedTab: GeneralUserBottomNavTab.home,
-                  onTap: (tab) {
-                    switch (tab) {
-                      case GeneralUserBottomNavTab.home:
-                        context.go(AppRoutes.dashboardPath);
-                      case GeneralUserBottomNavTab.buoys:
-                        context.go(AppRoutes.buoysPath);
-                      case GeneralUserBottomNavTab.map:
-                        context.go(
-                          AppRoutes.mapPath,
-                          extra: loadedState.mapData,
-                        );
-                      case GeneralUserBottomNavTab.export:
-                        context.push(AppRoutes.exportSelectionPath);
-                      case GeneralUserBottomNavTab.setup:
-                        context.push(AppRoutes.setupPath);
-                    }
-                  },
-                  showSetup: loadedState.isAdmin,
-                ),
-              ],
             ),
           ),
         );
@@ -257,7 +336,7 @@ class _StatItem extends StatelessWidget {
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
             color: const Color(0xFF3D4349),
-            fontSize: 15,
+            fontSize: 13,
           ),
           textAlign: TextAlign.center,
         ),
@@ -267,7 +346,7 @@ class _StatItem extends StatelessWidget {
           children: [
             Text(
               value,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF20262B),
               ),
@@ -290,24 +369,21 @@ class _MapPreviewCard extends StatelessWidget {
   final UserMapDashboardGetBuoyDashboardResult dashboardData;
   final List<UserMapDashboardGetBuoyMapDashboardItem> mapData;
 
-  const _MapPreviewCard({
-    required this.dashboardData,
-    required this.mapData,
-  });
+  const _MapPreviewCard({required this.dashboardData, required this.mapData});
 
   @override
   Widget build(BuildContext context) {
     final summary = dashboardData.summary;
     final locations = mapData.isNotEmpty
         ? mapData
-            .map(
-              (e) => UserMapDashboardGetBuoyDashboardLocation(
-                buoyId: e.buoyId,
-                latitude: e.latitude,
-                longitude: e.longitude,
-              ),
-            )
-            .toList(growable: false)
+              .map(
+                (e) => UserMapDashboardGetBuoyDashboardLocation(
+                  buoyId: e.buoyId,
+                  latitude: e.latitude,
+                  longitude: e.longitude,
+                ),
+              )
+              .toList(growable: false)
         : dashboardData.buoyLocations;
 
     // Assign marker colors using the server summary counts.

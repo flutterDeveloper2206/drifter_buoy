@@ -27,8 +27,8 @@ class _GeneralUserLoginPageState extends State<GeneralUserLoginPage> {
   @override
   void initState() {
     super.initState();
-    _emailController = TextEditingController();
-    _passwordController = TextEditingController();
+    _emailController = TextEditingController(text: 'DBTesting@123');
+    _passwordController = TextEditingController(text: 'Azista@123');
     _obscurePasswordNotifier = ValueNotifier<bool>(true);
   }
 
@@ -126,7 +126,7 @@ class _GeneralUserLoginPageState extends State<GeneralUserLoginPage> {
                                     const SizedBox(height: 44),
                                     Text(
                                       'Log In',
-                                      style: textTheme.headlineMedium?.copyWith(
+                                      style: textTheme.titleLarge?.copyWith(
                                         fontWeight: FontWeight.w700,
                                         color: const Color(0xFF2B2F33),
                                       ),
@@ -239,7 +239,7 @@ class _GeneralUserLoginPageState extends State<GeneralUserLoginPage> {
                                                         ),
                                                   ),
                                                   textStyle: textTheme
-                                                      .headlineSmall
+                                                      .titleMedium
                                                       ?.copyWith(
                                                         fontWeight:
                                                             FontWeight.w600,
@@ -369,7 +369,7 @@ class _BrandFooter extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           'Azista',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
             color: const Color(0xFFC93333),
             fontWeight: FontWeight.w700,
             letterSpacing: 0.2,

@@ -1,4 +1,5 @@
 import 'package:drifter_buoy/core/constants/app_routes.dart';
+import 'package:drifter_buoy/core/theme/app_typography.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_icon_circle_button.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_loader.dart';
@@ -83,10 +84,8 @@ class GeneralUserSetupDetailPage extends StatelessWidget {
                                         'Bluetooth Setup',
                                         style: Theme.of(context)
                                             .textTheme
-                                            .titleLarge
-                                            ?.copyWith(
-                                              color: const Color(0xFF1D2329),
-                                              fontWeight: FontWeight.w700,
+                                            .compactSectionTitle(
+                                              const Color(0xFF1D2329),
                                             ),
                                       ),
                                     ),
@@ -119,10 +118,8 @@ class GeneralUserSetupDetailPage extends StatelessWidget {
                                         'Enable Configuration',
                                         style: Theme.of(context)
                                             .textTheme
-                                            .titleLarge
-                                            ?.copyWith(
-                                              color: const Color(0xFF1D2329),
-                                              fontWeight: FontWeight.w700,
+                                            .compactSectionTitle(
+                                              const Color(0xFF1D2329),
                                             ),
                                       ),
                                     ),
@@ -145,10 +142,8 @@ class GeneralUserSetupDetailPage extends StatelessWidget {
                                   'Enable Configuration to Set Up Buoy',
                                   style: Theme.of(context)
                                       .textTheme
-                                      .titleMedium
-                                      ?.copyWith(
-                                        color: const Color(0xFF6A7178),
-                                        fontWeight: FontWeight.w600,
+                                      .compactSupportingText(
+                                        const Color(0xFF6A7178),
                                       ),
                                 ),
                                 if (state.enableConfiguration && bluetoothOn) ...[
@@ -173,11 +168,7 @@ class GeneralUserSetupDetailPage extends StatelessWidget {
                                             'Continue to Buoy Setup',
                                             style: Theme.of(context)
                                                 .textTheme
-                                                .titleMedium
-                                                ?.copyWith(
-                                                  color: _blue,
-                                                  fontWeight: FontWeight.w700,
-                                                ),
+                                                .compactActionText(_blue),
                                           ),
                                         ],
                                       ),
@@ -196,10 +187,8 @@ class GeneralUserSetupDetailPage extends StatelessWidget {
                                   'Memory Status',
                                   style: Theme.of(context)
                                       .textTheme
-                                      .titleLarge
-                                      ?.copyWith(
-                                        color: const Color(0xFF1D2329),
-                                        fontWeight: FontWeight.w700,
+                                      .compactSectionTitle(
+                                        const Color(0xFF1D2329),
                                       ),
                                 ),
                                 const SizedBox(height: 8),
@@ -207,10 +196,8 @@ class GeneralUserSetupDetailPage extends StatelessWidget {
                                   state.memoryStatus,
                                   style: Theme.of(context)
                                       .textTheme
-                                      .titleMedium
-                                      ?.copyWith(
-                                        color: const Color(0xFF2A2F34),
-                                        fontWeight: FontWeight.w700,
+                                      .compactValueText(
+                                        const Color(0xFF2A2F34),
                                       ),
                                 ),
                               ],
@@ -232,10 +219,8 @@ class GeneralUserSetupDetailPage extends StatelessWidget {
                                         'Self-Test and Debug',
                                         style: Theme.of(context)
                                             .textTheme
-                                            .titleLarge
-                                            ?.copyWith(
-                                              color: const Color(0xFF1D2329),
-                                              fontWeight: FontWeight.w700,
+                                            .compactSectionTitle(
+                                              const Color(0xFF1D2329),
                                             ),
                                       ),
                                     ),
@@ -258,10 +243,8 @@ class GeneralUserSetupDetailPage extends StatelessWidget {
                                   'Backup',
                                   style: Theme.of(context)
                                       .textTheme
-                                      .titleLarge
-                                      ?.copyWith(
-                                        color: const Color(0xFF1D2329),
-                                        fontWeight: FontWeight.w700,
+                                      .compactSectionTitle(
+                                        const Color(0xFF1D2329),
                                       ),
                                 ),
                                 const SizedBox(height: 10),
@@ -278,11 +261,7 @@ class GeneralUserSetupDetailPage extends StatelessWidget {
                                         'Backup Data to Server',
                                         style: Theme.of(context)
                                             .textTheme
-                                            .titleMedium
-                                            ?.copyWith(
-                                              color: _blue,
-                                              fontWeight: FontWeight.w700,
-                                            ),
+                                            .compactActionText(_blue),
                                       ),
                                     ),
                                   ],
@@ -343,10 +322,7 @@ class _BluetoothGrid extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 value,
-                style: t.titleMedium?.copyWith(
-                  color: const Color(0xFF1D2329),
-                  fontWeight: FontWeight.w700,
-                ),
+                style: t.compactValueText(const Color(0xFF1D2329)),
               ),
             ],
           ),
@@ -429,10 +405,10 @@ class _Header extends StatelessWidget {
             child: Center(
               child: Text(
                 'Add New',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: const Color(0xFF262C31),
-                      fontWeight: FontWeight.w700,
-                    ),
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: const Color(0xFF242A2F),
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ),

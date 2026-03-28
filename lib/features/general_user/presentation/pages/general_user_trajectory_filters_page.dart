@@ -74,7 +74,7 @@ class _GeneralUserTrajectoryFiltersPageState
                                       'Trajectory View',
                                       style: Theme.of(context)
                                           .textTheme
-                                          .headlineSmall
+                                          .titleMedium
                                           ?.copyWith(
                                             color: const Color(0xFF1E252C),
                                             fontWeight: FontWeight.w700,

@@ -67,7 +67,7 @@ class _GeneralUserNoInternetPageState extends State<GeneralUserNoInternetPage> {
                 Text(
                   'No Internet Connection',
                   textAlign: TextAlign.center,
-                  style: textTheme.headlineSmall?.copyWith(
+                  style: textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF262C31),
                   ),

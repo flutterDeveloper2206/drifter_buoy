@@ -1,4 +1,5 @@
 import 'package:drifter_buoy/core/constants/app_routes.dart';
+import 'package:drifter_buoy/core/theme/app_typography.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_flushbar.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_icon_circle_button.dart';
@@ -117,9 +118,8 @@ class _Header extends StatelessWidget {
             child: Center(
               child: Text(
                 'Self-Test and Debug',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: const Color(0xFF262C31),
-                  fontWeight: FontWeight.w700,
+                style: Theme.of(context).textTheme.compactAppBarTitle(
+                  const Color(0xFF262C31),
                 ),
               ),
             ),
@@ -159,7 +159,7 @@ class _ActionTile extends StatelessWidget {
             Expanded(
               child: Text(
                 title,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: const Color(0xFF2A2F34),
                   fontWeight: FontWeight.w700,
                 ),

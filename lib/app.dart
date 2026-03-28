@@ -1,4 +1,5 @@
 import 'package:drifter_buoy/core/constants/app_constants.dart';
+import 'package:drifter_buoy/core/theme/app_theme.dart';
 import 'package:drifter_buoy/core/utils/app_router.dart';
 import 'package:flutter/material.dart';
 
@@ -10,18 +11,7 @@ class DrifterBuoyApp extends StatelessWidget {
     return MaterialApp.router(
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
-        useMaterial3: true,
-        textTheme: ThemeData.light().textTheme,
-        pageTransitionsTheme: const PageTransitionsTheme(
-          builders: {
-            TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
-            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-            TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
-          },
-        ),
-      ),
+      theme: buildAppTheme(),
       routerConfig: AppRouter.router,
     );
   }

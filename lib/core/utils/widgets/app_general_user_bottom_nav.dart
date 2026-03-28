@@ -1,5 +1,7 @@
 import 'package:drifter_buoy/core/constants/app_assets.dart';
 import 'package:drifter_buoy/core/constants/app_routes.dart';
+import 'package:drifter_buoy/core/storage/auth_session_store.dart';
+import 'package:drifter_buoy/core/utils/injection_container.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
@@ -118,6 +120,31 @@ class AppGeneralUserBottomNav extends StatelessWidget {
   }
 }
 
+/// Bottom bar with **Set Up** tab only when stored session [roleName] is Admin.
+///
+/// Uses [AuthSessionStore.cachedIsAdmin] only (no [FutureBuilder]) so list API
+/// or other rebuilds do not re-run async work and briefly hide the 5th tab.
+class AppGeneralUserBottomNavForSession extends StatelessWidget {
+  final GeneralUserBottomNavTab selectedTab;
+  final ValueChanged<GeneralUserBottomNavTab>? onTap;
+
+  const AppGeneralUserBottomNavForSession({
+    super.key,
+    required this.selectedTab,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final showSetup = sl<AuthSessionStore>().cachedIsAdmin ?? false;
+    return AppGeneralUserBottomNav(
+      selectedTab: selectedTab,
+      onTap: onTap,
+      showSetup: showSetup,
+    );
+  }
+}
+
 class _BottomNavItem extends StatelessWidget {
   final IconData? icon;
   final String? svgAssetPath;
@@ -144,8 +171,8 @@ class _BottomNavItem extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(10),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOutCubic,
+          duration: const Duration(milliseconds: 280),
+          curve: Curves.easeInOutCubic,
           padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
             color: selected ? const Color(0x1A246CBD) : Colors.transparent,
@@ -155,8 +182,8 @@ class _BottomNavItem extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               AnimatedScale(
-                duration: const Duration(milliseconds: 220),
-                curve: Curves.easeOutCubic,
+                duration: const Duration(milliseconds: 280),
+                curve: Curves.easeInOutCubic,
                 scale: selected ? 1.08 : 1,
                 child: svgAssetPath != null
                     ? SvgPicture.asset(
@@ -169,9 +196,9 @@ class _BottomNavItem extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 220),
-                curve: Curves.easeOutCubic,
-                style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                duration: const Duration(milliseconds: 280),
+                curve: Curves.easeInOutCubic,
+                style: Theme.of(context).textTheme.titleSmall!.copyWith(
                   color: color,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
                 ),

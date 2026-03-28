@@ -62,7 +62,7 @@ class _GeneralUserSplashPageState extends State<GeneralUserSplashPage> {
       final loginResponse = await authSessionStore.getLoginResponse();
       if (!mounted) return;
       final roleName = loginResponse?.result.roleName ?? '';
-      final isAdmin = roleName.toLowerCase() == 'admin';
+      final isAdmin = AuthSessionStore.isAdminRoleName(roleName);
       context.go(AppRoutes.dashboardPath, extra: isAdmin);
       return;
     }
@@ -156,7 +156,7 @@ class _GeneralUserSplashPageState extends State<GeneralUserSplashPage> {
                           Text(
                             'Drifter Buoy Monitoring System',
                             textAlign: TextAlign.center,
-                            style: textTheme.headlineSmall?.copyWith(
+                            style: textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFF2B2F33),
                             ),
@@ -219,7 +219,7 @@ class _BrandFooter extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           'Azista',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
             color: const Color(0xFFC93333),
             fontWeight: FontWeight.w700,
             letterSpacing: 0.2,

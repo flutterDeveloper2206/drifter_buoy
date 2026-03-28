@@ -120,7 +120,7 @@ class _GeneralUserCreatePasswordPageState
                               const SizedBox(height: 150),
                               Text(
                                 'Create New Psssoword',
-                                style: textTheme.headlineMedium?.copyWith(
+                                style: textTheme.titleLarge?.copyWith(
                                   fontWeight: FontWeight.w700,
                                   color: const Color(0xFF2B2F33),
                                 ),
@@ -220,7 +220,7 @@ class _GeneralUserCreatePasswordPageState
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
-                                    textStyle: textTheme.headlineSmall
+                                    textStyle: textTheme.titleMedium
                                         ?.copyWith(fontWeight: FontWeight.w600),
                                   ),
                                   child: const Text('Submit'),
@@ -329,7 +329,7 @@ class _BrandFooter extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           'Azista',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
             color: const Color(0xFFC93333),
             fontWeight: FontWeight.w700,
             letterSpacing: 0.2,

@@ -1,4 +1,5 @@
 import 'package:drifter_buoy/core/constants/app_routes.dart';
+import 'package:drifter_buoy/core/storage/auth_session_store.dart';
 import 'package:drifter_buoy/core/utils/injection_container.dart';
 import 'package:drifter_buoy/core/utils/navigation_service.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoys/general_user_buoys_bloc.dart';
@@ -145,7 +146,10 @@ class AppRouter {
         name: AppRoutes.dashboardName,
         pageBuilder: (context, state) {
           final extra = state.extra;
-          final isAdmin = extra is bool ? extra : false;
+          // Tab bar uses `go(dashboard)` without `extra`; fall back to session role cache.
+          final isAdmin = extra is bool
+              ? extra
+              : (sl<AuthSessionStore>().cachedIsAdmin ?? false);
           return _tabTransitionPage(
             state: state,
             child: BlocProvider<GeneralUserDashboardBloc>(

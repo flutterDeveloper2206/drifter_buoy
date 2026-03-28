@@ -12,7 +12,17 @@ class AuthSessionStore {
 
   final AppPrefs _appPrefs;
 
+  /// Cached from last [saveLoginResponse] / [getLoginResponse] / [readIsAdmin].
+  bool? _cachedIsAdmin;
+
+  /// Sync read for tab navigation when `go` does not pass `extra` (e.g. Home from Buoys).
+  bool? get cachedIsAdmin => _cachedIsAdmin;
+
+  static bool isAdminRoleName(String roleName) =>
+      roleName.trim().toLowerCase() == 'admin';
+
   Future<void> saveLoginResponse(UserAuthenticateLoginResponse response) async {
+    _cachedIsAdmin = isAdminRoleName(response.result.roleName);
     final loginJson = jsonEncode(response.toJson());
     await _appPrefs.setString(AppPrefKeys.authLoginResponse, loginJson);
     await _appPrefs.setString(AppPrefKeys.authAccessToken, response.result.token);
@@ -25,15 +35,28 @@ class AuthSessionStore {
   Future<UserAuthenticateLoginResponse?> getLoginResponse() async {
     final raw = await _appPrefs.getString(AppPrefKeys.authLoginResponse);
     if (raw == null || raw.isEmpty) {
+      _cachedIsAdmin = false;
       return null;
     }
 
     final decoded = jsonDecode(raw);
     if (decoded is! Map<String, dynamic>) {
+      _cachedIsAdmin = false;
       return null;
     }
 
-    return UserAuthenticateLoginResponse.fromJson(decoded);
+    final response = UserAuthenticateLoginResponse.fromJson(decoded);
+    _cachedIsAdmin = isAdminRoleName(response.result.roleName);
+    return response;
+  }
+
+  /// Resolves whether the stored session user is Admin (matches login/splash logic).
+  Future<bool> readIsAdmin() async {
+    if (_cachedIsAdmin != null) {
+      return _cachedIsAdmin!;
+    }
+    await getLoginResponse();
+    return _cachedIsAdmin ?? false;
   }
 
   Future<String?> getAccessToken() async {
@@ -53,6 +76,7 @@ class AuthSessionStore {
   }
 
   Future<void> clear() async {
+    _cachedIsAdmin = null;
     await _appPrefs.remove(AppPrefKeys.authLoginResponse);
     await _appPrefs.remove(AppPrefKeys.authAccessToken);
     await _appPrefs.remove(AppPrefKeys.authRefreshToken);

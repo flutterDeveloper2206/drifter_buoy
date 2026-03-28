@@ -1,3 +1,4 @@
+import 'package:drifter_buoy/core/storage/auth_session_store.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:drifter_buoy/core/utils/app_logger.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_login.dart';
@@ -32,7 +33,7 @@ class GeneralUserLoginBloc
       },
       (response) {
         final roleName = response.result.roleName;
-        final isAdmin = roleName.toLowerCase() == 'admin';
+        final isAdmin = AuthSessionStore.isAdminRoleName(roleName);
         emit(
           GeneralUserLoginAuthenticated(
             isAdmin: isAdmin,

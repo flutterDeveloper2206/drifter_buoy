@@ -1,3 +1,4 @@
+import 'package:drifter_buoy/core/theme/app_typography.dart';
 import 'package:flutter/material.dart';
 
 /// Nearby devices shown in the setup flow (prototype — replace with real scan).
@@ -34,17 +35,15 @@ Future<(String, String)?> showSetupBluetoothDeviceSheet(BuildContext context) {
               const SizedBox(height: 14),
               Text(
                 'Bluetooth',
-                style: Theme.of(ctx).textTheme.headlineSmall?.copyWith(
-                      color: const Color(0xFF1D2329),
-                      fontWeight: FontWeight.w700,
+                style: Theme.of(ctx).textTheme.compactAppBarTitle(
+                      const Color(0xFF1D2329),
                     ),
               ),
               const SizedBox(height: 6),
               Text(
                 'Nearby Bluetooth Devices',
-                style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
-                      color: const Color(0xFF70757A),
-                      fontWeight: FontWeight.w600,
+                style: Theme.of(ctx).textTheme.compactSupportingText(
+                      const Color(0xFF70757A),
                     ),
               ),
               const SizedBox(height: 12),
@@ -67,7 +66,7 @@ Future<(String, String)?> showSetupBluetoothDeviceSheet(BuildContext context) {
                       ),
                       title: Text(
                         d.name,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: const Color(0xFF2A2F34),
                               fontWeight: FontWeight.w700,
                             ),

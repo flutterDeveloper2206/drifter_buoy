@@ -11,7 +11,6 @@ class GeneralUserMapFiltersState extends Equatable {
   final bool gprsSignalEnabled;
   final bool statusFilterEnabled;
   final bool signalStrengthEnabled;
-  final bool locationZoneEnabled;
   final MapDisplayType mapType;
   final String message;
 
@@ -23,7 +22,6 @@ class GeneralUserMapFiltersState extends Equatable {
     required this.gprsSignalEnabled,
     required this.statusFilterEnabled,
     required this.signalStrengthEnabled,
-    required this.locationZoneEnabled,
     required this.mapType,
     required this.message,
   });
@@ -36,7 +34,6 @@ class GeneralUserMapFiltersState extends Equatable {
       gprsSignalEnabled = false,
       statusFilterEnabled = true,
       signalStrengthEnabled = false,
-      locationZoneEnabled = false,
       mapType = MapDisplayType.satellite,
       message = '';
 
@@ -48,7 +45,6 @@ class GeneralUserMapFiltersState extends Equatable {
     bool? gprsSignalEnabled,
     bool? statusFilterEnabled,
     bool? signalStrengthEnabled,
-    bool? locationZoneEnabled,
     MapDisplayType? mapType,
     String? message,
   }) {
@@ -61,7 +57,6 @@ class GeneralUserMapFiltersState extends Equatable {
       statusFilterEnabled: statusFilterEnabled ?? this.statusFilterEnabled,
       signalStrengthEnabled:
           signalStrengthEnabled ?? this.signalStrengthEnabled,
-      locationZoneEnabled: locationZoneEnabled ?? this.locationZoneEnabled,
       mapType: mapType ?? this.mapType,
       message: message ?? this.message,
     );
@@ -76,7 +71,6 @@ class GeneralUserMapFiltersState extends Equatable {
     gprsSignalEnabled,
     statusFilterEnabled,
     signalStrengthEnabled,
-    locationZoneEnabled,
     mapType,
     message,
   ];

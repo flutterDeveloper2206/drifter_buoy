@@ -30,7 +30,10 @@ class GeneralUserSetupPage extends StatefulWidget {
 class _GeneralUserSetupPageState extends State<GeneralUserSetupPage> {
   final TextEditingController _searchController = TextEditingController();
 
-  static const List<_SetupDeviceItem> _allDevices = [
+  /// Replace with API-loaded devices; empty list shows the empty state.
+  late final List<_SetupDeviceItem> _devices;
+
+  static const List<_SetupDeviceItem> _kDefaultSetupDevices = [
     _SetupDeviceItem(
       id: 'DB - 01',
       lastUpdate: 'Last Update : 09:20 AM',
@@ -69,6 +72,12 @@ class _GeneralUserSetupPageState extends State<GeneralUserSetupPage> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _devices = List<_SetupDeviceItem>.of(_kDefaultSetupDevices);
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
@@ -77,9 +86,9 @@ class _GeneralUserSetupPageState extends State<GeneralUserSetupPage> {
   List<_SetupDeviceItem> get _visibleDevices {
     final q = _searchController.text.trim().toLowerCase();
     if (q.isEmpty) {
-      return _allDevices;
+      return _devices;
     }
-    return _allDevices
+    return _devices
         .where(
           (d) => d.id
               .toLowerCase()
@@ -101,12 +110,13 @@ class _GeneralUserSetupPageState extends State<GeneralUserSetupPage> {
           children: [
             const AppGeneralUserMainAppBar(),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 12, 0),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
                     'Set Up',
-                    style: textTheme.headlineMedium?.copyWith(
+                    style: textTheme.titleLarge?.copyWith(
                       color: const Color(0xFF242A2F),
                       fontWeight: FontWeight.w700,
                     ),
@@ -121,7 +131,7 @@ class _GeneralUserSetupPageState extends State<GeneralUserSetupPage> {
                     ),
                     label: Text(
                       'Add New',
-                      style: textTheme.titleMedium?.copyWith(
+                      style: textTheme.titleSmall?.copyWith(
                         color: const Color(0xFF206BBE),
                         fontWeight: FontWeight.w700,
                       ),
@@ -142,23 +152,91 @@ class _GeneralUserSetupPageState extends State<GeneralUserSetupPage> {
                   setState(() {});
                   FocusScope.of(context).unfocus();
                 },
+                onClearTap: _searchController.text.trim().isNotEmpty
+                    ? () {
+                        _searchController.clear();
+                        setState(() {});
+                        FocusScope.of(context).unfocus();
+                      }
+                    : null,
               ),
             ),
             Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                itemCount: _visibleDevices.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (context, index) {
-                  final item = _visibleDevices[index];
-                  return _SetupDeviceCard(
-                    item: item,
-                    onTap: () => context.push(AppRoutes.setupDetailPath),
-                  );
-                },
+              child: _visibleDevices.isEmpty
+                  ? _SetupEmptyView(searchQuery: _searchController.text)
+                  : ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                      itemCount: _visibleDevices.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        final item = _visibleDevices[index];
+                        return _SetupDeviceCard(
+                          item: item,
+                          onTap: () => context.push(AppRoutes.setupDetailPath),
+                        );
+                      },
+                    ),
+            ),
+            const AppGeneralUserBottomNavForSession(
+              selectedTab: GeneralUserBottomNavTab.setup,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SetupEmptyView extends StatelessWidget {
+  const _SetupEmptyView({required this.searchQuery});
+
+  final String searchQuery;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final trimmed = searchQuery.trim();
+    final isSearching = trimmed.isNotEmpty;
+    final title = isSearching
+        ? 'No buoys match "$trimmed".'
+        : 'No devices added yet.';
+    final subtitle = isSearching
+        ? 'Try a different Buoy ID.'
+        : 'Use Add New above to register and configure a buoy.';
+
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(32, 24, 32, 24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isSearching
+                  ? Icons.search_off_rounded
+                  : Icons.settings_suggest_outlined,
+              size: 56,
+              color: const Color(0xFF5E656C).withValues(alpha: 0.55),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: textTheme.titleSmall?.copyWith(
+                color: const Color(0xFF5E656C),
+                fontWeight: FontWeight.w600,
+                height: 1.3,
               ),
             ),
-            AppGeneralUserBottomNav(selectedTab: GeneralUserBottomNavTab.setup),
+            const SizedBox(height: 10),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: textTheme.bodySmall?.copyWith(
+                color: const Color(0xFF8A9095),
+                fontWeight: FontWeight.w600,
+                height: 1.35,
+              ),
+            ),
           ],
         ),
       ),
@@ -171,11 +249,13 @@ class _SetupSearchBar extends StatelessWidget {
     required this.controller,
     required this.onChanged,
     required this.onSearchTap,
+    required this.onClearTap,
   });
 
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
   final VoidCallback onSearchTap;
+  final VoidCallback? onClearTap;
 
   @override
   Widget build(BuildContext context) {
@@ -213,7 +293,26 @@ class _SetupSearchBar extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                 ),
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                contentPadding: const EdgeInsets.fromLTRB(0, 14, 0, 14),
+                suffixIconConstraints: const BoxConstraints(
+                  minWidth: 0,
+                  minHeight: 0,
+                ),
+                suffixIcon: onClearTap == null
+                    ? null
+                    : IconButton(
+                        onPressed: onClearTap,
+                        style: IconButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          visualDensity: VisualDensity.compact,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        icon: const Icon(
+                          Icons.close_rounded,
+                          size: 20,
+                          color: Color(0xFF8F9498),
+                        ),
+                      ),
               ),
             ),
           ),
@@ -281,7 +380,7 @@ class _SetupDeviceCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         item.id,
-                        style: textTheme.titleMedium?.copyWith(
+                        style: textTheme.titleSmall?.copyWith(
                           color: const Color(0xFF1D2329),
                           fontWeight: FontWeight.w700,
                         ),
@@ -290,12 +389,12 @@ class _SetupDeviceCard extends StatelessWidget {
                     const Icon(
                       Icons.wifi_rounded,
                       color: Color(0xFF22BE61),
-                      size: 20,
+                      size: 18,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       'Active',
-                      style: textTheme.titleMedium?.copyWith(
+                      style: textTheme.titleSmall?.copyWith(
                         color: const Color(0xFF22BE61),
                         fontWeight: FontWeight.w700,
                       ),
@@ -305,7 +404,7 @@ class _SetupDeviceCard extends StatelessWidget {
                 const SizedBox(height: 6),
                 Text(
                   item.lastUpdate,
-                  style: textTheme.bodyMedium?.copyWith(
+                  style: textTheme.bodySmall?.copyWith(
                     color: const Color(0xFF70757A),
                     fontWeight: FontWeight.w500,
                   ),
@@ -369,7 +468,7 @@ class _MetricBlock extends StatelessWidget {
           textAlign: TextAlign.center,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: textTheme.titleSmall?.copyWith(
+          style: textTheme.labelMedium?.copyWith(
             color: const Color(0xFF1D2329),
             fontWeight: FontWeight.w700,
             height: 1.2,
@@ -378,7 +477,7 @@ class _MetricBlock extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           label,
-          style: textTheme.bodySmall?.copyWith(
+          style: textTheme.labelSmall?.copyWith(
             color: const Color(0xFF8A9095),
             fontWeight: FontWeight.w600,
           ),

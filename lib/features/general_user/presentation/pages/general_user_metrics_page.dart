@@ -96,7 +96,7 @@ class _Header extends StatelessWidget {
             child: Center(
               child: Text(
                 'Metrics',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: const Color(0xFF272C31),
                   fontWeight: FontWeight.w700,
                 ),

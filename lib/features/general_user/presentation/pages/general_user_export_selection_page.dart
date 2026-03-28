@@ -12,8 +12,23 @@ import 'package:go_router/go_router.dart';
 
 import '../widgets/general_user_loading_shimmers.dart';
 
-class GeneralUserExportSelectionPage extends StatelessWidget {
+class GeneralUserExportSelectionPage extends StatefulWidget {
   const GeneralUserExportSelectionPage({super.key});
+
+  @override
+  State<GeneralUserExportSelectionPage> createState() =>
+      _GeneralUserExportSelectionPageState();
+}
+
+class _GeneralUserExportSelectionPageState
+    extends State<GeneralUserExportSelectionPage> {
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,12 +40,26 @@ class GeneralUserExportSelectionPage extends StatelessWidget {
             const AppGeneralUserMainAppBar(),
             const _Header(),
             Expanded(
-              child:
-                  BlocBuilder<
-                    GeneralUserExportSelectionBloc,
-                    GeneralUserExportSelectionState
-                  >(
-                    builder: (context, state) {
+              child: BlocListener<
+                GeneralUserExportSelectionBloc,
+                GeneralUserExportSelectionState
+              >(
+                listenWhen: (previous, current) =>
+                    previous.query != current.query,
+                listener: (_, state) {
+                  if (_searchController.text == state.query) {
+                    return;
+                  }
+                  _searchController.text = state.query;
+                  _searchController.selection = TextSelection.collapsed(
+                    offset: _searchController.text.length,
+                  );
+                },
+                child: BlocBuilder<
+                  GeneralUserExportSelectionBloc,
+                  GeneralUserExportSelectionState
+                >(
+                  builder: (context, state) {
                       if (state.status ==
                               GeneralUserExportSelectionStatus.loading ||
                           state.status ==
@@ -60,6 +89,7 @@ class GeneralUserExportSelectionPage extends StatelessWidget {
                           Padding(
                             padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
                             child: _SearchBar(
+                              controller: _searchController,
                               onChanged: (value) {
                                 context
                                     .read<GeneralUserExportSelectionBloc>()
@@ -69,7 +99,22 @@ class GeneralUserExportSelectionPage extends StatelessWidget {
                                       ),
                                     );
                               },
-                              onSearchTap: () => FocusScope.of(context).unfocus(),
+                              onSearchTap: () =>
+                                  FocusScope.of(context).unfocus(),
+                              onClearTap: queryTrimmed.isNotEmpty
+                                  ? () {
+                                      _searchController.clear();
+                                      context
+                                          .read<
+                                            GeneralUserExportSelectionBloc
+                                          >()
+                                          .add(
+                                            const UpdateGeneralUserExportSelectionQuery(
+                                              '',
+                                            ),
+                                          );
+                                    }
+                                  : null,
                             ),
                           ),
                           if (showSelectAll)
@@ -151,7 +196,7 @@ class GeneralUserExportSelectionPage extends StatelessWidget {
                                   'Continue to Export',
                                   style: Theme.of(context)
                                       .textTheme
-                                      .headlineSmall
+                                      .titleMedium
                                       ?.copyWith(
                                         color: Colors.white,
                                         fontWeight: FontWeight.w700,
@@ -160,13 +205,14 @@ class GeneralUserExportSelectionPage extends StatelessWidget {
                               ),
                             ),
                           ),
-                          AppGeneralUserBottomNav(
-                            selectedTab: GeneralUserBottomNavTab.export,
-                          ),
                         ],
                       );
                     },
                   ),
+                ),
+              ),
+            const AppGeneralUserBottomNavForSession(
+              selectedTab: GeneralUserBottomNavTab.export,
             ),
           ],
         ),
@@ -186,7 +232,7 @@ class _Header extends StatelessWidget {
         alignment: Alignment.centerLeft,
         child: Text(
           'Export',
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
             color: const Color(0xFF242A2F),
             fontWeight: FontWeight.w700,
           ),
@@ -197,10 +243,17 @@ class _Header extends StatelessWidget {
 }
 
 class _SearchBar extends StatelessWidget {
+  final TextEditingController controller;
   final ValueChanged<String> onChanged;
   final VoidCallback? onSearchTap;
+  final VoidCallback? onClearTap;
 
-  const _SearchBar({required this.onChanged, this.onSearchTap});
+  const _SearchBar({
+    required this.controller,
+    required this.onChanged,
+    this.onSearchTap,
+    required this.onClearTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -222,6 +275,7 @@ class _SearchBar extends StatelessWidget {
         children: [
           Expanded(
             child: TextField(
+              controller: controller,
               onChanged: onChanged,
               maxLines: 1,
               textAlignVertical: TextAlignVertical.center,
@@ -237,7 +291,26 @@ class _SearchBar extends StatelessWidget {
                 ),
                 border: InputBorder.none,
                 isDense: true,
-                contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                contentPadding: const EdgeInsets.fromLTRB(0, 14, 0, 14),
+                suffixIconConstraints: const BoxConstraints(
+                  minWidth: 0,
+                  minHeight: 0,
+                ),
+                suffixIcon: onClearTap == null
+                    ? null
+                    : IconButton(
+                        onPressed: onClearTap,
+                        style: IconButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          visualDensity: VisualDensity.compact,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        icon: const Icon(
+                          Icons.close_rounded,
+                          size: 20,
+                          color: Color(0xFF8F9498),
+                        ),
+                      ),
               ),
             ),
           ),
@@ -278,20 +351,49 @@ class _ExportSelectionEmptyView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final message = isSearching
+    final textTheme = Theme.of(context).textTheme;
+    final title = isSearching
         ? 'No buoys match "$query".'
         : 'No buoys available to export.';
+    final subtitle = isSearching
+        ? 'Try a different Buoy ID.'
+        : 'Buoys will show here when they are available.';
+    final icon = isSearching
+        ? Icons.search_off_rounded
+        : Icons.file_download_outlined;
 
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Text(
-          message,
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            color: const Color(0xFF5E656C),
-            fontWeight: FontWeight.w600,
-          ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(32, 24, 32, 24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 56,
+              color: const Color(0xFF5E656C).withValues(alpha: 0.55),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: textTheme.titleLarge?.copyWith(
+                color: const Color(0xFF5E656C),
+                fontWeight: FontWeight.w600,
+                height: 1.3,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: textTheme.titleMedium?.copyWith(
+                color: const Color(0xFF8A9095),
+                fontWeight: FontWeight.w600,
+                height: 1.35,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -317,7 +419,7 @@ class _SelectAllRow extends StatelessWidget {
             const SizedBox(width: 10),
             Text(
               'Select All',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
                 color: const Color(0xFF353B41),
                 fontWeight: FontWeight.w700,
               ),
@@ -371,7 +473,7 @@ class _BuoySelectableCard extends StatelessWidget {
                 children: [
                   Text(
                     item.id,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       color: const Color(0xFF2A2F34),
                       fontWeight: FontWeight.w700,
                     ),
@@ -379,7 +481,7 @@ class _BuoySelectableCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     'Last Update : ${item.lastUpdate}',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: const Color(0xFF70757A),
                       fontWeight: FontWeight.w600,
                     ),
@@ -390,11 +492,11 @@ class _BuoySelectableCard extends StatelessWidget {
             const SizedBox(width: 10),
             Row(
               children: [
-                Icon(statusIcon, color: statusColor, size: 18),
+                Icon(statusIcon, color: statusColor, size: 16),
                 const SizedBox(width: 4),
                 Text(
                   statusLabel,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     color: statusColor,
                     fontWeight: FontWeight.w700,
                   ),
