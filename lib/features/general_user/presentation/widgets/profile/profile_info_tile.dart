@@ -31,18 +31,18 @@ class GeneralUserProfileInfoTile extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: const Color(0xFF7B8288),
-                        fontWeight: FontWeight.w700,
-                      ),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: const Color(0xFF7B8288),
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: const Color(0xFF2B3138),
-                        fontWeight: FontWeight.w700,
-                      ),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: const Color(0xFF2B3138),
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ],
             ),
@@ -52,4 +52,3 @@ class GeneralUserProfileInfoTile extends StatelessWidget {
     );
   }
 }
-

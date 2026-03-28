@@ -68,7 +68,7 @@ class GeneralUserProfileEditForm extends StatelessWidget {
                 children: [
                   Text(
                     'Edit Profile',
-                    style: textTheme.titleMedium?.copyWith(
+                    style: textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF23282D),
                     ),

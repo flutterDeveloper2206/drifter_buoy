@@ -33,12 +33,12 @@ class GeneralUserMapFiltersPage extends StatelessWidget {
               builder: (context, state) {
                 return Stack(
                   children: [
-                    const Positioned.fill(
+                    Positioned.fill(
                       child: DummyBuoyMapView(
                         interactive: false,
                         showLabels: false,
-                        buoys: [],
-                        initialCenter: LatLng(37.812, -122.455),
+                        buoys: const [],
+                        initialCenter: const LatLng(37.812, -122.455),
                         initialZoom: 11.0,
                       ),
                     ),
@@ -133,7 +133,7 @@ class GeneralUserMapFiltersPage extends StatelessWidget {
             Center(
               child: Text(
                 'Toggles and Filters',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: const Color(0xFF2D2D2D),
                   fontWeight: FontWeight.w700,
                 ),
@@ -313,7 +313,7 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       label,
-      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+      style: Theme.of(context).textTheme.titleLarge?.copyWith(
         color: const Color(0xFF333333),
         fontWeight: FontWeight.w700,
       ),

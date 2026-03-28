@@ -18,4 +18,10 @@ class ApiEndpoints {
 
   static const String updateUserProfileUrl =
       'http://4.213.34.231:5025/api/Admin/User/UpdateUserProfile';
+
+  static const String getAllBuoysStatusForExportUrl =
+      'http://4.213.34.231:5025/api/Report/Report/GetAllBuoysStatusForExport';
+
+  static const String getAllBuoysDataOverviewViewUrl =
+      'http://4.213.34.231:5025/api/User/UserViewBuoyDashboard/GetAllBuoysDataOverviewView';
 }

@@ -1,5 +1,7 @@
+import 'package:drifter_buoy/core/constants/app_assets.dart';
 import 'package:drifter_buoy/core/constants/app_routes.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 enum GeneralUserBottomNavTab { home, buoys, map, export, setup }
@@ -16,10 +18,7 @@ class AppGeneralUserBottomNav extends StatelessWidget {
     this.showSetup = true,
   });
 
-  void _handleTap(
-    BuildContext context,
-    GeneralUserBottomNavTab tab,
-  ) {
+  void _handleTap(BuildContext context, GeneralUserBottomNavTab tab) {
     if (tab == selectedTab) {
       return;
     }
@@ -39,11 +38,8 @@ class AppGeneralUserBottomNav extends StatelessWidget {
     final shouldPushForSecondaryTab = switch (selectedTab) {
       GeneralUserBottomNavTab.home ||
       GeneralUserBottomNavTab.buoys ||
-      GeneralUserBottomNavTab.map =>
-        true,
-      GeneralUserBottomNavTab.export ||
-      GeneralUserBottomNavTab.setup =>
-        false,
+      GeneralUserBottomNavTab.map => true,
+      GeneralUserBottomNavTab.export || GeneralUserBottomNavTab.setup => false,
     };
 
     switch (tab) {
@@ -89,37 +85,32 @@ class AppGeneralUserBottomNav extends StatelessWidget {
             icon: Icons.home_outlined,
             label: 'Home',
             selected: selectedTab == GeneralUserBottomNavTab.home,
-            onTap: () =>
-                _handleTap(context, GeneralUserBottomNavTab.home),
+            onTap: () => _handleTap(context, GeneralUserBottomNavTab.home),
           ),
           _BottomNavItem(
-            icon: Icons.anchor_outlined,
+            svgAssetPath: AppAssets.icBuoys,
             label: "Buoy's",
             selected: selectedTab == GeneralUserBottomNavTab.buoys,
-            onTap: () =>
-                _handleTap(context, GeneralUserBottomNavTab.buoys),
+            onTap: () => _handleTap(context, GeneralUserBottomNavTab.buoys),
           ),
           _BottomNavItem(
-            icon: Icons.map_outlined,
+            svgAssetPath: AppAssets.icMap,
             label: 'Map',
             selected: selectedTab == GeneralUserBottomNavTab.map,
-            onTap: () =>
-                _handleTap(context, GeneralUserBottomNavTab.map),
+            onTap: () => _handleTap(context, GeneralUserBottomNavTab.map),
           ),
           _BottomNavItem(
-            icon: Icons.file_download_outlined,
+            svgAssetPath: AppAssets.icExport,
             label: 'Export',
             selected: selectedTab == GeneralUserBottomNavTab.export,
-            onTap: () =>
-                _handleTap(context, GeneralUserBottomNavTab.export),
+            onTap: () => _handleTap(context, GeneralUserBottomNavTab.export),
           ),
           if (showSetup)
             _BottomNavItem(
               icon: Icons.settings_outlined,
               label: 'Set Up',
               selected: selectedTab == GeneralUserBottomNavTab.setup,
-              onTap: () =>
-                  _handleTap(context, GeneralUserBottomNavTab.setup),
+              onTap: () => _handleTap(context, GeneralUserBottomNavTab.setup),
             ),
         ],
       ),
@@ -128,17 +119,19 @@ class AppGeneralUserBottomNav extends StatelessWidget {
 }
 
 class _BottomNavItem extends StatelessWidget {
-  final IconData icon;
+  final IconData? icon;
+  final String? svgAssetPath;
   final String label;
   final bool selected;
   final VoidCallback onTap;
 
   const _BottomNavItem({
-    required this.icon,
+    this.icon,
+    this.svgAssetPath,
     required this.label,
     required this.selected,
     required this.onTap,
-  });
+  }) : assert(icon != null || svgAssetPath != null);
 
   @override
   Widget build(BuildContext context) {
@@ -155,9 +148,7 @@ class _BottomNavItem extends StatelessWidget {
           curve: Curves.easeOutCubic,
           padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
-            color: selected
-                ? const Color(0x1A246CBD)
-                : Colors.transparent,
+            color: selected ? const Color(0x1A246CBD) : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Column(
@@ -167,7 +158,14 @@ class _BottomNavItem extends StatelessWidget {
                 duration: const Duration(milliseconds: 220),
                 curve: Curves.easeOutCubic,
                 scale: selected ? 1.08 : 1,
-                child: Icon(icon, size: 24, color: color),
+                child: svgAssetPath != null
+                    ? SvgPicture.asset(
+                        svgAssetPath!,
+                        width: 24,
+                        height: 24,
+                        colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+                      )
+                    : Icon(icon, size: 24, color: color),
               ),
               const SizedBox(height: 4),
               AnimatedDefaultTextStyle(

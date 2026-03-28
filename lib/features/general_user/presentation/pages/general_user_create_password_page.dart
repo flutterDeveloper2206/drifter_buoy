@@ -1,3 +1,4 @@
+import 'package:drifter_buoy/core/constants/app_assets.dart';
 import 'package:drifter_buoy/core/constants/app_routes.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_flushbar.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_elevated_button.dart';
@@ -27,8 +28,8 @@ class _GeneralUserCreatePasswordPageState
   @override
   void initState() {
     super.initState();
-    _newPasswordController = TextEditingController(text: '**********');
-    _confirmPasswordController = TextEditingController(text: '**********');
+    _newPasswordController = TextEditingController();
+    _confirmPasswordController = TextEditingController();
     _obscureNewPasswordNotifier = ValueNotifier<bool>(true);
     _obscureConfirmPasswordNotifier = ValueNotifier<bool>(true);
   }
@@ -45,6 +46,7 @@ class _GeneralUserCreatePasswordPageState
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final viewInsets = MediaQuery.of(context).viewInsets;
 
     return BlocListener<
       GeneralUserCreatePasswordBloc,
@@ -59,37 +61,51 @@ class _GeneralUserCreatePasswordPageState
         }
       },
       child: Scaffold(
+        resizeToAvoidBottomInset: true,
         body: Stack(
+          fit: StackFit.expand,
           children: [
             const _CreatePasswordBackground(),
             SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0, end: 1),
-                  duration: const Duration(milliseconds: 700),
-                  curve: Curves.easeOutCubic,
-                  builder: (context, progress, child) {
-                    final offsetY = (1 - progress) * 16;
-                    return Opacity(
-                      opacity: progress,
-                      child: Transform.translate(
-                        offset: Offset(0, offsetY),
-                        child: child,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    padding: EdgeInsets.only(bottom: viewInsets.bottom),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight,
                       ),
-                    );
-                  },
-                  child:
-                      BlocBuilder<
-                        GeneralUserCreatePasswordBloc,
-                        GeneralUserCreatePasswordState
-                      >(
-                        builder: (context, state) {
-                          final isLoading =
-                              state is GeneralUserCreatePasswordLoading;
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0, end: 1),
+                          duration: const Duration(milliseconds: 700),
+                          curve: Curves.easeOutCubic,
+                          builder: (context, progress, child) {
+                            final offsetY = (1 - progress) * 16;
+                            return Opacity(
+                              opacity: progress,
+                              child: Transform.translate(
+                                offset: Offset(0, offsetY),
+                                child: child,
+                              ),
+                            );
+                          },
+                          child:
+                              BlocBuilder<
+                                GeneralUserCreatePasswordBloc,
+                                GeneralUserCreatePasswordState
+                              >(
+                                builder: (context, state) {
+                                  final isLoading =
+                                      state is GeneralUserCreatePasswordLoading;
+                                  return IntrinsicHeight(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
                               const SizedBox(height: 12),
                               IconButton(
                                 onPressed: isLoading
@@ -143,8 +159,8 @@ class _GeneralUserCreatePasswordPageState
                                               },
                                         icon: Icon(
                                           obscure
-                                              ? Icons.visibility_outlined
-                                              : Icons.visibility_off_outlined,
+                                              ? Icons.visibility_off_outlined
+                                              : Icons.visibility_outlined,
                                           color: const Color(0xFF3A4046),
                                         ),
                                       ),
@@ -180,8 +196,8 @@ class _GeneralUserCreatePasswordPageState
                                               },
                                         icon: Icon(
                                           obscure
-                                              ? Icons.visibility_outlined
-                                              : Icons.visibility_off_outlined,
+                                              ? Icons.visibility_off_outlined
+                                              : Icons.visibility_outlined,
                                           color: const Color(0xFF3A4046),
                                         ),
                                       ),
@@ -213,11 +229,16 @@ class _GeneralUserCreatePasswordPageState
                               const Spacer(),
                               const Center(child: _BrandFooter()),
                               const SizedBox(height: 18),
-                            ],
-                          );
-                        },
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                        ),
                       ),
-                ),
+                    ),
+                  );
+                },
               ),
             ),
           ],
@@ -261,7 +282,7 @@ class _GeneralUserCreatePasswordPageState
   InputDecoration get _fieldDecoration {
     return InputDecoration(
       filled: true,
-      fillColor: const Color(0xFFF2F2F2),
+      fillColor: const Color(0xFFF2F2F2), 
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -280,58 +301,15 @@ class _CreatePasswordBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFFD0DEE8), Color(0xFFD5E2EA), Color(0xFFDFE8EE)],
-            ),
-          ),
-        ),
-        Align(
-          alignment: Alignment.bottomCenter,
-          child: SizedBox(
-            height: 190,
-            width: double.infinity,
-            child: CustomPaint(painter: _WaterPainter()),
-          ),
-        ),
-      ],
+    return Positioned.fill(
+      child: Image.asset(
+        AppAssets.imgLoginBg,
+        fit: BoxFit.cover,
+        alignment: Alignment.center,
+        filterQuality: FilterQuality.high,
+      ),
     );
   }
-}
-
-class _WaterPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final basePaint = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [Color(0xD9D8E4EB), Color(0xE7DFE9EF)],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), basePaint);
-
-    final ripplePaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.05
-      ..color = const Color(0x7AAFC2CF);
-
-    for (double y = 20; y < size.height; y += 14) {
-      final path = Path()..moveTo(0, y);
-      for (double x = 0; x <= size.width; x += 22) {
-        path.quadraticBezierTo(x + 11, y - 2, x + 22, y);
-      }
-      canvas.drawPath(path, ripplePaint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _BrandFooter extends StatelessWidget {
@@ -343,7 +321,7 @@ class _BrandFooter extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Image.asset(
-          'assets/icons/ic_azista.png',
+          AppAssets.icAzista,
           width: 38,
           height: 38,
           fit: BoxFit.contain,

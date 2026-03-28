@@ -201,7 +201,7 @@ class _DateRangeCard extends StatelessWidget {
             'Select Date Range',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               color: const Color(0xFF30353A),
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w500,
             ),
           ),
           const SizedBox(height: 10),

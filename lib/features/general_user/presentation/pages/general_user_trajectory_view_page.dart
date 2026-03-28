@@ -1,3 +1,4 @@
+import 'package:drifter_buoy/core/constants/app_assets.dart';
 import 'package:drifter_buoy/core/constants/app_routes.dart';
 import 'package:drifter_buoy/core/utils/injection_container.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
@@ -237,7 +238,7 @@ class _MapLegendCard extends StatelessWidget {
             color: Color(0xFF4CAF50),
           ),
           AppMapLegendItem(
-            icon: Icons.battery_1_bar,
+            svgAssetPath: AppAssets.icBatteryLow,
             label: 'Battery Low',
             color: Color(0xFF4F95DA),
           ),
@@ -285,7 +286,7 @@ class _BottomTogglePanel extends StatelessWidget {
             ),
             Text(
               'Toggles and Filters',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 color: const Color(0xFF2D3238),
                 fontWeight: FontWeight.w700,
               ),
@@ -354,7 +355,7 @@ class _TrajectoryFiltersSheet extends StatelessWidget {
                 ),
                 Text(
                   'Toggles and Filters',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: const Color(0xFF2D2D2D),
                     fontWeight: FontWeight.w700,
                   ),

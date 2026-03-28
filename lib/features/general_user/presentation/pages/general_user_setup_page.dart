@@ -1,5 +1,6 @@
 import 'package:drifter_buoy/core/constants/app_routes.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_general_user_bottom_nav.dart';
+import 'package:drifter_buoy/core/utils/widgets/app_general_user_main_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -98,6 +99,7 @@ class _GeneralUserSetupPageState extends State<GeneralUserSetupPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            const AppGeneralUserMainAppBar(),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 12, 0),
               child: Row(

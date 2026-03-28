@@ -9,15 +9,32 @@ class DummyBuoy extends Equatable {
   final String id;
   final LatLng position;
   final BuoyStatus status;
+  final String battery;
+  final String gps;
+  final String signal;
 
-  const DummyBuoy({
-    required this.id,
+  DummyBuoy({
+    required Object? id,
     required this.position,
     required this.status,
-  });
+    Object? battery = '—',
+    Object? gps = '—',
+    Object? signal = '—',
+  })  : id = _safeLabel(id, fallback: 'DB - --'),
+        battery = _safeLabel(battery, fallback: '—'),
+        gps = _safeLabel(gps, fallback: '—'),
+        signal = _safeLabel(signal, fallback: '—');
 
   @override
-  List<Object> get props => [id, position.latitude, position.longitude, status];
+  List<Object> get props => [
+        id,
+        position.latitude,
+        position.longitude,
+        status,
+        battery,
+        gps,
+        signal,
+      ];
 }
 
 class DummyBuoyMapView extends StatelessWidget {
@@ -29,59 +46,85 @@ class DummyBuoyMapView extends StatelessWidget {
   final MapController? mapController;
   final ValueChanged<DummyBuoy>? onBuoyTap;
   final DummyBuoy? selectedBuoy;
+  final VoidCallback? onMapTap;
 
-  const DummyBuoyMapView({
+  DummyBuoyMapView({
     super.key,
     this.interactive = false,
     this.showLabels = false,
     this.initialCenter = const LatLng(37.7749, -122.4194),
     this.initialZoom = 10.3,
-    this.buoys = defaultBuoys,
+    List<DummyBuoy>? buoys,
     this.mapController,
     this.onBuoyTap,
     this.selectedBuoy,
-  });
+    this.onMapTap,
+  }) : buoys = buoys ?? defaultBuoys;
 
-  static const List<DummyBuoy> defaultBuoys = [
+  static final List<DummyBuoy> defaultBuoys = [
     DummyBuoy(
       id: 'DB - 01',
       position: LatLng(37.7955, -122.4312),
       status: BuoyStatus.active,
+      battery: '11.8 v',
+      gps: '15°40\'51.0"N',
+      signal: '79%',
     ),
     DummyBuoy(
       id: 'DB - 01',
       position: LatLng(37.7570, -122.4010),
       status: BuoyStatus.active,
+      battery: '12.1 v',
+      gps: '15°41\'02.1"N',
+      signal: '82%',
     ),
     DummyBuoy(
       id: 'DB - 01',
       position: LatLng(37.7688, -122.3820),
       status: BuoyStatus.active,
+      battery: '10.9 v',
+      gps: '15°39\'48.5"N',
+      signal: '71%',
     ),
     DummyBuoy(
       id: 'DB - 01',
       position: LatLng(37.7860, -122.3738),
       status: BuoyStatus.batteryLow,
+      battery: '9.8 v',
+      gps: '15°38\'22.0"N',
+      signal: '54%',
     ),
     DummyBuoy(
       id: 'DB - 01',
       position: LatLng(37.7775, -122.3562),
       status: BuoyStatus.offline,
+      battery: '—',
+      gps: '—',
+      signal: '—',
     ),
     DummyBuoy(
       id: 'DB - 01',
       position: LatLng(37.7414, -122.4098),
       status: BuoyStatus.active,
+      battery: '11.2 v',
+      gps: '15°40\'15.0"N',
+      signal: '65%',
     ),
     DummyBuoy(
       id: 'DB - 01',
       position: LatLng(37.7244, -122.3875),
       status: BuoyStatus.active,
+      battery: '12.4 v',
+      gps: '15°42\'11.5"N',
+      signal: '88%',
     ),
     DummyBuoy(
       id: 'DB - 01',
       position: LatLng(37.7128, -122.3518),
       status: BuoyStatus.active,
+      battery: '11.0 v',
+      gps: '15°37\'39.2"N',
+      signal: '73%',
     ),
   ];
 
@@ -93,6 +136,7 @@ class DummyBuoyMapView extends StatelessWidget {
         options: MapOptions(
           initialCenter: initialCenter,
           initialZoom: initialZoom,
+          onTap: (_, __) => onMapTap?.call(),
           interactionOptions: InteractionOptions(
             flags: interactive ? InteractiveFlag.all : InteractiveFlag.none,
           ),
@@ -138,11 +182,25 @@ bool _isSameBuoy(DummyBuoy? selected, DummyBuoy buoy) {
   if (selected == null) {
     return false;
   }
-  return _normalizeBuoyId(selected.id) == _normalizeBuoyId(buoy.id);
+  // IDs are not unique in our dummy data (many markers share the same `DB - 01`),
+  // so we also compare the marker position to ensure only one buoy highlights.
+  final idMatch =
+      _normalizeBuoyId(selected.id) == _normalizeBuoyId(buoy.id);
+  final latMatch = (selected.position.latitude - buoy.position.latitude).abs() <
+      1e-9;
+  final lonMatch =
+      (selected.position.longitude - buoy.position.longitude).abs() < 1e-9;
+  return idMatch && latMatch && lonMatch;
 }
 
 String _normalizeBuoyId(String id) =>
     id.toLowerCase().replaceAll(RegExp(r'\s+'), '');
+
+String _safeLabel(Object? value, {required String fallback}) {
+  final text = value?.toString() ?? '';
+  final trimmed = text.trim();
+  return trimmed.isEmpty ? fallback : trimmed;
+}
 
 class _BuoyMarker extends StatelessWidget {
   final String id;
