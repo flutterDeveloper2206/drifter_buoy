@@ -7,6 +7,8 @@ class GeneralUserMetricsState extends Equatable {
   final GeneralUserMetricsStatus status;
   final String buoyId;
   final GeneralUserMetricsDateRange dateRange;
+  final DateTime? customStart;
+  final DateTime? customEnd;
   final String batteryVoltage;
   final List<double> batteryPoints;
   final List<String> xAxisLabels;
@@ -16,6 +18,8 @@ class GeneralUserMetricsState extends Equatable {
     required this.status,
     required this.buoyId,
     required this.dateRange,
+    required this.customStart,
+    required this.customEnd,
     required this.batteryVoltage,
     required this.batteryPoints,
     required this.xAxisLabels,
@@ -26,22 +30,20 @@ class GeneralUserMetricsState extends Equatable {
     : status = GeneralUserMetricsStatus.initial,
       buoyId = 'DB-01',
       dateRange = GeneralUserMetricsDateRange.last24Hours,
+      customStart = null,
+      customEnd = null,
       batteryVoltage = '',
       batteryPoints = const [],
-      xAxisLabels = const [
-        '11:00',
-        '12:00',
-        '13:00',
-        '14:00',
-        '15:00',
-        '16:00',
-      ],
+      xAxisLabels = const [],
       message = '';
 
   GeneralUserMetricsState copyWith({
     GeneralUserMetricsStatus? status,
     String? buoyId,
     GeneralUserMetricsDateRange? dateRange,
+    DateTime? customStart,
+    DateTime? customEnd,
+    bool clearCustomRange = false,
     String? batteryVoltage,
     List<double>? batteryPoints,
     List<String>? xAxisLabels,
@@ -51,6 +53,8 @@ class GeneralUserMetricsState extends Equatable {
       status: status ?? this.status,
       buoyId: buoyId ?? this.buoyId,
       dateRange: dateRange ?? this.dateRange,
+      customStart: clearCustomRange ? null : (customStart ?? this.customStart),
+      customEnd: clearCustomRange ? null : (customEnd ?? this.customEnd),
       batteryVoltage: batteryVoltage ?? this.batteryVoltage,
       batteryPoints: batteryPoints ?? this.batteryPoints,
       xAxisLabels: xAxisLabels ?? this.xAxisLabels,
@@ -59,10 +63,12 @@ class GeneralUserMetricsState extends Equatable {
   }
 
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
     status,
     buoyId,
     dateRange,
+    customStart,
+    customEnd,
     batteryVoltage,
     batteryPoints,
     xAxisLabels,

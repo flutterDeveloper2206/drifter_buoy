@@ -26,3 +26,16 @@ class ChangeGeneralUserMetricsDateRange extends GeneralUserMetricsEvent {
   @override
   List<Object> get props => [dateRange];
 }
+
+class ApplyGeneralUserMetricsCustomRange extends GeneralUserMetricsEvent {
+  const ApplyGeneralUserMetricsCustomRange({
+    required this.start,
+    required this.end,
+  });
+
+  final DateTime start;
+  final DateTime end;
+
+  @override
+  List<Object> get props => [start, end];
+}

@@ -5,6 +5,7 @@ import 'package:drifter_buoy/core/constants/api_endpoints.dart';
 import 'package:drifter_buoy/core/network/api_service.dart';
 import 'package:drifter_buoy/core/utils/typedefs.dart';
 import 'package:drifter_buoy/features/general_user/data/models/user_report_get_buoy_distance_report_for_export_response.dart';
+import 'package:drifter_buoy/features/general_user/data/utils/general_user_buoy_id_for_api.dart';
 
 class GeneralUserReportRemoteDataSource {
   const GeneralUserReportRemoteDataSource({required ApiService apiService})
@@ -18,8 +19,9 @@ class GeneralUserReportRemoteDataSource {
     required String fromDate,
     required String toDate,
   }) {
+    final id = normalizeBuoyIdForGeneralUserApi(buoyId);
     final form = FormData.fromMap(<String, dynamic>{
-      'buoyId': buoyId.trim(),
+      'buoyId': id,
       'fromDate': fromDate,
       'toDate': toDate,
     });

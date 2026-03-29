@@ -1,24 +1,15 @@
 import 'package:drifter_buoy/core/constants/app_routes.dart';
+import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_general_user_bottom_nav.dart';
+import 'package:drifter_buoy/core/utils/widgets/general_user_back_navigation_scope.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_general_user_main_app_bar.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_devices/general_user_setup_devices_bloc.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_devices/general_user_setup_devices_event.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_devices/general_user_setup_devices_state.dart';
+import 'package:drifter_buoy/features/general_user/presentation/widgets/general_user_loading_shimmers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-
-class _SetupDeviceItem {
-  const _SetupDeviceItem({
-    required this.id,
-    required this.lastUpdate,
-    required this.battery,
-    required this.gps,
-    required this.signal,
-  });
-
-  final String id;
-  final String lastUpdate;
-  final String battery;
-  final String gps;
-  final String signal;
-}
 
 class GeneralUserSetupPage extends StatefulWidget {
   const GeneralUserSetupPage({super.key});
@@ -30,157 +21,178 @@ class GeneralUserSetupPage extends StatefulWidget {
 class _GeneralUserSetupPageState extends State<GeneralUserSetupPage> {
   final TextEditingController _searchController = TextEditingController();
 
-  /// Replace with API-loaded devices; empty list shows the empty state.
-  late final List<_SetupDeviceItem> _devices;
-
-  static const List<_SetupDeviceItem> _kDefaultSetupDevices = [
-    _SetupDeviceItem(
-      id: 'DB - 01',
-      lastUpdate: 'Last Update : 09:20 AM',
-      battery: '11.8 v',
-      gps: '15°40\'51.0"N',
-      signal: '79%',
-    ),
-    _SetupDeviceItem(
-      id: 'DB - 02',
-      lastUpdate: 'Last Update : 08:45 AM',
-      battery: '12.1 v',
-      gps: '15°41\'02.1"N',
-      signal: '82%',
-    ),
-    _SetupDeviceItem(
-      id: 'DB - 03',
-      lastUpdate: 'Last Update : 07:12 AM',
-      battery: '10.9 v',
-      gps: '15°39\'48.5"N',
-      signal: '71%',
-    ),
-    _SetupDeviceItem(
-      id: 'DB - 04',
-      lastUpdate: 'Last Update : 06:30 AM',
-      battery: '11.2 v',
-      gps: '15°40\'15.0"N',
-      signal: '65%',
-    ),
-    _SetupDeviceItem(
-      id: 'DB - 05',
-      lastUpdate: 'Last Update : Yesterday',
-      battery: '9.8 v',
-      gps: '15°38\'22.0"N',
-      signal: '54%',
-    ),
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _devices = List<_SetupDeviceItem>.of(_kDefaultSetupDevices);
-  }
-
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
 
-  List<_SetupDeviceItem> get _visibleDevices {
-    final q = _searchController.text.trim().toLowerCase();
-    if (q.isEmpty) {
-      return _devices;
-    }
-    return _devices
-        .where(
-          (d) => d.id
-              .toLowerCase()
-              .replaceAll(' ', '')
-              .contains(q.replaceAll(' ', '')),
-        )
-        .toList(growable: false);
-  }
-
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFDDE1E4),
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const AppGeneralUserMainAppBar(),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
+    return GeneralUserTabRootPopScope(
+      child: Scaffold(
+        backgroundColor: const Color(0xFFDDE1E4),
+        body: SafeArea(
+          child:
+              BlocListener<
+              GeneralUserSetupDevicesBloc,
+              GeneralUserSetupDevicesState
+            >(
+              listenWhen: (previous, current) =>
+                  previous.query != current.query,
+              listener: (_, state) {
+                if (_searchController.text == state.query) {
+                  return;
+                }
+                _searchController.text = state.query;
+                _searchController.selection = TextSelection.collapsed(
+                  offset: _searchController.text.length,
+                );
+              },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    'Set Up',
-                    style: textTheme.titleLarge?.copyWith(
-                      color: const Color(0xFF242A2F),
-                      fontWeight: FontWeight.w700,
+                  const AppGeneralUserMainAppBar(),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Set Up',
+                          style: textTheme.titleLarge?.copyWith(
+                            color: const Color(0xFF242A2F),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const Spacer(),
+                        TextButton.icon(
+                          onPressed: () =>
+                              context.push(AppRoutes.setupDetailPath),
+                          icon: const Icon(
+                            Icons.add,
+                            size: 22,
+                            color: Color(0xFF206BBE),
+                          ),
+                          label: Text(
+                            'Add New',
+                            style: textTheme.titleSmall?.copyWith(
+                              color: const Color(0xFF206BBE),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const Spacer(),
-                  TextButton.icon(
-                    onPressed: () => context.push(AppRoutes.setupDetailPath),
-                    icon: const Icon(
-                      Icons.add,
-                      size: 22,
-                      color: Color(0xFF206BBE),
-                    ),
-                    label: Text(
-                      'Add New',
-                      style: textTheme.titleSmall?.copyWith(
-                        color: const Color(0xFF206BBE),
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                    ),
+                  Expanded(
+                    child:
+                        BlocBuilder<
+                          GeneralUserSetupDevicesBloc,
+                          GeneralUserSetupDevicesState
+                        >(
+                          builder: (context, state) {
+                            if (state.status ==
+                                    GeneralUserSetupDevicesStatus.loading ||
+                                state.status ==
+                                    GeneralUserSetupDevicesStatus.initial) {
+                              return const GeneralUserBuoysShimmer();
+                            }
+
+                            if (state.status ==
+                                GeneralUserSetupDevicesStatus.error) {
+                              return AppErrorView(
+                                message: state.message,
+                                onRetry: () {
+                                  context
+                                      .read<GeneralUserSetupDevicesBloc>()
+                                      .add(const LoadGeneralUserSetupDevices());
+                                },
+                              );
+                            }
+
+                            return Column(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    16,
+                                    12,
+                                    16,
+                                    12,
+                                  ),
+                                  child: _SetupSearchBar(
+                                    controller: _searchController,
+                                    onChanged: (value) {
+                                      context
+                                          .read<GeneralUserSetupDevicesBloc>()
+                                          .add(
+                                            UpdateGeneralUserSetupDevicesQuery(
+                                              value,
+                                            ),
+                                          );
+                                    },
+                                    onSearchTap: () {
+                                      FocusScope.of(context).unfocus();
+                                    },
+                                    onClearTap: state.query.trim().isNotEmpty
+                                        ? () {
+                                            context
+                                                .read<
+                                                  GeneralUserSetupDevicesBloc
+                                                >()
+                                                .add(
+                                                  const ClearGeneralUserSetupDevicesQuery(),
+                                                );
+                                            FocusScope.of(context).unfocus();
+                                          }
+                                        : null,
+                                  ),
+                                ),
+                                Expanded(
+                                  child: state.filteredDevices.isEmpty
+                                      ? _SetupEmptyView(
+                                          searchQuery: state.query,
+                                        )
+                                      : ListView.separated(
+                                          padding: const EdgeInsets.fromLTRB(
+                                            16,
+                                            0,
+                                            16,
+                                            8,
+                                          ),
+                                          itemCount:
+                                              state.filteredDevices.length,
+                                          separatorBuilder: (_, __) =>
+                                              const SizedBox(height: 12),
+                                          itemBuilder: (context, index) {
+                                            final item =
+                                                state.filteredDevices[index];
+                                            return _SetupDeviceCard(
+                                              item: item,
+                                              onTap: () => context.push(
+                                                AppRoutes.setupDetailPath,
+                                                extra: item.id,
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                  ),
+                  const AppGeneralUserBottomNavForSession(
+                    selectedTab: GeneralUserBottomNavTab.setup,
                   ),
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-              child: _SetupSearchBar(
-                controller: _searchController,
-                onChanged: (_) => setState(() {}),
-                onSearchTap: () {
-                  setState(() {});
-                  FocusScope.of(context).unfocus();
-                },
-                onClearTap: _searchController.text.trim().isNotEmpty
-                    ? () {
-                        _searchController.clear();
-                        setState(() {});
-                        FocusScope.of(context).unfocus();
-                      }
-                    : null,
-              ),
-            ),
-            Expanded(
-              child: _visibleDevices.isEmpty
-                  ? _SetupEmptyView(searchQuery: _searchController.text)
-                  : ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                      itemCount: _visibleDevices.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
-                      itemBuilder: (context, index) {
-                        final item = _visibleDevices[index];
-                        return _SetupDeviceCard(
-                          item: item,
-                          onTap: () => context.push(AppRoutes.setupDetailPath),
-                        );
-                      },
-                    ),
-            ),
-            const AppGeneralUserBottomNavForSession(
-              selectedTab: GeneralUserBottomNavTab.setup,
-            ),
-          ],
         ),
       ),
     );
@@ -345,30 +357,47 @@ class _SetupSearchBar extends StatelessWidget {
 class _SetupDeviceCard extends StatelessWidget {
   const _SetupDeviceCard({required this.item, required this.onTap});
 
-  final _SetupDeviceItem item;
+  final GeneralUserSetupDeviceItem item;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.07),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+    final (icon, iconColor, textColor) = switch (item.connectionStatus) {
+      GeneralUserSetupDeviceConnectionStatus.active => (
+        Icons.wifi_rounded,
+        const Color(0xFF22BE61),
+        const Color(0xFF22BE61),
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
+      GeneralUserSetupDeviceConnectionStatus.offline => (
+        Icons.wifi_off_rounded,
+        const Color(0xFFD94A4A),
+        const Color(0xFFD94A4A),
+      ),
+      GeneralUserSetupDeviceConnectionStatus.batteryLow => (
+        Icons.battery_alert_rounded,
+        const Color(0xFFE6A23C),
+        const Color(0xFFE6A23C),
+      ),
+    };
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.07),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
             child: Column(
@@ -386,16 +415,12 @@ class _SetupDeviceCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const Icon(
-                      Icons.wifi_rounded,
-                      color: Color(0xFF22BE61),
-                      size: 18,
-                    ),
+                    Icon(icon, color: iconColor, size: 18),
                     const SizedBox(width: 4),
                     Text(
-                      'Active',
+                      item.statusLabel,
                       style: textTheme.titleSmall?.copyWith(
-                        color: const Color(0xFF22BE61),
+                        color: textColor,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -424,6 +449,7 @@ class _SetupDeviceCard extends StatelessWidget {
                         icon: Icons.map_outlined,
                         value: item.gps,
                         label: 'GPS',
+                        maxLines: 3,
                       ),
                     ),
                     Expanded(
@@ -449,11 +475,13 @@ class _MetricBlock extends StatelessWidget {
     required this.icon,
     required this.value,
     required this.label,
+    this.maxLines = 2,
   });
 
   final IconData icon;
   final String value;
   final String label;
+  final int maxLines;
 
   @override
   Widget build(BuildContext context) {
@@ -466,7 +494,7 @@ class _MetricBlock extends StatelessWidget {
         Text(
           value,
           textAlign: TextAlign.center,
-          maxLines: 2,
+          maxLines: maxLines,
           overflow: TextOverflow.ellipsis,
           style: textTheme.labelMedium?.copyWith(
             color: const Color(0xFF1D2329),

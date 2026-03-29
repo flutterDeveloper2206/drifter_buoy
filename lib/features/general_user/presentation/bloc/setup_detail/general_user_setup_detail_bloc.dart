@@ -20,10 +20,21 @@ class GeneralUserSetupDetailBloc
     Emitter<GeneralUserSetupDetailState> emit,
   ) async {
     AppLogger.i('LoadGeneralUserSetupDetail event triggered');
+    final trimmedId = event.buoyId?.trim();
+    final contextBuoyId =
+        trimmedId != null && trimmedId.isNotEmpty ? trimmedId : null;
+
     emit(
-      state.copyWith(
+      GeneralUserSetupDetailState(
         status: GeneralUserSetupDetailStatus.loading,
+        enableConfiguration: false,
+        signalStrength: '--',
+        bluetoothDevice: '--',
+        lastSync: '--',
+        connectionStatus: 'Disconnected',
+        memoryStatus: '0 Records',
         message: '',
+        contextBuoyId: contextBuoyId,
       ),
     );
 

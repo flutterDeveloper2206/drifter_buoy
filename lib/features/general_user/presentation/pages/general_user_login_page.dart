@@ -133,7 +133,7 @@ class _GeneralUserLoginPageState extends State<GeneralUserLoginPage> {
                                     ),
                                     const SizedBox(height: 10),
                                     Text(
-                                      'to Access real-time buoy data, configuration, and\ndiagnostics.',
+                                      'to Access real-time buoy data, configuration, and diagnostics.',
                                       style: textTheme.titleMedium?.copyWith(
                                         color: const Color(0xFF30363C),
                                         height: 1.35,

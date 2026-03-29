@@ -2,6 +2,7 @@ import 'package:drifter_buoy/core/constants/app_routes.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_flushbar.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_general_user_bottom_nav.dart';
+import 'package:drifter_buoy/core/utils/widgets/general_user_back_navigation_scope.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_general_user_main_app_bar.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_info_metric_item.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoys/general_user_buoys_bloc.dart';
@@ -30,10 +31,11 @@ class _GeneralUserBuoysPageState extends State<GeneralUserBuoysPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFDDE1E4),
-      body: SafeArea(
-        child: BlocListener<GeneralUserBuoysBloc, GeneralUserBuoysState>(
+    return GeneralUserTabRootPopScope(
+      child: Scaffold(
+        backgroundColor: const Color(0xFFDDE1E4),
+        body: SafeArea(
+          child: BlocListener<GeneralUserBuoysBloc, GeneralUserBuoysState>(
           listenWhen: (previous, current) => previous.query != current.query,
           listener: (_, state) {
             if (_searchController.text == state.query) {
@@ -163,6 +165,7 @@ class _GeneralUserBuoysPageState extends State<GeneralUserBuoysPage> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

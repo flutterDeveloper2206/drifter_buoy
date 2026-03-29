@@ -132,9 +132,11 @@ class GeneralUserBuoyOverviewBloc
     final metrics = result.metrics.isNotEmpty ? result.metrics.first : null;
     final traj = result.trajectory.isNotEmpty ? result.trajectory.first : null;
 
-    final id = overview?.buoyId.trim().isNotEmpty == true
-        ? overview!.buoyId.trim()
-        : requestedBuoyId;
+    final apiOverviewId = (overview?.buoyId ?? '').trim();
+    final req = requestedBuoyId.trim();
+    // Prefer the id used to open this screen so JSON numeric ids (1) do not
+    // replace zero-padded ids (01) for downstream API calls.
+    final id = req.isNotEmpty ? req : apiOverviewId;
 
     final statusLower = (overview?.buoyStatus ?? '').toLowerCase().trim();
     final isActive = statusLower == 'online' || statusLower == 'active';

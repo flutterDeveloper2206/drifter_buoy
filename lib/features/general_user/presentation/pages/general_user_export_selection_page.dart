@@ -1,6 +1,7 @@
 import 'package:drifter_buoy/core/constants/app_routes.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_general_user_bottom_nav.dart';
+import 'package:drifter_buoy/core/utils/widgets/general_user_back_navigation_scope.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_general_user_main_app_bar.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_elevated_button.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/export_selection/general_user_export_selection_bloc.dart';
@@ -33,10 +34,11 @@ class _GeneralUserExportSelectionPageState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFDDE1E4),
-      body: SafeArea(
-        child: Column(
+    return GeneralUserTabRootPopScope(
+      child: Scaffold(
+        backgroundColor: const Color(0xFFDDE1E4),
+        body: SafeArea(
+          child: Column(
           children: [
             const AppGeneralUserMainAppBar(),
             const _Header(),
@@ -234,6 +236,7 @@ class _GeneralUserExportSelectionPageState
             ),
           ],
         ),
+      ),
       ),
     );
   }

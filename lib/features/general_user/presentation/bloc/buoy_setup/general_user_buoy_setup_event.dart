@@ -8,7 +8,13 @@ abstract class GeneralUserBuoySetupEvent extends Equatable {
 }
 
 class LoadGeneralUserBuoySetup extends GeneralUserBuoySetupEvent {
-  const LoadGeneralUserBuoySetup();
+  const LoadGeneralUserBuoySetup({this.initialStationId});
+
+  /// Buoy / station id from setup list or detail (`go_router` extra).
+  final String? initialStationId;
+
+  @override
+  List<Object?> get props => [initialStationId];
 }
 
 class UpdateGeneralUserBuoySetupField extends GeneralUserBuoySetupEvent {

@@ -46,7 +46,19 @@ class GeneralUserSetupDetailPage extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            const _Header(),
+            BlocBuilder<GeneralUserSetupDetailBloc,
+                GeneralUserSetupDetailState>(
+              buildWhen: (p, c) =>
+                  p.contextBuoyId != c.contextBuoyId ||
+                  p.status != c.status,
+              builder: (context, state) {
+                final title = state.contextBuoyId == null ||
+                        state.contextBuoyId!.trim().isEmpty
+                    ? 'Add New'
+                    : state.contextBuoyId!.trim();
+                return _Header(title: title);
+              },
+            ),
             Expanded(
               child: BlocBuilder<GeneralUserSetupDetailBloc,
                   GeneralUserSetupDetailState>(
@@ -60,7 +72,9 @@ class GeneralUserSetupDetailPage extends StatelessWidget {
                       message: state.message,
                       onRetry: () {
                         context.read<GeneralUserSetupDetailBloc>().add(
-                              const LoadGeneralUserSetupDetail(),
+                              LoadGeneralUserSetupDetail(
+                                buoyId: state.contextBuoyId,
+                              ),
                             );
                       },
                     );
@@ -149,8 +163,10 @@ class GeneralUserSetupDetailPage extends StatelessWidget {
                                 if (state.enableConfiguration && bluetoothOn) ...[
                                   const SizedBox(height: 14),
                                   InkWell(
-                                    onTap: () =>
-                                        context.push(AppRoutes.buoySetupPath),
+                                    onTap: () => context.push(
+                                      AppRoutes.buoySetupPath,
+                                      extra: state.contextBuoyId,
+                                    ),
                                     borderRadius: BorderRadius.circular(8),
                                     child: Padding(
                                       padding: const EdgeInsets.symmetric(
@@ -383,7 +399,9 @@ class _BluetoothGrid extends StatelessWidget {
 }
 
 class _Header extends StatelessWidget {
-  const _Header();
+  const _Header({required this.title});
+
+  final String title;
 
   @override
   Widget build(BuildContext context) {
@@ -404,7 +422,9 @@ class _Header extends StatelessWidget {
           Expanded(
             child: Center(
               child: Text(
-                'Add New',
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   color: const Color(0xFF242A2F),
                   fontWeight: FontWeight.w700,

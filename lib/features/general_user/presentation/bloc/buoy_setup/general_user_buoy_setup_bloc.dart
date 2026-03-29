@@ -18,10 +18,12 @@ class GeneralUserBuoySetupBloc
     AppLogger.i('LoadGeneralUserBuoySetup event triggered');
     emit(state.copyWith(status: GeneralUserBuoySetupStatus.loading));
     await Future<void>.delayed(const Duration(milliseconds: 150));
+    final fromRoute = event.initialStationId?.trim();
+    final hasStationId = fromRoute != null && fromRoute.isNotEmpty;
     emit(
       state.copyWith(
         status: GeneralUserBuoySetupStatus.loaded,
-        stationId: 'DB - 04',
+        stationId: hasStationId ? fromRoute : 'DB - 04',
         stationName: 'Alpha 01',
         transmissionInterval: '00:15:00',
         transmissionStartTime: '00:15:00',

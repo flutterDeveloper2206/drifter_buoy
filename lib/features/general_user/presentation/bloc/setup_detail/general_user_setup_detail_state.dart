@@ -11,6 +11,7 @@ class GeneralUserSetupDetailState extends Equatable {
   final String connectionStatus;
   final String memoryStatus;
   final String message;
+  final String? contextBuoyId;
 
   const GeneralUserSetupDetailState({
     required this.status,
@@ -21,6 +22,7 @@ class GeneralUserSetupDetailState extends Equatable {
     required this.connectionStatus,
     required this.memoryStatus,
     required this.message,
+    required this.contextBuoyId,
   });
 
   const GeneralUserSetupDetailState.initial()
@@ -31,7 +33,8 @@ class GeneralUserSetupDetailState extends Equatable {
       lastSync = '--',
       connectionStatus = 'Disconnected',
       memoryStatus = '0 Records',
-      message = '';
+      message = '',
+      contextBuoyId = null;
 
   GeneralUserSetupDetailState copyWith({
     GeneralUserSetupDetailStatus? status,
@@ -42,6 +45,7 @@ class GeneralUserSetupDetailState extends Equatable {
     String? connectionStatus,
     String? memoryStatus,
     String? message,
+    String? contextBuoyId,
   }) {
     return GeneralUserSetupDetailState(
       status: status ?? this.status,
@@ -52,11 +56,12 @@ class GeneralUserSetupDetailState extends Equatable {
       connectionStatus: connectionStatus ?? this.connectionStatus,
       memoryStatus: memoryStatus ?? this.memoryStatus,
       message: message ?? this.message,
+      contextBuoyId: contextBuoyId ?? this.contextBuoyId,
     );
   }
 
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
     status,
     enableConfiguration,
     signalStrength,
@@ -65,5 +70,6 @@ class GeneralUserSetupDetailState extends Equatable {
     connectionStatus,
     memoryStatus,
     message,
+    contextBuoyId,
   ];
 }

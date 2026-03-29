@@ -8,7 +8,13 @@ abstract class GeneralUserSetupDetailEvent extends Equatable {
 }
 
 class LoadGeneralUserSetupDetail extends GeneralUserSetupDetailEvent {
-  const LoadGeneralUserSetupDetail();
+  const LoadGeneralUserSetupDetail({this.buoyId});
+
+  /// When set (e.g. from setup list), detail flow is scoped to this buoy.
+  final String? buoyId;
+
+  @override
+  List<Object?> get props => [buoyId];
 }
 
 class ToggleGeneralUserEnableConfiguration extends GeneralUserSetupDetailEvent {

@@ -51,6 +51,8 @@ import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_buoy_distance_report_for_export.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_all_buoys_data_overview_view.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_buoy_data_overview.dart';
+import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_buoy_metrics.dart';
+import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_all_buoys_status.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_update_user_profile.dart';
 import 'package:drifter_buoy/features/sample_feature/data/datasources/item_remote_data_source.dart';
 import 'package:drifter_buoy/features/sample_feature/data/repositories/item_repository_impl.dart';
@@ -60,6 +62,8 @@ import 'package:drifter_buoy/features/sample_feature/domain/usecases/delete_item
 import 'package:drifter_buoy/features/sample_feature/domain/usecases/get_items.dart';
 import 'package:drifter_buoy/features/sample_feature/presentation/bloc/items_bloc.dart';
 import 'package:get_it/get_it.dart';
+
+import '../../features/general_user/presentation/bloc/setup_devices/general_user_setup_devices_bloc.dart';
 
 final GetIt sl = GetIt.instance;
 
@@ -376,6 +380,18 @@ Future<void> initDependencies() async {
     );
   }
 
+  if (!sl.isRegistered<GeneralUserGetAllBuoysStatus>()) {
+    sl.registerLazySingleton<GeneralUserGetAllBuoysStatus>(
+      () => GeneralUserGetAllBuoysStatus(repository: sl()),
+    );
+  }
+
+  if (!sl.isRegistered<GeneralUserSetupDevicesBloc>()) {
+    sl.registerFactory<GeneralUserSetupDevicesBloc>(
+      () => GeneralUserSetupDevicesBloc(getAllBuoysStatus: sl()),
+    );
+  }
+
   if (!sl.isRegistered<GeneralUserBuoyOverviewBloc>()) {
     sl.registerFactory<GeneralUserBuoyOverviewBloc>(
       () => GeneralUserBuoyOverviewBloc(getBuoyDataOverview: sl()),
@@ -392,9 +408,19 @@ Future<void> initDependencies() async {
     ),
   );
 
-  if (!sl.isRegistered<GeneralUserMetricsBloc>()) {
-    sl.registerFactory<GeneralUserMetricsBloc>(() => GeneralUserMetricsBloc());
+  if (!sl.isRegistered<GeneralUserGetBuoyMetrics>()) {
+    sl.registerLazySingleton<GeneralUserGetBuoyMetrics>(
+      () => GeneralUserGetBuoyMetrics(repository: sl()),
+    );
   }
+
+  if (sl.isRegistered<GeneralUserMetricsBloc>()) {
+    sl.unregister<GeneralUserMetricsBloc>();
+  }
+
+  sl.registerFactory<GeneralUserMetricsBloc>(
+    () => GeneralUserMetricsBloc(getBuoyMetrics: sl()),
+  );
 
   if (!sl.isRegistered<GeneralUserSetupDetailBloc>()) {
     sl.registerFactory<GeneralUserSetupDetailBloc>(

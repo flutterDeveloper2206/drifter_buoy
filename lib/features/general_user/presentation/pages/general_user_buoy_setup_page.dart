@@ -39,6 +39,10 @@ class GeneralUserBuoySetupPage extends StatelessWidget {
               }
 
               final saving = state.status == GeneralUserBuoySetupStatus.saving;
+              final fieldsMounted =
+                  state.status == GeneralUserBuoySetupStatus.loaded ||
+                  saving ||
+                  state.status == GeneralUserBuoySetupStatus.error;
               return Column(
                 children: [
                   const _Header(),
@@ -67,6 +71,9 @@ class GeneralUserBuoySetupPage extends StatelessWidget {
                             _Field(
                               label: 'Station ID',
                               value: state.stationId,
+                              formFieldKey: ValueKey(
+                                'stationId-$fieldsMounted',
+                              ),
                               onChanged: (v) => context
                                   .read<GeneralUserBuoySetupBloc>()
                                   .add(
@@ -79,6 +86,9 @@ class GeneralUserBuoySetupPage extends StatelessWidget {
                             _Field(
                               label: 'Station Name',
                               value: state.stationName,
+                              formFieldKey: ValueKey(
+                                'stationName-$fieldsMounted',
+                              ),
                               onChanged: (v) => context
                                   .read<GeneralUserBuoySetupBloc>()
                                   .add(
@@ -91,6 +101,9 @@ class GeneralUserBuoySetupPage extends StatelessWidget {
                             _Field(
                               label: 'Transmission Interval',
                               value: state.transmissionInterval,
+                              formFieldKey: ValueKey(
+                                'txInterval-$fieldsMounted',
+                              ),
                               onChanged: (v) => context
                                   .read<GeneralUserBuoySetupBloc>()
                                   .add(
@@ -103,6 +116,9 @@ class GeneralUserBuoySetupPage extends StatelessWidget {
                             _Field(
                               label: 'Transmission Start Time',
                               value: state.transmissionStartTime,
+                              formFieldKey: ValueKey(
+                                'txStart-$fieldsMounted',
+                              ),
                               onChanged: (v) => context
                                   .read<GeneralUserBuoySetupBloc>()
                                   .add(
@@ -188,11 +204,13 @@ class _Header extends StatelessWidget {
 class _Field extends StatelessWidget {
   final String label;
   final String value;
+  final Key? formFieldKey;
   final ValueChanged<String> onChanged;
 
   const _Field({
     required this.label,
     required this.value,
+    this.formFieldKey,
     required this.onChanged,
   });
 
@@ -211,6 +229,7 @@ class _Field extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           TextFormField(
+            key: formFieldKey,
             initialValue: value,
             onChanged: onChanged,
             style: Theme.of(context).textTheme.compactFieldInput(

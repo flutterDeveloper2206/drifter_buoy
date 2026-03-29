@@ -14,6 +14,8 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/dashboard/g
 import 'package:drifter_buoy/features/general_user/presentation/bloc/profile/general_user_profile_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/profile/general_user_profile_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_profile_page.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_devices/general_user_setup_devices_bloc.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_devices/general_user_setup_devices_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_setup_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_setup_detail_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_detail/general_user_setup_detail_bloc.dart';
@@ -31,6 +33,7 @@ import 'package:drifter_buoy/features/general_user/presentation/pages/general_us
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_forgot_password_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_login_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_buoy_overview_page.dart';
+import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_metrics_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_map_buoy_details_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_map_filters_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_map_page.dart';
@@ -57,6 +60,7 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_
 import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_filters/general_user_trajectory_filters_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_filters/general_user_trajectory_filters_event.dart';
 import 'package:drifter_buoy/features/general_user/data/models/user_map_dashboard_get_buoy_map_dashboard_response.dart';
+import 'package:drifter_buoy/features/general_user/presentation/navigation/general_user_metrics_route_extra.dart';
 import 'package:drifter_buoy/features/general_user/presentation/widgets/dummy_buoy_map_view.dart';
 import 'package:drifter_buoy/features/sample_feature/presentation/bloc/items_bloc.dart';
 import 'package:drifter_buoy/features/sample_feature/presentation/bloc/items_event.dart';
@@ -232,6 +236,23 @@ class AppRouter {
           );
         },
       ),
+      GoRoute(
+        path: AppRoutes.metricsPath,
+        name: AppRoutes.metricsName,
+        builder: (context, state) {
+          final extra = state.extra;
+          final parsed = _parseGeneralUserMetricsExtra(extra);
+
+          return BlocProvider<GeneralUserMetricsBloc>(
+            create: (_) =>
+                sl<GeneralUserMetricsBloc>()
+                  ..add(LoadGeneralUserMetrics(buoyId: parsed.buoyId)),
+            child: GeneralUserMetricsPage(
+              focusBatterySection: parsed.focusBatterySection,
+            ),
+          );
+        },
+      ),
 
       GoRoute(
         path: AppRoutes.trajectoryViewPath,
@@ -322,7 +343,11 @@ class AppRouter {
         pageBuilder: (context, state) {
           return _tabTransitionPage(
             state: state,
-            child: const GeneralUserSetupPage(),
+            child: BlocProvider<GeneralUserSetupDevicesBloc>(
+              create: (_) => sl<GeneralUserSetupDevicesBloc>()
+                ..add(const LoadGeneralUserSetupDevices()),
+              child: const GeneralUserSetupPage(),
+            ),
           );
         },
       ),
@@ -330,10 +355,14 @@ class AppRouter {
         path: AppRoutes.setupDetailPath,
         name: AppRoutes.setupDetailName,
         builder: (context, state) {
+          final extra = state.extra;
+          final buoyId = extra is String && extra.trim().isNotEmpty
+              ? extra.trim()
+              : null;
           return BlocProvider<GeneralUserSetupDetailBloc>(
             create: (_) =>
                 sl<GeneralUserSetupDetailBloc>()
-                  ..add(const LoadGeneralUserSetupDetail()),
+                  ..add(LoadGeneralUserSetupDetail(buoyId: buoyId)),
             child: const GeneralUserSetupDetailPage(),
           );
         },
@@ -342,10 +371,18 @@ class AppRouter {
         path: AppRoutes.buoySetupPath,
         name: AppRoutes.buoySetupName,
         builder: (context, state) {
+          final extra = state.extra;
+          final initialStationId = extra is String && extra.trim().isNotEmpty
+              ? extra.trim()
+              : null;
           return BlocProvider<GeneralUserBuoySetupBloc>(
             create: (_) =>
                 sl<GeneralUserBuoySetupBloc>()
-                  ..add(const LoadGeneralUserBuoySetup()),
+                  ..add(
+                    LoadGeneralUserBuoySetup(
+                      initialStationId: initialStationId,
+                    ),
+                  ),
             child: const GeneralUserBuoySetupPage(),
           );
         },
@@ -426,4 +463,23 @@ BuoyStatus _statusFromApi(String status) {
     return BuoyStatus.batteryLow;
   }
   return BuoyStatus.offline;
+}
+
+({String buoyId, bool focusBatterySection}) _parseGeneralUserMetricsExtra(
+  dynamic extra,
+) {
+  if (extra is GeneralUserMetricsRouteExtra) {
+    final id = extra.buoyId.trim().replaceAll(' ', '');
+    return (
+      buoyId: id.isNotEmpty ? id : 'DB-01',
+      focusBatterySection: extra.focusBatterySection,
+    );
+  }
+  if (extra is String) {
+    final id = extra.trim().replaceAll(' ', '');
+    if (id.isNotEmpty) {
+      return (buoyId: id, focusBatterySection: false);
+    }
+  }
+  return (buoyId: 'DB-01', focusBatterySection: false);
 }

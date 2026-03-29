@@ -37,6 +37,7 @@ String _formatExportDisplayDate(DateTime d) {
 Future<DateTimeRange?> showExportThemedDateRangePicker({
   required BuildContext context,
   DateTimeRange? initialDateRange,
+  String description = 'Choose start and end dates for this export.',
 }) {
   const primary = Color(0xFF206BBE);
   const accent = Color(0xFF2A86CE);
@@ -63,10 +64,7 @@ Future<DateTimeRange?> showExportThemedDateRangePicker({
             initialDateRange.end.day,
           ),
         )
-      : PickerDateRange(
-          today.subtract(const Duration(days: 7)),
-          today,
-        );
+      : PickerDateRange(today.subtract(const Duration(days: 7)), today);
 
   final displayDate =
       initialDateRange?.start ?? initialRange.startDate ?? today;
@@ -92,7 +90,10 @@ Future<DateTimeRange?> showExportThemedDateRangePicker({
         child: Dialog(
           backgroundColor: Colors.transparent,
           elevation: 0,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 24,
+          ),
           child: ConstrainedBox(
             constraints: BoxConstraints(
               maxWidth: 400,
@@ -170,7 +171,7 @@ Future<DateTimeRange?> showExportThemedDateRangePicker({
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                'Choose start and end dates for this export.',
+                                description,
                                 style: Theme.of(dialogContext)
                                     .textTheme
                                     .bodySmall

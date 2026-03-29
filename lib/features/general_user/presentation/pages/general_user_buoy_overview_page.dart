@@ -7,6 +7,7 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/buoy_overvi
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoy_overview/general_user_buoy_overview_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoy_overview/general_user_buoy_overview_state.dart';
 import 'package:drifter_buoy/features/general_user/presentation/navigation/general_user_export_route_extra.dart';
+import 'package:drifter_buoy/features/general_user/presentation/navigation/general_user_metrics_route_extra.dart';
 import 'package:drifter_buoy/features/general_user/presentation/widgets/dummy_buoy_map_view.dart';
 import 'package:drifter_buoy/features/general_user/presentation/widgets/dummy_trajectory_map_preview.dart';
 import 'package:equatable/equatable.dart';
@@ -158,10 +159,13 @@ class _LoadedOverviewBody extends StatelessWidget {
           const SizedBox(height: 16),
           _MetricsCard(
             data: data,
-            onTap: () {
-
-            },
-            // onTap: () => context.push(AppRoutes.metricsPath, extra: data.id),
+            onTap: () => context.push(
+              AppRoutes.metricsPath,
+              extra: GeneralUserMetricsRouteExtra(
+                buoyId: data.id.replaceAll(' ', ''),
+                focusBatterySection: true,
+              ),
+            ),
           ),
           const SizedBox(height: 16),
           _TrajectoryCard(

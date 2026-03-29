@@ -111,9 +111,10 @@ class _GeneralUserMapPageState extends State<GeneralUserMapPage> {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final routerCanPop = GoRouter.of(context).canPop();
 
     return PopScope(
-      canPop: false,
+      canPop: !_mapSearchOpen && routerCanPop,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) {
           return;
@@ -123,6 +124,10 @@ class _GeneralUserMapPageState extends State<GeneralUserMapPage> {
             _mapSearchOpen = false;
           });
           FocusScope.of(context).unfocus();
+          return;
+        }
+        if (routerCanPop) {
+          context.pop();
           return;
         }
         context.go(AppRoutes.dashboardPath);

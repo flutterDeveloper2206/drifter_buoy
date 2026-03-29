@@ -28,8 +28,14 @@ class ApiEndpoints {
   static const String getAllBuoysDataOverviewViewUrl =
       'http://4.213.34.231:5025/api/User/UserViewBuoyDashboard/GetAllBuoysDataOverviewView';
 
+  static const String getAllBuoysStatusUrl =
+      'http://4.213.34.231:5025/api/User/UserViewBuoyDashboard/GetAllBuoysStatus';
+
   static const String getBuoyDataOverviewUrl =
       'http://4.213.34.231:5025/api/User/UserViewBuoyDashboard/GetBuoyDataOverview';
+
+  static const String getBuoyMetricsUrl =
+      'http://4.213.34.231:5025/api/User/UserViewBuoyDashboard/GetBuoyMetrics';
 
   static const String getBuoyDistanceReportForExportUrl =
       'http://4.213.34.231:5025/api/Report/Report/GetBuoyDistanceReportForExport';
