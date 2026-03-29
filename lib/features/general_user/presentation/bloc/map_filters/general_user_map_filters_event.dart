@@ -37,6 +37,10 @@ class ToggleSignalStrengthFilter extends GeneralUserMapFiltersEvent {
   const ToggleSignalStrengthFilter();
 }
 
+class ToggleLocationZoneFilter extends GeneralUserMapFiltersEvent {
+  const ToggleLocationZoneFilter();
+}
+
 class ChangeMapDisplayType extends GeneralUserMapFiltersEvent {
   final MapDisplayType mapType;
 

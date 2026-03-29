@@ -33,6 +33,10 @@ migrate_working_dir/
 /build/
 /coverage/
 
+# Map API keys (copy from *.example files)
+android/secrets.properties
+ios/Flutter/Secrets.xcconfig
+
 # Symbolication related
 app.*.symbols
 

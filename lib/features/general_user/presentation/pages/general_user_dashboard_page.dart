@@ -13,6 +13,7 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/dashboard/g
 import 'package:drifter_buoy/features/general_user/data/models/user_map_dashboard_get_buoy_dashboard_response.dart';
 import 'package:drifter_buoy/features/general_user/data/models/user_map_dashboard_get_buoy_map_dashboard_response.dart';
 import 'package:drifter_buoy/features/general_user/presentation/widgets/dummy_buoy_map_view.dart';
+import 'package:drifter_buoy/features/general_user/presentation/widgets/google_maps_buoy_preview.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -105,18 +106,23 @@ class GeneralUserDashboardPage extends StatelessWidget {
                 const SizedBox(height: 28),
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+                  padding: const EdgeInsets.fromLTRB(14, 14, 10, 12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF2F2F2),
-                    borderRadius: BorderRadius.circular(14),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.07),
+                        blurRadius: 14,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 2,
-                          vertical: 2,
-                        ),
+                        padding: const EdgeInsets.only(left: 2, right: 4),
                         child: Row(
                           children: [
                             Text(
@@ -128,18 +134,20 @@ class GeneralUserDashboardPage extends StatelessWidget {
                             ),
                             const Spacer(),
                             IconButton(
+                              visualDensity: VisualDensity.compact,
                               onPressed: () {
                                 context.go(
                                   AppRoutes.mapPath,
                                   extra: loadedState.mapData,
                                 );
                               },
-                              icon: const Icon(Icons.arrow_forward, size: 24),
+                              icon: const Icon(Icons.arrow_forward, size: 22),
+                              color: const Color(0xFF23282D),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 8),
                       _MapPreviewCard(
                         dashboardData: dashboardData,
                         mapData: loadedState.mapData,
@@ -325,23 +333,9 @@ class _MapPreviewCard extends StatelessWidget {
       );
     }
 
-    final initialCenter = locations.isNotEmpty
-        ? LatLng(locations.first.latitude, locations.first.longitude)
-        : const LatLng(37.7749, -122.4194);
-
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
-      child: SizedBox(
-        width: double.infinity,
-        height: 360,
-        child: DummyBuoyMapView(
-          interactive: false,
-          showLabels: false,
-          initialCenter: initialCenter,
-          initialZoom: 10.3,
-          buoys: buoyMarkers,
-        ),
-      ),
+      child: GoogleMapsBuoyPreview(buoys: buoyMarkers, height: 360),
     );
   }
 }

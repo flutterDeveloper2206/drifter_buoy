@@ -203,6 +203,15 @@ class GeneralUserMapFiltersPage extends StatelessWidget {
                 );
               },
             ),
+            AppCheckboxSettingTile(
+              label: 'Location / Zone',
+              selected: state.locationZoneFilterEnabled,
+              onTap: () {
+                context.read<GeneralUserMapFiltersBloc>().add(
+                  const ToggleLocationZoneFilter(),
+                );
+              },
+            ),
             const SizedBox(height: 10),
             const Divider(color: Color(0xFFD2D2D2), thickness: 1),
             const SizedBox(height: 14),

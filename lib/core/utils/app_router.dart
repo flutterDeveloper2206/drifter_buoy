@@ -186,10 +186,19 @@ class AppRouter {
           final preloaded = _toPreloadedMapBuoys(state.extra);
           return _tabTransitionPage(
             state: state,
-            child: BlocProvider<GeneralUserMapBloc>(
-              create: (_) =>
-                  sl<GeneralUserMapBloc>()
-                    ..add(LoadGeneralUserMap(preloadedBuoys: preloaded)),
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider<GeneralUserMapBloc>(
+                  create: (_) =>
+                      sl<GeneralUserMapBloc>()
+                        ..add(LoadGeneralUserMap(preloadedBuoys: preloaded)),
+                ),
+                BlocProvider<GeneralUserMapFiltersBloc>(
+                  create: (_) =>
+                      sl<GeneralUserMapFiltersBloc>()
+                        ..add(const LoadGeneralUserMapFilters()),
+                ),
+              ],
               child: GeneralUserMapPage(initialSearchOpen: openSearch),
             ),
           );

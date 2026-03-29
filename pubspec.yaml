@@ -55,6 +55,7 @@ dependencies:
   # Syncfusion >=31.1.20 requires Flutter SDK >=3.35.1. Use 33.1.45 after upgrading Flutter.
   syncfusion_flutter_datepicker: ^31.1.19
   fl_chart: ^1.2.0
+  google_maps_flutter: ^2.14.0
 
 dev_dependencies:
   flutter_test:
