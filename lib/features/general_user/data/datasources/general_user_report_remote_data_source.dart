@@ -45,4 +45,38 @@ class GeneralUserReportRemoteDataSource {
       },
     );
   }
+
+  ResultFuture<UserReportGetBuoyDistanceReportForExportResponse>
+  getBuoyDataReportForExport({
+    required String buoyIdsCsv,
+    required String fromDate,
+    required String toDate,
+  }) {
+    final form = FormData.fromMap(<String, dynamic>{
+      'BuoyIds': buoyIdsCsv,
+      'FromDate': fromDate,
+      'ToDate': toDate,
+    });
+
+    return _apiService.post<UserReportGetBuoyDistanceReportForExportResponse>(
+      ApiEndpoints.getBuoyDataReportForExportUrl,
+      data: form,
+      parser: (dynamic data) {
+        if (data is String) {
+          final decoded = jsonDecode(data);
+          if (decoded is Map<String, dynamic>) {
+            return UserReportGetBuoyDistanceReportForExportResponse.fromJson(
+              decoded,
+            );
+          }
+        }
+
+        if (data is! Map<String, dynamic>) {
+          throw Exception('Invalid buoy data report for export response format');
+        }
+
+        return UserReportGetBuoyDistanceReportForExportResponse.fromJson(data);
+      },
+    );
+  }
 }

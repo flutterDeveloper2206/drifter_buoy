@@ -8,4 +8,11 @@ abstract class GeneralUserReportRepository {
     required String fromDate,
     required String toDate,
   });
+
+  ResultFuture<UserReportGetBuoyDistanceReportForExportResponse>
+  getBuoyDataReportForExport({
+    required String buoyIdsCsv,
+    required String fromDate,
+    required String toDate,
+  });
 }

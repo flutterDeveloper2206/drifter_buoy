@@ -15,12 +15,12 @@ final class GeneralUserExportBuoyDistanceExtra extends GeneralUserExportRouteExt
   List<Object?> get props => [buoyId];
 }
 
-/// Continue from multi-buoy selection (legacy placeholder export).
-final class GeneralUserExportSelectionCountExtra extends GeneralUserExportRouteExtra {
-  const GeneralUserExportSelectionCountExtra(this.selectedBuoyCount);
+/// Continue from multi-buoy selection — loads [GetBuoyDataReportForExport].
+final class GeneralUserExportSelectionBuoysExtra extends GeneralUserExportRouteExtra {
+  const GeneralUserExportSelectionBuoysExtra({required this.buoyIds});
 
-  final int selectedBuoyCount;
+  final List<String> buoyIds;
 
   @override
-  List<Object?> get props => [selectedBuoyCount];
+  List<Object?> get props => [buoyIds];
 }

@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-enum ExportDateRange { last24Hours, yesterday, last7Days, last30Days, custom }
+enum ExportDateRange { last24Hours, yesterday,  custom }
 
 enum ExportFormat { csv, pdf }
 
@@ -51,9 +51,12 @@ class ChangeGeneralUserExportFormat extends GeneralUserExportEvent {
   List<Object?> get props => [format];
 }
 
-/// Placeholder export for multi-buoy selection flow (no API).
-class SubmitGeneralUserExport extends GeneralUserExportEvent {
-  const SubmitGeneralUserExport();
+class ExportMultiBuoyDataSaveToDevice extends GeneralUserExportEvent {
+  const ExportMultiBuoyDataSaveToDevice();
+}
+
+class ExportMultiBuoyDataShare extends GeneralUserExportEvent {
+  const ExportMultiBuoyDataShare();
 }
 
 class ExportBuoyDistanceSaveToDevice extends GeneralUserExportEvent {

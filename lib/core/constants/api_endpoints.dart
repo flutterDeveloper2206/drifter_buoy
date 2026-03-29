@@ -33,4 +33,7 @@ class ApiEndpoints {
 
   static const String getBuoyDistanceReportForExportUrl =
       'http://4.213.34.231:5025/api/Report/Report/GetBuoyDistanceReportForExport';
+
+  static const String getBuoyDataReportForExportUrl =
+      'http://4.213.34.231:5025/api/Report/Report/GetBuoyDataReportForExport';
 }

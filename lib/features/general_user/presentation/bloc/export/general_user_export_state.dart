@@ -26,6 +26,7 @@ class GeneralUserExportState extends Equatable {
     required this.mode,
     required this.routeExtraSnapshot,
     required this.selectedBuoyCount,
+    required this.selectedBuoyIds,
     required this.buoyId,
     required this.dateRange,
     required this.customStart,
@@ -44,6 +45,7 @@ class GeneralUserExportState extends Equatable {
   final GeneralUserExportMode mode;
   final Object? routeExtraSnapshot;
   final int selectedBuoyCount;
+  final List<String> selectedBuoyIds;
   final String? buoyId;
   final ExportDateRange dateRange;
   final DateTime? customStart;
@@ -64,6 +66,7 @@ class GeneralUserExportState extends Equatable {
       mode = GeneralUserExportMode.multiSelection,
       routeExtraSnapshot = null,
       selectedBuoyCount = 0,
+      selectedBuoyIds = const [],
       buoyId = null,
       dateRange = ExportDateRange.last24Hours,
       customStart = null,
@@ -83,6 +86,7 @@ class GeneralUserExportState extends Equatable {
     Object? routeExtraSnapshot,
     bool assignRouteExtraSnapshot = false,
     int? selectedBuoyCount,
+    List<String>? selectedBuoyIds,
     String? buoyId,
     bool clearBuoyId = false,
     ExportDateRange? dateRange,
@@ -107,6 +111,7 @@ class GeneralUserExportState extends Equatable {
           ? routeExtraSnapshot
           : this.routeExtraSnapshot,
       selectedBuoyCount: selectedBuoyCount ?? this.selectedBuoyCount,
+      selectedBuoyIds: selectedBuoyIds ?? this.selectedBuoyIds,
       buoyId: clearBuoyId ? null : (buoyId ?? this.buoyId),
       dateRange: dateRange ?? this.dateRange,
       customStart: clearCustomRange ? null : (customStart ?? this.customStart),
@@ -130,6 +135,7 @@ class GeneralUserExportState extends Equatable {
         mode,
         routeExtraSnapshot,
         selectedBuoyCount,
+        selectedBuoyIds,
         buoyId,
         dateRange,
         customStart,

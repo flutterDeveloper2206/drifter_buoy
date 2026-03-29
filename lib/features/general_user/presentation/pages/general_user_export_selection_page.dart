@@ -41,10 +41,7 @@ class _GeneralUserExportSelectionPageState
             const AppGeneralUserMainAppBar(),
             const _Header(),
             Expanded(
-              child: BlocListener<
-                GeneralUserExportSelectionBloc,
-                GeneralUserExportSelectionState
-              >(
+              child: BlocListener<GeneralUserExportSelectionBloc, GeneralUserExportSelectionState>(
                 listenWhen: (previous, current) =>
                     previous.query != current.query,
                 listener: (_, state) {
@@ -56,164 +53,182 @@ class _GeneralUserExportSelectionPageState
                     offset: _searchController.text.length,
                   );
                 },
-                child: BlocBuilder<
-                  GeneralUserExportSelectionBloc,
-                  GeneralUserExportSelectionState
-                >(
-                  builder: (context, state) {
-                      if (state.status ==
-                              GeneralUserExportSelectionStatus.loading ||
-                          state.status ==
-                              GeneralUserExportSelectionStatus.initial) {
-                        return const GeneralUserExportSelectionShimmer();
-                      }
+                child:
+                    BlocBuilder<
+                      GeneralUserExportSelectionBloc,
+                      GeneralUserExportSelectionState
+                    >(
+                      builder: (context, state) {
+                        if (state.status ==
+                                GeneralUserExportSelectionStatus.loading ||
+                            state.status ==
+                                GeneralUserExportSelectionStatus.initial) {
+                          return const GeneralUserExportSelectionShimmer();
+                        }
 
-                      if (state.status ==
-                          GeneralUserExportSelectionStatus.error) {
-                        return AppErrorView(
-                          message: state.message,
-                          onRetry: () {
-                            context.read<GeneralUserExportSelectionBloc>().add(
-                              const LoadGeneralUserExportSelection(),
-                            );
-                          },
-                        );
-                      }
+                        if (state.status ==
+                            GeneralUserExportSelectionStatus.error) {
+                          return AppErrorView(
+                            message: state.message,
+                            onRetry: () {
+                              context
+                                  .read<GeneralUserExportSelectionBloc>()
+                                  .add(const LoadGeneralUserExportSelection());
+                            },
+                          );
+                        }
 
-                      final queryTrimmed = state.query.trim();
-                      final isSearching = queryTrimmed.isNotEmpty;
-                      final showSelectAll =
-                          !isSearching && state.filteredItems.isNotEmpty;
+                        final queryTrimmed = state.query.trim();
+                        final isSearching = queryTrimmed.isNotEmpty;
+                        final showSelectAll =
+                            !isSearching && state.filteredItems.isNotEmpty;
 
-                      return Column(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                            child: _SearchBar(
-                              controller: _searchController,
-                              onChanged: (value) {
-                                context
-                                    .read<GeneralUserExportSelectionBloc>()
-                                    .add(
-                                      UpdateGeneralUserExportSelectionQuery(
-                                        value,
-                                      ),
-                                    );
-                              },
-                              onSearchTap: () =>
-                                  FocusScope.of(context).unfocus(),
-                              onClearTap: queryTrimmed.isNotEmpty
-                                  ? () {
-                                      _searchController.clear();
-                                      context
-                                          .read<
-                                            GeneralUserExportSelectionBloc
-                                          >()
-                                          .add(
-                                            const UpdateGeneralUserExportSelectionQuery(
-                                              '',
-                                            ),
-                                          );
-                                    }
-                                  : null,
-                            ),
-                          ),
-                          if (showSelectAll)
+                        return Column(
+                          children: [
                             Padding(
                               padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                              child: _SelectAllRow(
-                                selected: state.allFilteredSelected,
-                                onTap: () {
+                              child: _SearchBar(
+                                controller: _searchController,
+                                onChanged: (value) {
                                   context
                                       .read<GeneralUserExportSelectionBloc>()
                                       .add(
-                                        const ToggleGeneralUserExportSelectionAll(),
+                                        UpdateGeneralUserExportSelectionQuery(
+                                          value,
+                                        ),
                                       );
                                 },
+                                onSearchTap: () =>
+                                    FocusScope.of(context).unfocus(),
+                                onClearTap: queryTrimmed.isNotEmpty
+                                    ? () {
+                                        _searchController.clear();
+                                        context
+                                            .read<
+                                              GeneralUserExportSelectionBloc
+                                            >()
+                                            .add(
+                                              const UpdateGeneralUserExportSelectionQuery(
+                                                '',
+                                              ),
+                                            );
+                                      }
+                                    : null,
                               ),
                             ),
-                          Expanded(
-                            child: state.filteredItems.isEmpty
-                                ? _ExportSelectionEmptyView(
-                                    isSearching: isSearching,
-                                    query: queryTrimmed,
-                                  )
-                                : ListView.separated(
-                                    padding: const EdgeInsets.fromLTRB(
-                                      16,
-                                      0,
-                                      16,
-                                      8,
+                            if (showSelectAll)
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  16,
+                                  0,
+                                  16,
+                                  10,
+                                ),
+                                child: _SelectAllRow(
+                                  selected: state.allFilteredSelected,
+                                  onTap: () {
+                                    context
+                                        .read<GeneralUserExportSelectionBloc>()
+                                        .add(
+                                          const ToggleGeneralUserExportSelectionAll(),
+                                        );
+                                  },
+                                ),
+                              ),
+                            Expanded(
+                              child: state.filteredItems.isEmpty
+                                  ? _ExportSelectionEmptyView(
+                                      isSearching: isSearching,
+                                      query: queryTrimmed,
+                                    )
+                                  : ListView.separated(
+                                      padding: const EdgeInsets.fromLTRB(
+                                        16,
+                                        0,
+                                        16,
+                                        8,
+                                      ),
+                                      itemCount: state.filteredItems.length,
+                                      separatorBuilder: (_, __) =>
+                                          const SizedBox(height: 8),
+                                      itemBuilder: (context, index) {
+                                        final item = state.filteredItems[index];
+                                        final selected = state.selectedIds
+                                            .contains(item.id);
+                                        return _BuoySelectableCard(
+                                          item: item,
+                                          selected: selected,
+                                          onTap: () {
+                                            context
+                                                .read<
+                                                  GeneralUserExportSelectionBloc
+                                                >()
+                                                .add(
+                                                  ToggleGeneralUserExportSelectionItem(
+                                                    item.id,
+                                                  ),
+                                                );
+                                          },
+                                        );
+                                      },
                                     ),
-                                    itemCount: state.filteredItems.length,
-                                    separatorBuilder: (_, __) =>
-                                        const SizedBox(height: 8),
-                                    itemBuilder: (context, index) {
-                                      final item = state.filteredItems[index];
-                                      final selected = state.selectedIds
-                                          .contains(item.id);
-                                      return _BuoySelectableCard(
-                                        item: item,
-                                        selected: selected,
-                                        onTap: () {
-                                          context
-                                              .read<
-                                                GeneralUserExportSelectionBloc
-                                              >()
-                                              .add(
-                                                ToggleGeneralUserExportSelectionItem(
-                                                  item.id,
-                                                ),
-                                              );
-                                        },
-                                      );
-                                    },
-                                  ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-                            child: SizedBox(
-                              width: double.infinity,
-                              height: 56,
-                              child: AppElevatedButton(
-                                loading: false,
-                                onPressed: state.selectedCount == 0
-                                    ? null
-                                    : () => context.push(
-                                        AppRoutes.exportPath,
-                                        extra: GeneralUserExportSelectionCountExtra(
-                                          state.selectedCount,
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                16,
+                                10,
+                                16,
+                                10,
+                              ),
+                              child: SizedBox(
+                                width: double.infinity,
+                                height: 56,
+                                child: AppElevatedButton(
+                                  loading: false,
+                                  onPressed: state.selectedCount == 0
+                                      ? null
+                                      : () => context.push(
+                                          AppRoutes.exportPath,
+                                          extra:
+                                              GeneralUserExportSelectionBuoysExtra(
+                                                buoyIds: state.allItems
+                                                    .where(
+                                                      (i) => state.selectedIds
+                                                          .contains(i.id),
+                                                    )
+                                                    .map((i) => i.id)
+                                                    .toList(),
+                                              ),
                                         ),
-                                      ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF206BBE),
-                                  foregroundColor: Colors.white,
-                                  disabledBackgroundColor: const Color(
-                                    0xFF206BBE,
-                                  ).withValues(alpha: 0.55),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF206BBE),
+                                    foregroundColor: Colors.white,
+                                    disabledBackgroundColor: const Color(
+                                      0xFF206BBE,
+                                    ).withValues(alpha: 0.55),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
                                   ),
-                                ),
-                                child: Text(
-                                  'Continue to Export',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w700,
-                                      ),
+                                  child: Text(
+                                    'Continue to Export',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
+                          ],
+                        );
+                      },
+                    ),
               ),
+            ),
             const AppGeneralUserBottomNavForSession(
               selectedTab: GeneralUserBottomNavTab.export,
             ),

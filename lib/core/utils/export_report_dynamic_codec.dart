@@ -91,3 +91,12 @@ String exportReportFileName({
   return 'buoy_${safeId}_$fromDate-$toDate.$ext'
       .replaceAll(' ', '_');
 }
+
+String exportMultiBuoyDataReportFileName({
+  required String fromDate,
+  required String toDate,
+  required bool csv,
+}) {
+  final ext = csv ? 'csv' : 'pdf';
+  return 'buoy_data_${fromDate}_$toDate.$ext'.replaceAll(' ', '_');
+}

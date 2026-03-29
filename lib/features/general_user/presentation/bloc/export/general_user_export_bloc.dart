@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:drifter_buoy/core/utils/app_logger.dart';
 import 'package:drifter_buoy/core/utils/export_report_dynamic_codec.dart';
 import 'package:drifter_buoy/core/utils/report_export_date_format.dart';
+import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_buoy_data_report_for_export.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_buoy_distance_report_for_export.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/export/general_user_export_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/export/general_user_export_state.dart';
@@ -13,13 +14,16 @@ class GeneralUserExportBloc
     extends Bloc<GeneralUserExportEvent, GeneralUserExportState> {
   GeneralUserExportBloc({
     required GeneralUserGetBuoyDistanceReportForExport getBuoyDistanceReport,
+    required GeneralUserGetBuoyDataReportForExport getBuoyDataReport,
   })  : _getBuoyDistanceReport = getBuoyDistanceReport,
+        _getBuoyDataReport = getBuoyDataReport,
         super(const GeneralUserExportState.initial()) {
     on<LoadGeneralUserExport>(_onLoadGeneralUserExport);
     on<ChangeGeneralUserExportDateRange>(_onChangeDateRange);
     on<ApplyGeneralUserExportCustomRange>(_onApplyCustomRange);
     on<ChangeGeneralUserExportFormat>(_onChangeFormat);
-    on<SubmitGeneralUserExport>(_onSubmitGeneralUserExport);
+    on<ExportMultiBuoyDataSaveToDevice>(_onExportMultiDataSave);
+    on<ExportMultiBuoyDataShare>(_onExportMultiDataShare);
     on<ExportBuoyDistanceSaveToDevice>(_onExportSave);
     on<ExportBuoyDistanceShare>(_onExportShare);
     on<ClearGeneralUserExportDeliverable>(_onClearDeliverable);
@@ -27,6 +31,7 @@ class GeneralUserExportBloc
   }
 
   final GeneralUserGetBuoyDistanceReportForExport _getBuoyDistanceReport;
+  final GeneralUserGetBuoyDataReportForExport _getBuoyDataReport;
 
   Future<void> _onLoadGeneralUserExport(
     LoadGeneralUserExport event,
@@ -49,6 +54,8 @@ class GeneralUserExportBloc
       final buoyReady = parsed.mode == GeneralUserExportMode.buoyDistance &&
           parsed.buoyId != null &&
           parsed.buoyId!.isNotEmpty;
+      final multiReady = parsed.mode == GeneralUserExportMode.multiSelection &&
+          parsed.selectedBuoyIds.isNotEmpty;
 
       emit(
         GeneralUserExportState(
@@ -56,8 +63,9 @@ class GeneralUserExportBloc
           mode: parsed.mode,
           routeExtraSnapshot: event.routeExtra,
           selectedBuoyCount: parsed.selectedBuoyCount,
+          selectedBuoyIds: parsed.selectedBuoyIds,
           buoyId: parsed.buoyId,
-          dateRange: buoyReady
+          dateRange: (buoyReady || multiReady)
               ? ExportDateRange.yesterday
               : ExportDateRange.last24Hours,
           customStart: null,
@@ -67,7 +75,7 @@ class GeneralUserExportBloc
           isSuccessMessage: false,
           reportColumns: const [],
           reportRows: const [],
-          isReportLoading: buoyReady,
+          isReportLoading: buoyReady || multiReady,
           deliverable: null,
           buoyScreenNotice: '',
         ),
@@ -75,6 +83,8 @@ class GeneralUserExportBloc
 
       if (buoyReady) {
         await _fetchBuoyReport(emit);
+      } else if (multiReady) {
+        await _fetchMultiBuoyDataReport(emit);
       }
 
       AppLogger.i('LoadGeneralUserExport success');
@@ -101,33 +111,33 @@ class GeneralUserExportBloc
         mode: GeneralUserExportMode.buoyDistance,
         buoyId: id.isEmpty ? null : id,
         selectedBuoyCount: 0,
+        selectedBuoyIds: const [],
       );
     }
-    if (extra is GeneralUserExportSelectionCountExtra) {
+    if (extra is GeneralUserExportSelectionBuoysExtra) {
+      final ids = extra.buoyIds
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList(growable: false);
       return _ParsedRouteExtra(
         mode: GeneralUserExportMode.multiSelection,
         buoyId: null,
-        selectedBuoyCount: extra.selectedBuoyCount,
-      );
-    }
-    if (extra is int && extra > 0) {
-      return _ParsedRouteExtra(
-        mode: GeneralUserExportMode.multiSelection,
-        buoyId: null,
-        selectedBuoyCount: extra,
+        selectedBuoyCount: ids.length,
+        selectedBuoyIds: ids,
       );
     }
     return const _ParsedRouteExtra(
       mode: GeneralUserExportMode.multiSelection,
       buoyId: null,
       selectedBuoyCount: 0,
+      selectedBuoyIds: [],
     );
   }
 
-  void _onChangeDateRange(
+  Future<void> _onChangeDateRange(
     ChangeGeneralUserExportDateRange event,
     Emitter<GeneralUserExportState> emit,
-  ) {
+  ) async {
     emit(
       state.copyWith(
         dateRange: event.dateRange,
@@ -138,12 +148,13 @@ class GeneralUserExportBloc
         buoyScreenNotice: '',
       ),
     );
+    await _refetchReportIfNeeded(emit);
   }
 
-  void _onApplyCustomRange(
+  Future<void> _onApplyCustomRange(
     ApplyGeneralUserExportCustomRange event,
     Emitter<GeneralUserExportState> emit,
-  ) {
+  ) async {
     final a = startOfDay(
       event.start.isBefore(event.end) ? event.start : event.end,
     );
@@ -162,6 +173,22 @@ class GeneralUserExportBloc
         buoyScreenNotice: '',
       ),
     );
+    await _refetchReportIfNeeded(emit);
+  }
+
+  Future<void> _refetchReportIfNeeded(
+    Emitter<GeneralUserExportState> emit,
+  ) async {
+    if (state.mode == GeneralUserExportMode.buoyDistance &&
+        state.buoyId != null &&
+        state.buoyId!.isNotEmpty) {
+      await _fetchBuoyReport(emit);
+      return;
+    }
+    if (state.mode == GeneralUserExportMode.multiSelection &&
+        state.selectedBuoyIds.isNotEmpty) {
+      await _fetchMultiBuoyDataReport(emit);
+    }
   }
 
   void _onChangeFormat(
@@ -178,51 +205,124 @@ class GeneralUserExportBloc
     );
   }
 
-  Future<void> _onSubmitGeneralUserExport(
-    SubmitGeneralUserExport event,
+  Future<void> _onExportMultiDataSave(
+    ExportMultiBuoyDataSaveToDevice event,
     Emitter<GeneralUserExportState> emit,
   ) async {
-    if (state.status == GeneralUserExportStatus.exporting) {
-      return;
-    }
+    await _exportMultiBuoyDataFile(emit, forShare: false);
+  }
+
+  Future<void> _onExportMultiDataShare(
+    ExportMultiBuoyDataShare event,
+    Emitter<GeneralUserExportState> emit,
+  ) async {
+    await _exportMultiBuoyDataFile(emit, forShare: true);
+  }
+
+  Future<void> _exportMultiBuoyDataFile(
+    Emitter<GeneralUserExportState> emit, {
+    required bool forShare,
+  }) async {
     if (state.mode != GeneralUserExportMode.multiSelection) {
       return;
     }
+    if (state.selectedBuoyIds.isEmpty) {
+      emit(
+        state.copyWith(
+          message: 'No buoys selected.',
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
+    final dates = _apiDateStrings(state);
+    if (dates == null) {
+      emit(
+        state.copyWith(
+          message: 'Please choose a valid date range.',
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
 
-    AppLogger.i('SubmitGeneralUserExport (multi placeholder)');
     emit(
       state.copyWith(
         status: GeneralUserExportStatus.exporting,
         message: '',
         isSuccessMessage: false,
+        clearDeliverable: true,
       ),
     );
 
-    try {
-      await Future<void>.delayed(const Duration(milliseconds: 650));
-      final label = _dateRangeLabel(state.dateRange);
-      final fmt = state.format == ExportFormat.csv ? 'CSV' : 'PDF';
-      emit(
-        state.copyWith(
-          status: GeneralUserExportStatus.loaded,
-          message: '$fmt export for $label is ready (preview).',
-          isSuccessMessage: true,
-        ),
-      );
-    } catch (error, stackTrace) {
-      AppLogger.e(
-        'SubmitGeneralUserExport failed',
-        error: error,
-        stackTrace: stackTrace,
-      );
-      emit(
-        state.copyWith(
-          status: GeneralUserExportStatus.error,
-          message: 'Export failed. Please try again.',
-          isSuccessMessage: false,
-        ),
-      );
-    }
+    final idsCsv = state.selectedBuoyIds.join(',');
+    final outcome = await _getBuoyDataReport(
+      buoyIdsCsv: idsCsv,
+      fromDate: dates.$1,
+      toDate: dates.$2,
+    );
+
+    await outcome.foldAsync(
+      (failure) async {
+        emit(
+          state.copyWith(
+            status: GeneralUserExportStatus.loaded,
+            message: failure.message,
+            isSuccessMessage: false,
+          ),
+        );
+      },
+      (response) async {
+        try {
+          final cols = deriveReportColumnOrder(response.rows);
+          final Uint8List bytes;
+          if (state.format == ExportFormat.csv) {
+            final csv = buildDynamicCsv(
+              columnOrder: cols,
+              rows: response.rows,
+            );
+            bytes = encodeCsvToUtf8Bytes(csv);
+          } else {
+            bytes = await buildDynamicPdf(
+              columnOrder: cols,
+              rows: response.rows,
+              title:
+                  'Buoy data — ${state.selectedBuoyIds.length} buoys (${dates.$1} → ${dates.$2})',
+            );
+          }
+          final name = exportMultiBuoyDataReportFileName(
+            fromDate: dates.$1,
+            toDate: dates.$2,
+            csv: state.format == ExportFormat.csv,
+          );
+          emit(
+            state.copyWith(
+              status: GeneralUserExportStatus.loaded,
+              reportColumns: cols,
+              reportRows: response.rows,
+              deliverable: GeneralUserExportDeliverable(
+                bytes: bytes,
+                fileName: name,
+                forShare: forShare,
+              ),
+            ),
+          );
+        } catch (error, stackTrace) {
+          AppLogger.e(
+            'Multi export file build failed',
+            error: error,
+            stackTrace: stackTrace,
+          );
+          emit(
+            state.copyWith(
+              status: GeneralUserExportStatus.loaded,
+              message: 'Could not build export file.',
+              isSuccessMessage: false,
+            ),
+          );
+        }
+      },
+    );
   }
 
   Future<void> _onExportSave(
@@ -410,6 +510,70 @@ class GeneralUserExportBloc
     );
   }
 
+  Future<void> _fetchMultiBuoyDataReport(Emitter<GeneralUserExportState> emit) async {
+    if (state.mode != GeneralUserExportMode.multiSelection ||
+        state.selectedBuoyIds.isEmpty) {
+      return;
+    }
+
+    final dates = _apiDateStrings(state);
+    if (dates == null) {
+      emit(
+        state.copyWith(
+          isReportLoading: false,
+          reportColumns: const [],
+          reportRows: const [],
+          assignBuoyScreenNotice: true,
+          buoyScreenNotice: 'Data not found',
+        ),
+      );
+      return;
+    }
+
+    emit(
+      state.copyWith(
+        isReportLoading: true,
+        message: '',
+        assignBuoyScreenNotice: true,
+        buoyScreenNotice: '',
+      ),
+    );
+
+    final idsCsv = state.selectedBuoyIds.join(',');
+    final outcome = await _getBuoyDataReport(
+      buoyIdsCsv: idsCsv,
+      fromDate: dates.$1,
+      toDate: dates.$2,
+    );
+
+    await outcome.foldAsync(
+      (failure) async {
+        emit(
+          state.copyWith(
+            isReportLoading: false,
+            reportColumns: const [],
+            reportRows: const [],
+            assignBuoyScreenNotice: true,
+            buoyScreenNotice: failure.message,
+          ),
+        );
+      },
+      (response) async {
+        final cols = deriveReportColumnOrder(response.rows);
+        final empty = response.rows.isEmpty;
+        emit(
+          state.copyWith(
+            isReportLoading: false,
+            reportColumns: cols,
+            reportRows: response.rows,
+            assignBuoyScreenNotice: true,
+            buoyScreenNotice: empty ? 'Data not found' : '',
+          ),
+        );
+      },
+    );
+  }
+
   (String, String)? _apiDateStrings(GeneralUserExportState s) {
     final today = todayLocal();
     switch (s.dateRange) {
@@ -418,12 +582,7 @@ class GeneralUserExportBloc
       case ExportDateRange.yesterday:
         final y = today.subtract(const Duration(days: 1));
         return (formatReportApiDate(y), formatReportApiDate(y));
-      case ExportDateRange.last7Days:
-        final start = today.subtract(const Duration(days: 6));
-        return (formatReportApiDate(start), formatReportApiDate(today));
-      case ExportDateRange.last30Days:
-        final start = today.subtract(const Duration(days: 29));
-        return (formatReportApiDate(start), formatReportApiDate(today));
+
       case ExportDateRange.custom:
         final a = s.customStart;
         final b = s.customEnd;
@@ -447,21 +606,6 @@ class GeneralUserExportBloc
   ) {
     emit(state.copyWith(message: '', isSuccessMessage: false));
   }
-
-  String _dateRangeLabel(ExportDateRange range) {
-    switch (range) {
-      case ExportDateRange.last24Hours:
-        return 'Last 24 Hrs';
-      case ExportDateRange.yesterday:
-        return 'Yesterday';
-      case ExportDateRange.last7Days:
-        return 'Last 7 Days';
-      case ExportDateRange.last30Days:
-        return 'Last 30 Days';
-      case ExportDateRange.custom:
-        return 'Custom Range';
-    }
-  }
 }
 
 class _ParsedRouteExtra {
@@ -469,9 +613,11 @@ class _ParsedRouteExtra {
     required this.mode,
     required this.buoyId,
     required this.selectedBuoyCount,
+    required this.selectedBuoyIds,
   });
 
   final GeneralUserExportMode mode;
   final String? buoyId;
   final int selectedBuoyCount;
+  final List<String> selectedBuoyIds;
 }

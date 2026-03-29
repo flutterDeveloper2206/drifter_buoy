@@ -23,4 +23,18 @@ class GeneralUserReportRepositoryImpl implements GeneralUserReportRepository {
       toDate: toDate,
     );
   }
+
+  @override
+  ResultFuture<UserReportGetBuoyDistanceReportForExportResponse>
+  getBuoyDataReportForExport({
+    required String buoyIdsCsv,
+    required String fromDate,
+    required String toDate,
+  }) {
+    return _remoteDataSource.getBuoyDataReportForExport(
+      buoyIdsCsv: buoyIdsCsv,
+      fromDate: fromDate,
+      toDate: toDate,
+    );
+  }
 }

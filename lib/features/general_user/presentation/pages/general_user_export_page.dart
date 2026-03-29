@@ -13,6 +13,254 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/export/gene
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:syncfusion_flutter_datepicker/datepicker.dart';
+
+String _formatExportDisplayDate(DateTime d) {
+  const months = <String>[
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  final day = d.day.toString().padLeft(2, '0');
+  return '$day ${months[d.month - 1]} ${d.year}';
+}
+
+Future<DateTimeRange?> showExportThemedDateRangePicker({
+  required BuildContext context,
+  DateTimeRange? initialDateRange,
+}) {
+  const primary = Color(0xFF206BBE);
+  const accent = Color(0xFF2A86CE);
+  const surface = Color(0xFFF2F2F2);
+  const onSurface = Color(0xFF30353A);
+  const headerBg = Color(0xFFE8EBED);
+  const headerFg = Color(0xFF262C31);
+
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final minDate = DateTime(2020);
+  final maxDate = today.add(const Duration(days: 365));
+
+  final PickerDateRange initialRange = initialDateRange != null
+      ? PickerDateRange(
+          DateTime(
+            initialDateRange.start.year,
+            initialDateRange.start.month,
+            initialDateRange.start.day,
+          ),
+          DateTime(
+            initialDateRange.end.year,
+            initialDateRange.end.month,
+            initialDateRange.end.day,
+          ),
+        )
+      : PickerDateRange(
+          today.subtract(const Duration(days: 7)),
+          today,
+        );
+
+  final displayDate =
+      initialDateRange?.start ?? initialRange.startDate ?? today;
+
+  return showDialog<DateTimeRange>(
+    context: context,
+    barrierDismissible: true,
+    barrierColor: Colors.black.withValues(alpha: 0.45),
+    builder: (dialogContext) {
+      const radius = 20.0;
+      return Theme(
+        data: Theme.of(dialogContext).copyWith(
+          textButtonTheme: TextButtonThemeData(
+            style: TextButton.styleFrom(
+              foregroundColor: primary,
+              textStyle: const TextStyle(
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ),
+        ),
+        child: Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: 400,
+              maxHeight: MediaQuery.sizeOf(dialogContext).height * 0.88,
+            ),
+            child: Material(
+              color: surface,
+              elevation: 12,
+              shadowColor: Colors.black.withValues(alpha: 0.18),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(radius),
+                side: BorderSide(
+                  color: const Color(0xFF2A86CE).withValues(alpha: 0.28),
+                  width: 1,
+                ),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.fromLTRB(18, 18, 14, 16),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          headerBg,
+                          Color.lerp(headerBg, Colors.white, 0.35)!,
+                        ],
+                      ),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(radius),
+                      ),
+                      border: Border(
+                        bottom: BorderSide(
+                          color: const Color(0xFF2A86CE).withValues(alpha: 0.2),
+                        ),
+                      ),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: primary.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: const Padding(
+                            padding: EdgeInsets.all(10),
+                            child: Icon(
+                              Icons.calendar_month_rounded,
+                              color: primary,
+                              size: 26,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Select date range',
+                                style: Theme.of(dialogContext)
+                                    .textTheme
+                                    .titleLarge
+                                    ?.copyWith(
+                                      color: headerFg,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: -0.35,
+                                      height: 1.2,
+                                    ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Choose start and end dates for this export.',
+                                style: Theme.of(dialogContext)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                      color: onSurface.withValues(alpha: 0.72),
+                                      fontWeight: FontWeight.w500,
+                                      height: 1.35,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(
+                    height: 392,
+                    child: SfDateRangePicker(
+                      view: DateRangePickerView.month,
+                      selectionMode: DateRangePickerSelectionMode.range,
+                      minDate: minDate,
+                      maxDate: maxDate,
+                      initialSelectedRange: initialRange,
+                      initialDisplayDate: displayDate,
+                      showNavigationArrow: true,
+                      showActionButtons: true,
+                      confirmText: 'OK',
+                      cancelText: 'Cancel',
+                      backgroundColor: Colors.white,
+                      headerStyle: DateRangePickerHeaderStyle(
+                        backgroundColor: const Color(0xFFFAFAFA),
+                        textStyle: const TextStyle(
+                          color: headerFg,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                        ),
+                      ),
+                      selectionColor: primary,
+                      startRangeSelectionColor: primary,
+                      endRangeSelectionColor: primary,
+                      rangeSelectionColor: primary.withValues(alpha: 0.22),
+                      todayHighlightColor: accent,
+                      selectionTextStyle: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      rangeTextStyle: const TextStyle(
+                        color: onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      monthViewSettings: const DateRangePickerMonthViewSettings(
+                        firstDayOfWeek: 1,
+                        viewHeaderHeight: 32,
+                        viewHeaderStyle: DateRangePickerViewHeaderStyle(
+                          backgroundColor: Color(0xFFF2F2F2),
+                          textStyle: TextStyle(
+                            color: Color(0xFF5C5C5C),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      onSubmit: (Object? value) {
+                        if (value is PickerDateRange &&
+                            value.startDate != null &&
+                            value.endDate != null) {
+                          Navigator.of(dialogContext).pop(
+                            DateTimeRange(
+                              start: value.startDate!,
+                              end: value.endDate!,
+                            ),
+                          );
+                          return;
+                        }
+                        Navigator.of(dialogContext).pop();
+                      },
+                      onCancel: () {
+                        Navigator.of(dialogContext).pop();
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    },
+  );
+}
 
 class GeneralUserExportPage extends StatelessWidget {
   const GeneralUserExportPage({super.key});
@@ -146,9 +394,14 @@ class GeneralUserExportPage extends StatelessWidget {
 
                     final isExporting =
                         state.status == GeneralUserExportStatus.exporting;
-                    final hideBuoyExportControls =
-                        state.mode == GeneralUserExportMode.buoyDistance &&
-                        (state.isReportLoading || state.reportRows.isEmpty);
+                    final hideExportControls =
+                        (state.mode == GeneralUserExportMode.buoyDistance &&
+                            (state.isReportLoading ||
+                                state.reportRows.isEmpty)) ||
+                        (state.mode == GeneralUserExportMode.multiSelection &&
+                            state.selectedBuoyIds.isNotEmpty &&
+                            (state.isReportLoading ||
+                                state.reportRows.isEmpty));
 
                     return Column(
                       children: [
@@ -160,6 +413,8 @@ class GeneralUserExportPage extends StatelessWidget {
                                 _DateRangeCard(
                                   mode: state.mode,
                                   selected: state.dateRange,
+                                  customStart: state.customStart,
+                                  customEnd: state.customEnd,
                                   onChanged: isExporting
                                       ? null
                                       : (range) async {
@@ -168,12 +423,8 @@ class GeneralUserExportPage extends StatelessWidget {
                                           }
                                           if (range == ExportDateRange.custom) {
                                             final picked =
-                                                await showDateRangePicker(
+                                                await showExportThemedDateRangePicker(
                                                   context: context,
-                                                  firstDate: DateTime(2020),
-                                                  lastDate: DateTime.now().add(
-                                                    const Duration(days: 365),
-                                                  ),
                                                   initialDateRange:
                                                       state.customStart !=
                                                               null &&
@@ -220,8 +471,15 @@ class GeneralUserExportPage extends StatelessWidget {
                                               );
                                         },
                                 ),
-                                if (state.mode ==
-                                        GeneralUserExportMode.buoyDistance &&
+                                if ((state.mode ==
+                                            GeneralUserExportMode
+                                                .buoyDistance ||
+                                        (state.mode ==
+                                                GeneralUserExportMode
+                                                    .multiSelection &&
+                                            state
+                                                .selectedBuoyIds
+                                                .isNotEmpty)) &&
                                     state.isReportLoading) ...[
                                   const SizedBox(height: 24),
                                   const Center(
@@ -234,8 +492,15 @@ class GeneralUserExportPage extends StatelessWidget {
                                     ),
                                   ),
                                 ],
-                                if (state.mode ==
-                                        GeneralUserExportMode.buoyDistance &&
+                                if ((state.mode ==
+                                            GeneralUserExportMode
+                                                .buoyDistance ||
+                                        (state.mode ==
+                                                GeneralUserExportMode
+                                                    .multiSelection &&
+                                            state
+                                                .selectedBuoyIds
+                                                .isNotEmpty)) &&
                                     state.buoyScreenNotice.isNotEmpty) ...[
                                   const SizedBox(height: 20),
                                   Text(
@@ -250,13 +515,12 @@ class GeneralUserExportPage extends StatelessWidget {
                                         ),
                                   ),
                                 ],
-                                if (!hideBuoyExportControls) ...[
+                                if (!hideExportControls) ...[
                                   const SizedBox(height: 18),
                                   _ExportFormatCardSection(
-                                    mode: state.mode,
                                     selectedFormat: state.format,
-                                    selectedRange: state.dateRange,
-                                    rowCount: state.reportRows.length,
+                                    reportColumns: state.reportColumns,
+                                    reportRows: state.reportRows,
                                     enabled: !isExporting,
                                     onFormatChanged: (format) {
                                       context.read<GeneralUserExportBloc>().add(
@@ -269,7 +533,7 @@ class GeneralUserExportPage extends StatelessWidget {
                             ),
                           ),
                         ),
-                        if (!hideBuoyExportControls)
+                        if (!hideExportControls)
                           Padding(
                             padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
                             child: SizedBox(
@@ -281,17 +545,7 @@ class GeneralUserExportPage extends StatelessWidget {
                                     isExporting || _exportButtonDisabled(state)
                                     ? null
                                     : () {
-                                        if (state.mode ==
-                                            GeneralUserExportMode
-                                                .buoyDistance) {
-                                          _showBuoyExportConfirmDialog(context);
-                                        } else {
-                                          context
-                                              .read<GeneralUserExportBloc>()
-                                              .add(
-                                                const SubmitGeneralUserExport(),
-                                              );
-                                        }
+                                        _showExportConfirmDialog(context);
                                       },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFF206BBE),
@@ -328,11 +582,14 @@ class GeneralUserExportPage extends StatelessWidget {
   }
 
   bool _exportButtonDisabled(GeneralUserExportState state) {
-    if (state.mode != GeneralUserExportMode.buoyDistance) {
-      return false;
-    }
-    if (state.buoyId == null || state.buoyId!.isEmpty) {
-      return true;
+    if (state.mode == GeneralUserExportMode.buoyDistance) {
+      if (state.buoyId == null || state.buoyId!.isEmpty) {
+        return true;
+      }
+    } else if (state.mode == GeneralUserExportMode.multiSelection) {
+      if (state.selectedBuoyIds.isEmpty) {
+        return true;
+      }
     }
     if (state.dateRange == ExportDateRange.custom &&
         (state.customStart == null || state.customEnd == null)) {
@@ -341,7 +598,8 @@ class GeneralUserExportPage extends StatelessWidget {
     return false;
   }
 
-  Future<void> _showBuoyExportConfirmDialog(BuildContext context) async {
+  Future<void> _showExportConfirmDialog(BuildContext context) async {
+    final mode = context.read<GeneralUserExportBloc>().state.mode;
     await showDialog<void>(
       context: context,
       builder: (dialogContext) {
@@ -354,18 +612,30 @@ class GeneralUserExportPage extends StatelessWidget {
             TextButton(
               onPressed: () {
                 Navigator.of(dialogContext).pop();
-                context.read<GeneralUserExportBloc>().add(
-                  const ExportBuoyDistanceShare(),
-                );
+                if (mode == GeneralUserExportMode.buoyDistance) {
+                  context.read<GeneralUserExportBloc>().add(
+                    const ExportBuoyDistanceShare(),
+                  );
+                } else {
+                  context.read<GeneralUserExportBloc>().add(
+                    const ExportMultiBuoyDataShare(),
+                  );
+                }
               },
               child: const Text('Share'),
             ),
             FilledButton(
               onPressed: () {
                 Navigator.of(dialogContext).pop();
-                context.read<GeneralUserExportBloc>().add(
-                  const ExportBuoyDistanceSaveToDevice(),
-                );
+                if (mode == GeneralUserExportMode.buoyDistance) {
+                  context.read<GeneralUserExportBloc>().add(
+                    const ExportBuoyDistanceSaveToDevice(),
+                  );
+                } else {
+                  context.read<GeneralUserExportBloc>().add(
+                    const ExportMultiBuoyDataSaveToDevice(),
+                  );
+                }
               },
               child: const Text('Download'),
             ),
@@ -379,28 +649,25 @@ class GeneralUserExportPage extends StatelessWidget {
 class _DateRangeCard extends StatelessWidget {
   final GeneralUserExportMode mode;
   final ExportDateRange selected;
+  final DateTime? customStart;
+  final DateTime? customEnd;
   final Future<void> Function(ExportDateRange?)? onChanged;
 
   const _DateRangeCard({
     required this.mode,
     required this.selected,
     required this.onChanged,
+    this.customStart,
+    this.customEnd,
   });
 
   @override
   Widget build(BuildContext context) {
-    final items = mode == GeneralUserExportMode.buoyDistance
-        ? const [
-            ExportDateRange.yesterday,
-            ExportDateRange.last24Hours,
-            ExportDateRange.custom,
-          ]
-        : const [
-            ExportDateRange.last24Hours,
-            ExportDateRange.last7Days,
-            ExportDateRange.last30Days,
-            ExportDateRange.custom,
-          ];
+    final items = const [
+      ExportDateRange.yesterday,
+      ExportDateRange.last24Hours,
+      ExportDateRange.custom,
+    ];
 
     return Container(
       width: double.infinity,
@@ -459,6 +726,41 @@ class _DateRangeCard extends StatelessWidget {
               ),
             ),
           ),
+          if (selected == ExportDateRange.custom &&
+              customStart != null &&
+              customEnd != null) ...[
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: const Color(0xFF2A86CE).withValues(alpha: 0.35),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.date_range_rounded,
+                    size: 20,
+                    color: Color(0xFF206BBE),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      '${_formatExportDisplayDate(customStart!)}  –  ${_formatExportDisplayDate(customEnd!)}',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: const Color(0xFF30353A),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -470,10 +772,7 @@ class _DateRangeCard extends StatelessWidget {
         return 'Last 24 Hrs';
       case ExportDateRange.yesterday:
         return 'Yesterday';
-      case ExportDateRange.last7Days:
-        return 'Last 7 Days';
-      case ExportDateRange.last30Days:
-        return 'Last 30 Days';
+
       case ExportDateRange.custom:
         return 'Custom Range';
     }
@@ -481,18 +780,16 @@ class _DateRangeCard extends StatelessWidget {
 }
 
 class _ExportFormatCardSection extends StatelessWidget {
-  final GeneralUserExportMode mode;
   final ExportFormat selectedFormat;
-  final ExportDateRange selectedRange;
-  final int rowCount;
+  final List<String> reportColumns;
+  final List<Map<String, String>> reportRows;
   final bool enabled;
   final ValueChanged<ExportFormat> onFormatChanged;
 
   const _ExportFormatCardSection({
-    required this.mode,
     required this.selectedFormat,
-    required this.selectedRange,
-    required this.rowCount,
+    required this.reportColumns,
+    required this.reportRows,
     required this.enabled,
     required this.onFormatChanged,
   });
@@ -558,36 +855,77 @@ class _ExportFormatCardSection extends StatelessWidget {
   }
 
   String _estimateSize({required bool isCsv}) {
-    if (mode == GeneralUserExportMode.multiSelection) {
-      return _legacySizePlaceholder(isCsv: isCsv);
-    }
-    if (rowCount <= 0) {
+    if (reportRows.isEmpty) {
       return isCsv ? '~2 KB' : '~8 KB';
     }
-    final perRow = isCsv ? 80 : 220;
-    final bytes = rowCount * perRow + 500;
-    if (bytes < 1024) {
-      return '$bytes B';
+    final order = _columnOrderForEstimate();
+    if (order.isEmpty) {
+      return isCsv ? '~2 KB' : '~8 KB';
     }
-    final kb = bytes / 1024;
-    if (kb < 1024) {
-      return '${kb.toStringAsFixed(1)} KB';
-    }
-    return '${(kb / 1024).toStringAsFixed(1)} MB';
+    final csvBytes = _estimateCsvUtf8Bytes(
+      columnOrder: order,
+      rows: reportRows,
+    );
+    final bytes = isCsv
+        ? csvBytes
+        : _estimatePdfBytesFromTable(
+            csvUtf8Bytes: csvBytes,
+            rowCount: reportRows.length,
+            columnCount: order.length,
+          );
+    return _formatApproxFileSize(bytes);
   }
 
-  String _legacySizePlaceholder({required bool isCsv}) {
-    switch (selectedRange) {
-      case ExportDateRange.last24Hours:
-        return isCsv ? '2.4 MB' : '6.4 MB';
-      case ExportDateRange.yesterday:
-        return isCsv ? '2.2 MB' : '6.0 MB';
-      case ExportDateRange.last7Days:
-        return isCsv ? '7.8 MB' : '12.9 MB';
-      case ExportDateRange.last30Days:
-        return isCsv ? '18.3 MB' : '29.1 MB';
-      case ExportDateRange.custom:
-        return isCsv ? '5.9 MB' : '9.5 MB';
+  List<String> _columnOrderForEstimate() {
+    if (reportColumns.isNotEmpty) {
+      return reportColumns;
     }
+    if (reportRows.isEmpty) {
+      return const [];
+    }
+    return reportRows.first.keys.toList(growable: false);
   }
+}
+
+/// Rough UTF-8 byte count for CSV shaped like [buildDynamicCsv] (slack for quoting).
+int _estimateCsvUtf8Bytes({
+  required List<String> columnOrder,
+  required List<Map<String, String>> rows,
+}) {
+  var n = 0;
+  for (final h in columnOrder) {
+    n += h.length + 1;
+  }
+  n += 1;
+  for (final row in rows) {
+    for (final k in columnOrder) {
+      final v = row[k] ?? '';
+      n += v.length + 1;
+    }
+    n += 1;
+  }
+  return (n * 1.12).ceil();
+}
+
+/// Heuristic PDF output size from tabular data (fonts, layout, binary overhead).
+int _estimatePdfBytesFromTable({
+  required int csvUtf8Bytes,
+  required int rowCount,
+  required int columnCount,
+}) {
+  final base = 4500 + columnCount * 120;
+  final rowTerm = rowCount * (180 + columnCount * 35);
+  final fromCsv = (csvUtf8Bytes * 2.4).round();
+  return base + rowTerm > fromCsv ? base + rowTerm : fromCsv;
+}
+
+String _formatApproxFileSize(int bytes) {
+  if (bytes < 1024) {
+    return '~$bytes B';
+  }
+  final kb = bytes / 1024;
+  if (kb < 1024) {
+    return '~${kb.toStringAsFixed(1)} KB';
+  }
+  return '~${(kb / 1024).toStringAsFixed(1)} MB';
 }
