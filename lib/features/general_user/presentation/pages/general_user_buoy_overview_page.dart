@@ -6,8 +6,10 @@ import 'package:drifter_buoy/core/utils/widgets/app_loader.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoy_overview/general_user_buoy_overview_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoy_overview/general_user_buoy_overview_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoy_overview/general_user_buoy_overview_state.dart';
+import 'package:drifter_buoy/features/general_user/presentation/navigation/general_user_export_route_extra.dart';
 import 'package:drifter_buoy/features/general_user/presentation/widgets/dummy_buoy_map_view.dart';
 import 'package:drifter_buoy/features/general_user/presentation/widgets/dummy_trajectory_map_preview.dart';
+import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -26,9 +28,24 @@ class GeneralUserBuoyOverviewPage extends StatelessWidget {
               GeneralUserBuoyOverviewBloc,
               GeneralUserBuoyOverviewState
             >(
-              listenWhen: (previous, current) =>
-                  previous.message != current.message,
+              listenWhen: (previous, current) {
+                final prevMsg = switch (previous) {
+                  GeneralUserBuoyOverviewLoaded(:final message) => message,
+                  _ => '',
+                };
+                final curr = switch (current) {
+                  GeneralUserBuoyOverviewLoaded(:final message) => message,
+                  _ => null,
+                };
+                if (curr == null || curr.isEmpty) {
+                  return false;
+                }
+                return prevMsg != curr;
+              },
               listener: (context, state) {
+                if (state is! GeneralUserBuoyOverviewLoaded) {
+                  return;
+                }
                 if (state.message.isEmpty) {
                   return;
                 }
@@ -49,112 +66,116 @@ class GeneralUserBuoyOverviewPage extends StatelessWidget {
                     GeneralUserBuoyOverviewState
                   >(
                     builder: (context, state) {
-                      if (state.status ==
-                              GeneralUserBuoyOverviewStatus.loading ||
-                          state.status ==
-                              GeneralUserBuoyOverviewStatus.initial) {
-                        return const AppLoader();
-                      }
-
-                      if (state.status == GeneralUserBuoyOverviewStatus.error) {
-                        return AppErrorView(
-                          message: state.message,
-                          onRetry: () {
-                            context.read<GeneralUserBuoyOverviewBloc>().add(
-                              const LoadGeneralUserBuoyOverview(),
-                            );
-                          },
-                        );
-                      }
-
-                      final data = state.data;
-                      if (data == null) {
-                        return const AppErrorView(
-                          message: 'No buoy details found.',
-                        );
-                      }
-
-                      return SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                AppIconCircleButton(
-                                  onTap: () {
-                                    if (GoRouter.of(context).canPop()) {
-                                      context.pop();
-                                    } else {
-                                      context.go(AppRoutes.mapBuoyDetailsPath);
-                                    }
-                                  },
-                                  icon: Icons.arrow_back,
-                                ),
-                                Expanded(
-                                  child: Center(
-                                    child: Text(
-                                      data.id,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleMedium
-                                          ?.copyWith(
-                                            color: const Color(0xFF2A2F34),
-                                            fontWeight: FontWeight.w700,
+                      return switch (state) {
+                        GeneralUserBuoyOverviewInitial() ||
+                        GeneralUserBuoyOverviewLoading() => const AppLoader(),
+                        GeneralUserBuoyOverviewError(
+                          :final message,
+                          :final buoyId,
+                        ) =>
+                          AppErrorView(
+                            message: message,
+                            onRetry: buoyId.isEmpty
+                                ? null
+                                : () {
+                                    context
+                                        .read<GeneralUserBuoyOverviewBloc>()
+                                        .add(
+                                          LoadGeneralUserBuoyOverview(
+                                            buoyId: buoyId,
                                           ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 48),
-                              ],
-                            ),
-                            const SizedBox(height: 18),
-                            _OverviewTabBar(
-                              selectedTab: state.selectedTab,
-                              onTabChanged: (tab) {
-                                if (tab ==
-                                    GeneralUserBuoyOverviewTab.trajectory) {
-                                  context.push(
-                                    AppRoutes.trajectoryViewPath,
-                                    extra: data.id,
-                                  );
-                                  return;
-                                }
-
-                                context.read<GeneralUserBuoyOverviewBloc>().add(
-                                  ChangeGeneralUserBuoyOverviewTab(tab),
-                                );
-                              },
-                            ),
-                            const SizedBox(height: 18),
-                            _BuoyHeaderCard(data: data),
-                            const SizedBox(height: 16),
-                            _MetricsCard(
-                              data: data,
-                              onTap: () => context.push(
-                                AppRoutes.metricsPath,
-                                extra: data.id,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            _TrajectoryCard(
-                              data: data,
-                              onArrowTap: () => context.push(
-                                AppRoutes.trajectoryViewPath,
-                                extra: data.id,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            _DeviceActionsCard(
-                              onExportTap: () =>
-                                  context.push(AppRoutes.exportPath),
-                            ),
-                          ],
+                                        );
+                                  },
+                          ),
+                        GeneralUserBuoyOverviewLoaded() => _LoadedOverviewBody(
+                          state: state,
                         ),
-                      );
+                      };
                     },
                   ),
             ),
+      ),
+    );
+  }
+}
+
+class _LoadedOverviewBody extends StatelessWidget {
+  const _LoadedOverviewBody({required this.state});
+
+  final GeneralUserBuoyOverviewLoaded state;
+
+  @override
+  Widget build(BuildContext context) {
+    final data = state.data;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              AppIconCircleButton(
+                onTap: () {
+                  if (GoRouter.of(context).canPop()) {
+                    context.pop();
+                  } else {
+                    context.go(AppRoutes.mapBuoyDetailsPath);
+                  }
+                },
+                icon: Icons.arrow_back,
+              ),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    data.id,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: const Color(0xFF2A2F34),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 48),
+            ],
+          ),
+          const SizedBox(height: 18),
+          _OverviewTabBar(
+            selectedTab: state.selectedTab,
+            onTabChanged: (tab) {
+              if (tab == GeneralUserBuoyOverviewTab.trajectory) {
+                context.push(AppRoutes.trajectoryViewPath, extra: data.id);
+                return;
+              }
+
+              context.read<GeneralUserBuoyOverviewBloc>().add(
+                ChangeGeneralUserBuoyOverviewTab(tab),
+              );
+            },
+          ),
+          const SizedBox(height: 18),
+          _BuoyHeaderCard(data: data),
+          const SizedBox(height: 16),
+          _MetricsCard(
+            data: data,
+            onTap: () {
+
+            },
+            // onTap: () => context.push(AppRoutes.metricsPath, extra: data.id),
+          ),
+          const SizedBox(height: 16),
+          _TrajectoryCard(
+            onArrowTap: () =>
+                context.push(AppRoutes.trajectoryViewPath, extra: data.id),
+          ),
+          const SizedBox(height: 16),
+          _DeviceActionsCard(
+            onExportTap: () => context.push(
+              AppRoutes.exportPath,
+              extra: GeneralUserExportBuoyDistanceExtra(buoyId: data.id),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -405,10 +426,9 @@ class _MetricColumn extends StatelessWidget {
 }
 
 class _TrajectoryCard extends StatelessWidget {
-  final GeneralUserBuoyOverviewData data;
   final VoidCallback onArrowTap;
 
-  const _TrajectoryCard({required this.data, required this.onArrowTap});
+  const _TrajectoryCard({required this.onArrowTap});
 
   @override
   Widget build(BuildContext context) {
@@ -446,18 +466,40 @@ class _TrajectoryCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          SizedBox(
-            height: 170,
-            child: DummyTrajectoryMapPreview(
-              trajectoryPoints: data.trajectoryPoints,
-              buoy: DummyBuoy(
-                id: data.id,
-                position: data.trajectoryPoints.isNotEmpty
-                    ? data.trajectoryPoints.first
-                    : const LatLng(37.7749, -122.4194),
-                status: data.isActive ? BuoyStatus.active : BuoyStatus.offline,
-              ),
-            ),
+          BlocSelector<
+            GeneralUserBuoyOverviewBloc,
+            GeneralUserBuoyOverviewState,
+            _TrajectoryPreviewVm?
+          >(
+            selector: (s) {
+              if (s is! GeneralUserBuoyOverviewLoaded) {
+                return null;
+              }
+              final d = s.data;
+              return _TrajectoryPreviewVm(
+                buoyId: d.id,
+                points: d.trajectoryPoints,
+                status: _buoyMapStatusForOverview(d),
+              );
+            },
+            builder: (context, vm) {
+              if (vm == null) {
+                return const SizedBox(height: 170);
+              }
+              return SizedBox(
+                height: 170,
+                child: RepaintBoundary(
+                  child: DummyTrajectoryMapPreview(
+                    trajectoryPoints: vm.points,
+                    buoy: DummyBuoy(
+                      id: vm.buoyId,
+                      position: vm.anchor,
+                      status: vm.status,
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -522,4 +564,36 @@ class _DeviceActionsCard extends StatelessWidget {
 
 String _overviewCardDisplayId(String id) {
   return id.contains('-') ? id.replaceAll('-', ' - ') : id;
+}
+
+BuoyStatus _buoyMapStatusForOverview(GeneralUserBuoyOverviewData data) {
+  if (!data.isActive) {
+    return BuoyStatus.offline;
+  }
+  if (data.isBatteryLow) {
+    return BuoyStatus.batteryLow;
+  }
+  return BuoyStatus.active;
+}
+
+final class _TrajectoryPreviewVm extends Equatable {
+  const _TrajectoryPreviewVm({
+    required this.buoyId,
+    required this.points,
+    required this.status,
+  });
+
+  final String buoyId;
+  final List<LatLng> points;
+  final BuoyStatus status;
+
+  LatLng get anchor =>
+      points.isNotEmpty ? points.first : const LatLng(37.7749, -122.4194);
+
+  @override
+  List<Object?> get props => [
+    buoyId,
+    status,
+    points.map((p) => '${p.latitude},${p.longitude}').join('|'),
+  ];
 }

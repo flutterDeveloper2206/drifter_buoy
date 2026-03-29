@@ -37,8 +37,7 @@ class AppRoutes {
   static const String buoyOverviewPath = '/buoy-overview';
   static const String buoyOverviewName = 'buoy-overview';
 
-  static const String metricsPath = '/metrics';
-  static const String metricsName = 'metrics';
+
 
   static const String trajectoryViewPath = '/trajectory-view';
   static const String trajectoryViewName = 'trajectory-view';

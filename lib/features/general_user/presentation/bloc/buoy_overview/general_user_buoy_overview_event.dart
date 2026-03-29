@@ -12,7 +12,7 @@ abstract class GeneralUserBuoyOverviewEvent extends Equatable {
 class LoadGeneralUserBuoyOverview extends GeneralUserBuoyOverviewEvent {
   final String buoyId;
 
-  const LoadGeneralUserBuoyOverview({this.buoyId = 'DB-01'});
+  const LoadGeneralUserBuoyOverview({required this.buoyId});
 
   @override
   List<Object> get props => [buoyId];

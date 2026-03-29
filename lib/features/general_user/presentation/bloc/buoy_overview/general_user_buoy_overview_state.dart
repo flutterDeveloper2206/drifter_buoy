@@ -2,8 +2,6 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/buoy_overvi
 import 'package:equatable/equatable.dart';
 import 'package:latlong2/latlong.dart';
 
-enum GeneralUserBuoyOverviewStatus { initial, loading, loaded, error }
-
 class GeneralUserBuoyOverviewData extends Equatable {
   final String id;
   final bool isActive;
@@ -12,6 +10,7 @@ class GeneralUserBuoyOverviewData extends Equatable {
   final String gpsLatitude;
   final String gpsLongitude;
   final String signalStrength;
+  final bool isBatteryLow;
   final List<LatLng> trajectoryPoints;
 
   const GeneralUserBuoyOverviewData({
@@ -22,56 +21,66 @@ class GeneralUserBuoyOverviewData extends Equatable {
     required this.gpsLatitude,
     required this.gpsLongitude,
     required this.signalStrength,
+    required this.isBatteryLow,
     required this.trajectoryPoints,
   });
 
   @override
   List<Object> get props => [
-    id,
-    isActive,
-    lastUpdate,
-    batteryVoltage,
-    gpsLatitude,
-    gpsLongitude,
-    signalStrength,
-    trajectoryPoints,
-  ];
+        id,
+        isActive,
+        lastUpdate,
+        batteryVoltage,
+        gpsLatitude,
+        gpsLongitude,
+        signalStrength,
+        isBatteryLow,
+        trajectoryPoints,
+      ];
 }
 
-class GeneralUserBuoyOverviewState extends Equatable {
-  final GeneralUserBuoyOverviewStatus status;
+sealed class GeneralUserBuoyOverviewState extends Equatable {
+  const GeneralUserBuoyOverviewState();
+
+  @override
+  List<Object?> get props => [];
+}
+
+final class GeneralUserBuoyOverviewInitial extends GeneralUserBuoyOverviewState {
+  const GeneralUserBuoyOverviewInitial();
+}
+
+final class GeneralUserBuoyOverviewLoading extends GeneralUserBuoyOverviewState {
+  const GeneralUserBuoyOverviewLoading({required this.buoyId});
+
+  final String buoyId;
+
+  @override
+  List<Object?> get props => [buoyId];
+}
+
+final class GeneralUserBuoyOverviewLoaded extends GeneralUserBuoyOverviewState {
+  const GeneralUserBuoyOverviewLoaded({
+    required this.data,
+    required this.selectedTab,
+    this.message = '',
+    this.isSuccessMessage = false,
+  });
+
+  final GeneralUserBuoyOverviewData data;
   final GeneralUserBuoyOverviewTab selectedTab;
-  final GeneralUserBuoyOverviewData? data;
   final String message;
   final bool isSuccessMessage;
 
-  const GeneralUserBuoyOverviewState({
-    required this.status,
-    required this.selectedTab,
-    required this.data,
-    required this.message,
-    required this.isSuccessMessage,
-  });
-
-  const GeneralUserBuoyOverviewState.initial()
-    : status = GeneralUserBuoyOverviewStatus.initial,
-      selectedTab = GeneralUserBuoyOverviewTab.overview,
-      data = null,
-      message = '',
-      isSuccessMessage = false;
-
-  GeneralUserBuoyOverviewState copyWith({
-    GeneralUserBuoyOverviewStatus? status,
-    GeneralUserBuoyOverviewTab? selectedTab,
+  GeneralUserBuoyOverviewLoaded copyWith({
     GeneralUserBuoyOverviewData? data,
-    bool clearData = false,
+    GeneralUserBuoyOverviewTab? selectedTab,
     String? message,
     bool? isSuccessMessage,
   }) {
-    return GeneralUserBuoyOverviewState(
-      status: status ?? this.status,
+    return GeneralUserBuoyOverviewLoaded(
+      data: data ?? this.data,
       selectedTab: selectedTab ?? this.selectedTab,
-      data: clearData ? null : (data ?? this.data),
       message: message ?? this.message,
       isSuccessMessage: isSuccessMessage ?? this.isSuccessMessage,
     );
@@ -79,10 +88,22 @@ class GeneralUserBuoyOverviewState extends Equatable {
 
   @override
   List<Object?> get props => [
-    status,
-    selectedTab,
-    data,
-    message,
-    isSuccessMessage,
-  ];
+        data,
+        selectedTab,
+        message,
+        isSuccessMessage,
+      ];
+}
+
+final class GeneralUserBuoyOverviewError extends GeneralUserBuoyOverviewState {
+  const GeneralUserBuoyOverviewError({
+    required this.message,
+    required this.buoyId,
+  });
+
+  final String message;
+  final String buoyId;
+
+  @override
+  List<Object?> get props => [message, buoyId];
 }

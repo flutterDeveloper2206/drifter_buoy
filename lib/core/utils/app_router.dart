@@ -58,7 +58,6 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_
 import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_filters/general_user_trajectory_filters_event.dart';
 import 'package:drifter_buoy/features/general_user/data/models/user_map_dashboard_get_buoy_map_dashboard_response.dart';
 import 'package:drifter_buoy/features/general_user/presentation/widgets/dummy_buoy_map_view.dart';
-import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_metrics_page.dart';
 import 'package:drifter_buoy/features/sample_feature/presentation/bloc/items_bloc.dart';
 import 'package:drifter_buoy/features/sample_feature/presentation/bloc/items_event.dart';
 import 'package:drifter_buoy/features/sample_feature/presentation/pages/items_page.dart';
@@ -233,23 +232,7 @@ class AppRouter {
           );
         },
       ),
-      GoRoute(
-        path: AppRoutes.metricsPath,
-        name: AppRoutes.metricsName,
-        builder: (context, state) {
-          final extra = state.extra;
-          final buoyId = extra is String && extra.trim().isNotEmpty
-              ? extra.trim()
-              : 'DB-01';
 
-          return BlocProvider<GeneralUserMetricsBloc>(
-            create: (_) =>
-                sl<GeneralUserMetricsBloc>()
-                  ..add(LoadGeneralUserMetrics(buoyId: buoyId)),
-            child: const GeneralUserMetricsPage(),
-          );
-        },
-      ),
       GoRoute(
         path: AppRoutes.trajectoryViewPath,
         name: AppRoutes.trajectoryViewName,
@@ -288,14 +271,9 @@ class AppRouter {
         path: AppRoutes.exportPath,
         name: AppRoutes.exportName,
         builder: (context, state) {
-          final extra = state.extra;
-          final selectedBuoyCount = extra is int && extra > 0 ? extra : 0;
-
           return BlocProvider<GeneralUserExportBloc>(
             create: (_) => sl<GeneralUserExportBloc>()
-              ..add(
-                LoadGeneralUserExport(selectedBuoyCount: selectedBuoyCount),
-              ),
+              ..add(LoadGeneralUserExport(routeExtra: state.extra)),
             child: const GeneralUserExportPage(),
           );
         },

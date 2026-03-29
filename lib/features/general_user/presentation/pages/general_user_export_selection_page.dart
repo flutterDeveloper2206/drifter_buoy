@@ -6,6 +6,7 @@ import 'package:drifter_buoy/core/utils/widgets/app_elevated_button.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/export_selection/general_user_export_selection_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/export_selection/general_user_export_selection_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/export_selection/general_user_export_selection_state.dart';
+import 'package:drifter_buoy/features/general_user/presentation/navigation/general_user_export_route_extra.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -180,7 +181,9 @@ class _GeneralUserExportSelectionPageState
                                     ? null
                                     : () => context.push(
                                         AppRoutes.exportPath,
-                                        extra: state.selectedCount,
+                                        extra: GeneralUserExportSelectionCountExtra(
+                                          state.selectedCount,
+                                        ),
                                       ),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFF206BBE),
