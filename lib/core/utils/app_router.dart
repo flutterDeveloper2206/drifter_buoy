@@ -272,10 +272,19 @@ class AppRouter {
               ? extra.trim()
               : 'DB-01';
 
-          return BlocProvider<GeneralUserTrajectoryViewBloc>(
-            create: (_) =>
-                sl<GeneralUserTrajectoryViewBloc>()
-                  ..add(LoadGeneralUserTrajectoryView(buoyId: buoyId)),
+          return MultiBlocProvider(
+            providers: [
+              BlocProvider<GeneralUserTrajectoryViewBloc>(
+                create: (_) =>
+                    sl<GeneralUserTrajectoryViewBloc>()
+                      ..add(LoadGeneralUserTrajectoryView(buoyId: buoyId)),
+              ),
+              BlocProvider<GeneralUserTrajectoryFiltersBloc>(
+                create: (_) =>
+                    sl<GeneralUserTrajectoryFiltersBloc>()
+                      ..add(LoadGeneralUserTrajectoryFilters(buoyId: buoyId)),
+              ),
+            ],
             child: const GeneralUserTrajectoryViewPage(),
           );
         },

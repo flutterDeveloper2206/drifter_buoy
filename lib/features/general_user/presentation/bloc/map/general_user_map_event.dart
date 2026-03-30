@@ -34,6 +34,21 @@ class ResetBuoyFilters extends GeneralUserMapEvent {
   const ResetBuoyFilters();
 }
 
+class ApplyBuoyStatusVisibility extends GeneralUserMapEvent {
+  const ApplyBuoyStatusVisibility({
+    required this.showActive,
+    required this.showOffline,
+    required this.showBatteryLow,
+  });
+
+  final bool showActive;
+  final bool showOffline;
+  final bool showBatteryLow;
+
+  @override
+  List<Object?> get props => [showActive, showOffline, showBatteryLow];
+}
+
 class ZoomInMap extends GeneralUserMapEvent {
   const ZoomInMap();
 }

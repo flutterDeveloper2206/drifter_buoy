@@ -52,6 +52,7 @@ import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_all_buoys_data_overview_view.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_buoy_data_overview.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_buoy_metrics.dart';
+import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_buoy_trajectory_view.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_all_buoys_status.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_update_user_profile.dart';
 import 'package:drifter_buoy/features/sample_feature/data/datasources/item_remote_data_source.dart';
@@ -205,13 +206,13 @@ Future<void> initDependencies() async {
 
   if (!sl.isRegistered<GeneralUserTrajectoryViewBloc>()) {
     sl.registerFactory<GeneralUserTrajectoryViewBloc>(
-      () => GeneralUserTrajectoryViewBloc(),
+      () => GeneralUserTrajectoryViewBloc(getBuoyTrajectoryView: sl()),
     );
   }
 
   if (!sl.isRegistered<GeneralUserTrajectoryFiltersBloc>()) {
     sl.registerFactory<GeneralUserTrajectoryFiltersBloc>(
-      () => GeneralUserTrajectoryFiltersBloc(),
+      () => GeneralUserTrajectoryFiltersBloc(getBuoyTrajectoryView: sl()),
     );
   }
 
@@ -411,6 +412,12 @@ Future<void> initDependencies() async {
   if (!sl.isRegistered<GeneralUserGetBuoyMetrics>()) {
     sl.registerLazySingleton<GeneralUserGetBuoyMetrics>(
       () => GeneralUserGetBuoyMetrics(repository: sl()),
+    );
+  }
+
+  if (!sl.isRegistered<GeneralUserGetBuoyTrajectoryView>()) {
+    sl.registerLazySingleton<GeneralUserGetBuoyTrajectoryView>(
+      () => GeneralUserGetBuoyTrajectoryView(repository: sl()),
     );
   }
 

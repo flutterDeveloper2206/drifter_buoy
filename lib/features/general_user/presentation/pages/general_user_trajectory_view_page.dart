@@ -1,6 +1,5 @@
 import 'package:drifter_buoy/core/constants/app_assets.dart';
 import 'package:drifter_buoy/core/constants/app_routes.dart';
-import 'package:drifter_buoy/core/utils/injection_container.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_icon_circle_button.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_loader.dart';
@@ -12,12 +11,11 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_
 import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_view/general_user_trajectory_view_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_view/general_user_trajectory_view_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_view/general_user_trajectory_view_state.dart';
-import 'package:drifter_buoy/features/general_user/presentation/widgets/dummy_trajectory_live_map_view.dart';
+import 'package:drifter_buoy/features/general_user/presentation/widgets/google_trajectory_live_map_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:go_router/go_router.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 
 class GeneralUserTrajectoryViewPage extends StatefulWidget {
   const GeneralUserTrajectoryViewPage({super.key});
@@ -29,19 +27,17 @@ class GeneralUserTrajectoryViewPage extends StatefulWidget {
 
 class _GeneralUserTrajectoryViewPageState
     extends State<GeneralUserTrajectoryViewPage> {
-  final MapController _mapController = MapController();
+  gmaps.GoogleMapController? _mapController;
 
-  void _openFiltersSheet(String buoyId) {
+  void _openFiltersSheet() {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       barrierColor: const Color(0x66000000),
       backgroundColor: Colors.transparent,
       builder: (_) {
-        return BlocProvider<GeneralUserTrajectoryFiltersBloc>(
-          create: (_) =>
-              sl<GeneralUserTrajectoryFiltersBloc>()
-                ..add(LoadGeneralUserTrajectoryFilters(buoyId: buoyId)),
+        return BlocProvider.value(
+          value: context.read<GeneralUserTrajectoryFiltersBloc>(),
           child: const _TrajectoryFiltersSheet(),
         );
       },
@@ -60,7 +56,9 @@ class _GeneralUserTrajectoryViewPageState
                 previous.zoom != current.zoom &&
                 current.status == GeneralUserTrajectoryViewStatus.loaded,
             listener: (_, state) {
-              _mapController.move(_safeMapCenter(), state.zoom);
+              _mapController?.animateCamera(
+                gmaps.CameraUpdate.zoomTo(state.zoom.clamp(3, 17)),
+              );
             },
             child:
                 BlocBuilder<
@@ -68,9 +66,12 @@ class _GeneralUserTrajectoryViewPageState
                   GeneralUserTrajectoryViewState
                 >(
                   builder: (context, state) {
+                    final filters = context.watch<GeneralUserTrajectoryFiltersBloc>().state;
                     return Stack(
                       children: [
-                        Positioned.fill(child: _buildMapLayer(context, state)),
+                        Positioned.fill(
+                          child: _buildMapLayer(context, state, filters),
+                        ),
                         SafeArea(
                           child: Padding(
                             padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
@@ -119,7 +120,7 @@ class _GeneralUserTrajectoryViewPageState
                         Align(
                           alignment: Alignment.bottomCenter,
                           child: _BottomTogglePanel(
-                            onTap: () => _openFiltersSheet(state.buoyId),
+                            onTap: _openFiltersSheet,
                           ),
                         ),
                       ],
@@ -133,9 +134,17 @@ class _GeneralUserTrajectoryViewPageState
   Widget _buildMapLayer(
     BuildContext context,
     GeneralUserTrajectoryViewState state,
+    GeneralUserTrajectoryFiltersState filters,
   ) {
-    if (state.status == GeneralUserTrajectoryViewStatus.loading ||
-        state.status == GeneralUserTrajectoryViewStatus.initial) {
+    final hasPrimaryPoints = state.trajectoryPoints.isNotEmpty;
+    final hasFilterPoints = filters.trajectoryPoints.isNotEmpty;
+    final shouldBlockForInitialLoad =
+        (state.status == GeneralUserTrajectoryViewStatus.loading ||
+            state.status == GeneralUserTrajectoryViewStatus.initial) &&
+        !hasPrimaryPoints &&
+        !hasFilterPoints;
+
+    if (shouldBlockForInitialLoad) {
       return const AppLoader();
     }
 
@@ -150,28 +159,42 @@ class _GeneralUserTrajectoryViewPageState
       );
     }
 
-    final points = state.trajectoryPoints;
-    final center = points.isNotEmpty
-        ? points[points.length ~/ 2].position
-        : const LatLng(37.7749, -122.4194);
+    final points =
+        (filters.status == GeneralUserTrajectoryFiltersStatus.loaded &&
+            filters.trajectoryPoints.isNotEmpty)
+        ? filters.displayedPoints
+        : state.trajectoryPoints;
 
-    return DummyTrajectoryLiveMapView(
-      mapController: _mapController,
-      points: points,
-      initialZoom: state.zoom,
-      initialCenter: center,
-      showLabels: false,
-      showSecondaryLabels: false,
-      interactive: true,
+    final showInlineLoader =
+        state.status == GeneralUserTrajectoryViewStatus.loading ||
+        filters.status == GeneralUserTrajectoryFiltersStatus.loading;
+
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: GoogleTrajectoryLiveMapView(
+            points: points,
+            initialZoom: state.zoom,
+            showLabels: filters.status == GeneralUserTrajectoryFiltersStatus.loaded
+                ? filters.gpsCoordinatesEnabled
+                : true,
+            showSecondaryLabels:
+                filters.status == GeneralUserTrajectoryFiltersStatus.loaded
+                ? filters.timestampsEnabled
+                : false,
+            interactive: true,
+            onControllerReady: (c) => _mapController = c,
+          ),
+        ),
+        if (showInlineLoader)
+          const Positioned.fill(
+            child: IgnorePointer(
+              ignoring: true,
+              child: Center(child: AppLoader()),
+            ),
+          ),
+      ],
     );
-  }
-
-  LatLng _safeMapCenter() {
-    try {
-      return _mapController.camera.center;
-    } catch (_) {
-      return const LatLng(37.7749, -122.4194);
-    }
   }
 }
 
@@ -238,14 +261,14 @@ class _MapLegendCard extends StatelessWidget {
             color: Color(0xFF4CAF50),
           ),
           AppMapLegendItem(
-            svgAssetPath: AppAssets.icBatteryLow,
-            label: 'Battery Low',
-            color: Color(0xFF4F95DA),
-          ),
-          AppMapLegendItem(
             icon: Icons.wifi_off,
             label: 'Offline',
             color: Color(0xFFE74C3C),
+          ),
+          AppMapLegendItem(
+            svgAssetPath: AppAssets.icBatteryLow,
+            label: 'Battery Low',
+            color: Color(0xFF4F95DA),
           ),
         ],
       ),

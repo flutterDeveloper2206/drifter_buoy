@@ -37,6 +37,9 @@ class ApiEndpoints {
   static const String getBuoyMetricsUrl =
       'http://4.213.34.231:5025/api/User/UserViewBuoyDashboard/GetBuoyMetrics';
 
+  static const String getBuoyTrajectoryViewUrl =
+      'http://4.213.34.231:5025/api/User/UserViewBuoyDashboard/GetBuoyTrajectoryView';
+
   static const String getBuoyDistanceReportForExportUrl =
       'http://4.213.34.231:5025/api/Report/Report/GetBuoyDistanceReportForExport';
 

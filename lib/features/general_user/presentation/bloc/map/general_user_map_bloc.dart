@@ -11,6 +11,7 @@ class GeneralUserMapBloc
     on<ToggleGeneralUserMapPanel>(_onToggleGeneralUserMapPanel);
     on<ToggleBuoyStatusFilter>(_onToggleBuoyStatusFilter);
     on<ResetBuoyFilters>(_onResetBuoyFilters);
+    on<ApplyBuoyStatusVisibility>(_onApplyBuoyStatusVisibility);
     on<ZoomInMap>(_onZoomInMap);
     on<ZoomOutMap>(_onZoomOutMap);
   }
@@ -93,6 +94,19 @@ class GeneralUserMapBloc
   ) {
     emit(
       state.copyWith(showActive: true, showOffline: true, showBatteryLow: true),
+    );
+  }
+
+  void _onApplyBuoyStatusVisibility(
+    ApplyBuoyStatusVisibility event,
+    Emitter<GeneralUserMapState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        showActive: event.showActive,
+        showOffline: event.showOffline,
+        showBatteryLow: event.showBatteryLow,
+      ),
     );
   }
 

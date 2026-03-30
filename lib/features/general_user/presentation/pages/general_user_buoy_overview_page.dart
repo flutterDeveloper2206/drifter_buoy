@@ -9,7 +9,7 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/buoy_overvi
 import 'package:drifter_buoy/features/general_user/presentation/navigation/general_user_export_route_extra.dart';
 import 'package:drifter_buoy/features/general_user/presentation/navigation/general_user_metrics_route_extra.dart';
 import 'package:drifter_buoy/features/general_user/presentation/widgets/dummy_buoy_map_view.dart';
-import 'package:drifter_buoy/features/general_user/presentation/widgets/dummy_trajectory_map_preview.dart';
+import 'package:drifter_buoy/features/general_user/presentation/widgets/google_trajectory_map_preview.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -491,9 +491,9 @@ class _TrajectoryCard extends StatelessWidget {
                 return const SizedBox(height: 170);
               }
               return SizedBox(
-                height: 170,
+                height: 190,
                 child: RepaintBoundary(
-                  child: DummyTrajectoryMapPreview(
+                  child: GoogleTrajectoryMapPreview(
                     trajectoryPoints: vm.points,
                     buoy: DummyBuoy(
                       id: vm.buoyId,

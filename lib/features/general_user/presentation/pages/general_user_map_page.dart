@@ -1,8 +1,6 @@
-import 'package:drifter_buoy/core/constants/app_assets.dart';
 import 'package:drifter_buoy/core/constants/app_routes.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_icon_circle_button.dart';
-import 'package:drifter_buoy/core/utils/widgets/app_map_legend_item.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_settings_tiles.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/map/general_user_map_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/map/general_user_map_event.dart';
@@ -68,23 +66,30 @@ class _GeneralUserMapPageState extends State<GeneralUserMapPage> {
       return;
     }
     final mapState = context.read<GeneralUserMapBloc>().state;
-    setState(() {});
     final selected = _searchSelectedBuoyForState(mapState);
-    if (selected != null && mapState.status == GeneralUserMapStatus.loaded) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          _mapController?.animateCamera(
-            gmaps.CameraUpdate.newLatLngZoom(
-              gmaps.LatLng(
-                selected.position.latitude,
-                selected.position.longitude,
-              ),
-              mapState.zoom.clamp(3, 17),
-            ),
-          );
-        }
+    if (selected == null || mapState.status != GeneralUserMapStatus.loaded) {
+      setState(() {
+        _selectedBuoy = null;
       });
+      return;
     }
+
+    setState(() {
+      _selectedBuoy = selected;
+    });
+
+    final zoom = mapState.zoom < 13.5 ? 13.5 : mapState.zoom;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _mapController?.animateCamera(
+        gmaps.CameraUpdate.newLatLngZoom(
+          gmaps.LatLng(selected.position.latitude, selected.position.longitude),
+          zoom.clamp(3, 17),
+        ),
+      );
+    });
   }
 
   DummyBuoy? _searchSelectedBuoyForState(GeneralUserMapState state) {
@@ -142,16 +147,46 @@ class _GeneralUserMapPageState extends State<GeneralUserMapPage> {
       },
       child: Scaffold(
         resizeToAvoidBottomInset: false,
-        body: BlocListener<GeneralUserMapBloc, GeneralUserMapState>(
-          listenWhen: (previous, current) {
-            return previous.zoom != current.zoom &&
-                current.status == GeneralUserMapStatus.loaded;
-          },
-          listener: (_, state) {
-            _mapController?.animateCamera(
-              gmaps.CameraUpdate.zoomTo(state.zoom.clamp(3, 17)),
-            );
-          },
+        body: MultiBlocListener(
+          listeners: [
+            BlocListener<GeneralUserMapBloc, GeneralUserMapState>(
+              listenWhen: (previous, current) {
+                return previous.zoom != current.zoom &&
+                    current.status == GeneralUserMapStatus.loaded;
+              },
+              listener: (_, state) {
+                _mapController?.animateCamera(
+                  gmaps.CameraUpdate.zoomTo(state.zoom.clamp(3, 17)),
+                );
+              },
+            ),
+            BlocListener<GeneralUserMapFiltersBloc, GeneralUserMapFiltersState>(
+              listenWhen: (previous, current) {
+                final statusJustLoaded =
+                    previous.status != current.status &&
+                    current.status == GeneralUserMapFiltersStatus.loaded;
+                return statusJustLoaded ||
+                    previous.statusFilterEnabled !=
+                        current.statusFilterEnabled ||
+                    previous.batteryStatusEnabled !=
+                        current.batteryStatusEnabled;
+              },
+              listener: (context, filtersState) {
+                if (filtersState.status != GeneralUserMapFiltersStatus.loaded) {
+                  return;
+                }
+                final show = filtersState.statusFilterEnabled;
+                final showBattery = filtersState.batteryStatusEnabled;
+                context.read<GeneralUserMapBloc>().add(
+                  ApplyBuoyStatusVisibility(
+                    showActive: show,
+                    showOffline: show,
+                    showBatteryLow: showBattery,
+                  ),
+                );
+              },
+            ),
+          ],
           child: BlocBuilder<GeneralUserMapBloc, GeneralUserMapState>(
             builder: (context, state) {
               final h = MediaQuery.sizeOf(context).height;
@@ -160,12 +195,15 @@ class _GeneralUserMapPageState extends State<GeneralUserMapPage> {
                 fit: StackFit.expand,
                 children: [
                   Positioned.fill(
-                    child: BlocBuilder<GeneralUserMapFiltersBloc,
-                        GeneralUserMapFiltersState>(
-                      builder: (context, filtersState) {
-                        return _buildMapLayer(context, state, filtersState);
-                      },
-                    ),
+                    child:
+                        BlocBuilder<
+                          GeneralUserMapFiltersBloc,
+                          GeneralUserMapFiltersState
+                        >(
+                          builder: (context, filtersState) {
+                            return _buildMapLayer(context, state, filtersState);
+                          },
+                        ),
                   ),
                   if (!_mapSearchOpen)
                     Positioned(
@@ -282,37 +320,44 @@ class _GeneralUserMapPageState extends State<GeneralUserMapPage> {
                       bottom: sheetLift + 88,
                       child: _MapSelectedBuoyCard(
                         buoy: _activeSelectedBuoyForState(state)!,
-                      ),
-                    ),
-                  Align(
-                    alignment: Alignment.bottomCenter,
-                    child: NotificationListener<DraggableScrollableNotification>(
-                      onNotification: (notification) {
-                        if ((notification.extent - _sheetExtent).abs() >
-                            0.008) {
-                          setState(() {
-                            _sheetExtent = notification.extent;
-                          });
-                        }
-                        return false;
-                      },
-                      child: DraggableScrollableSheet(
-                        initialChildSize: 0.14,
-                        minChildSize: 0.12,
-                        maxChildSize: 0.72,
-                        snap: true,
-                        snapSizes: const [0.14, 0.65],
-                        builder: (context, scrollController) {
-                          return _MapFiltersDraggablePanel(
-                            scrollController: scrollController,
-                            titleStyle: textTheme.titleMedium?.copyWith(
-                              color: const Color(0xFF2D3238),
-                              fontWeight: FontWeight.w700,
-                            ),
+                        onTap: () {
+                          context.push(
+                            AppRoutes.buoyOverviewPath,
+                            extra: _activeSelectedBuoyForState(state)!.id,
                           );
                         },
                       ),
                     ),
+                  Align(
+                    alignment: Alignment.bottomCenter,
+                    child:
+                        NotificationListener<DraggableScrollableNotification>(
+                          onNotification: (notification) {
+                            if ((notification.extent - _sheetExtent).abs() >
+                                0.008) {
+                              setState(() {
+                                _sheetExtent = notification.extent;
+                              });
+                            }
+                            return false;
+                          },
+                          child: DraggableScrollableSheet(
+                            initialChildSize: 0.14,
+                            minChildSize: 0.12,
+                            maxChildSize: 0.72,
+                            snap: true,
+                            snapSizes: const [0.14, 0.65],
+                            builder: (context, scrollController) {
+                              return _MapFiltersDraggablePanel(
+                                scrollController: scrollController,
+                                titleStyle: textTheme.titleMedium?.copyWith(
+                                  color: const Color(0xFF2D3238),
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
                   ),
                 ],
               );
@@ -350,6 +395,8 @@ class _GeneralUserMapPageState extends State<GeneralUserMapPage> {
             buoys: state.filteredBuoys,
             zoomLevel: state.zoom,
             mapType: filtersState.mapType,
+            showDeviceName: true,
+            showBatteryStatus: filtersState.batteryStatusEnabled,
             selectedBuoy: _activeSelectedBuoyForState(state),
             boundsPaddingPx: 72,
             onControllerReady: (c) {
@@ -379,8 +426,18 @@ class _GeneralUserMapPageState extends State<GeneralUserMapPage> {
                 setState(() {
                   _selectedBuoy = buoy;
                 });
+                final zoom = state.zoom < 13.5 ? 13.5 : state.zoom;
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   _ignoreNextMapTapHide = false;
+                  _mapController?.animateCamera(
+                    gmaps.CameraUpdate.newLatLngZoom(
+                      gmaps.LatLng(
+                        buoy.position.latitude,
+                        buoy.position.longitude,
+                      ),
+                      zoom.clamp(3, 17),
+                    ),
+                  );
                 });
               }
             },
@@ -410,9 +467,10 @@ class _GeneralUserMapPageState extends State<GeneralUserMapPage> {
 }
 
 class _MapSelectedBuoyCard extends StatelessWidget {
-  const _MapSelectedBuoyCard({required this.buoy});
+  const _MapSelectedBuoyCard({required this.buoy, this.onTap});
 
   final DummyBuoy buoy;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -427,84 +485,91 @@ class _MapSelectedBuoyCard extends StatelessWidget {
       BuoyStatus.batteryLow => 'Battery Low',
     };
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                buoy.id,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: const Color(0xFF2E2E2E),
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const Spacer(),
-              Icon(
-                buoy.status == BuoyStatus.offline
-                    ? Icons.wifi_off
-                    : Icons.wifi_rounded,
-                color: statusColor,
-                size: 20,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                statusLabel,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: statusColor,
-                  fontWeight: FontWeight.w700,
-                ),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 18,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            'Last Update : 10:20 AM',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: const Color(0xFF6A7077),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 14),
-          Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: _MetricColumn(
-                  icon: Icons.battery_5_bar_rounded,
-                  value: buoy.battery,
-                  label: 'Battery',
+              Row(
+                children: [
+                  Text(
+                    buoy.id,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: const Color(0xFF2E2E2E),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const Spacer(),
+                  Icon(
+                    buoy.status == BuoyStatus.offline
+                        ? Icons.wifi_off
+                        : Icons.wifi_rounded,
+                    color: statusColor,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    statusLabel,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: statusColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Last Update : 10:20 AM',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: const Color(0xFF6A7077),
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              Expanded(
-                child: _MetricColumn(
-                  icon: Icons.map_outlined,
-                  value: buoy.gps,
-                  label: 'GPS',
-                ),
-              ),
-              Expanded(
-                child: _MetricColumn(
-                  icon: Icons.signal_cellular_alt_rounded,
-                  value: buoy.signal,
-                  label: 'Signal',
-                ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: _MetricColumn(
+                      icon: Icons.battery_5_bar_rounded,
+                      value: buoy.battery,
+                      label: 'Battery',
+                    ),
+                  ),
+                  Expanded(
+                    child: _MetricColumn(
+                      icon: Icons.map_outlined,
+                      value: buoy.gps,
+                      label: 'GPS',
+                    ),
+                  ),
+                  Expanded(
+                    child: _MetricColumn(
+                      icon: Icons.signal_cellular_alt_rounded,
+                      value: buoy.signal,
+                      label: 'Signal',
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -730,23 +795,77 @@ class _MapLegendCard extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          AppMapLegendItem(
-            icon: Icons.wifi,
+          _LegendPinItem(
+            assetPath: 'assets/images/green.png',
             label: 'Active',
-            color: isActiveVisible ? const Color(0xFF4CAF50) : disabledColor,
+            enabled: isActiveVisible,
+            enabledColor: const Color(0xFF4CAF50),
+            disabledColor: disabledColor,
           ),
-          AppMapLegendItem(
-            icon: Icons.wifi_off,
+          _LegendPinItem(
+            assetPath: 'assets/images/red.png',
             label: 'Offline',
-            color: isOfflineVisible ? const Color(0xFFE74C3C) : disabledColor,
+            enabled: isOfflineVisible,
+            enabledColor: const Color(0xFFE74C3C),
+            disabledColor: disabledColor,
           ),
-          AppMapLegendItem(
-            svgAssetPath: AppAssets.icBatteryLow,
+          _LegendPinItem(
+            assetPath: 'assets/images/yellow.png',
             label: 'Battery Low',
-            color: isBatteryVisible ? const Color(0xFF4F95DA) : disabledColor,
+            enabled: isBatteryVisible,
+            enabledColor: const Color(0xFF4F95DA),
+            disabledColor: disabledColor,
           ),
         ],
       ),
+    );
+  }
+}
+
+class _LegendPinItem extends StatelessWidget {
+  const _LegendPinItem({
+    required this.assetPath,
+    required this.label,
+    required this.enabled,
+    required this.enabledColor,
+    required this.disabledColor,
+  });
+
+  final String assetPath;
+  final String label;
+  final bool enabled;
+  final Color enabledColor;
+  final Color disabledColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final pin = Image.asset(
+      assetPath,
+      width: 16,
+      height: 16,
+      fit: BoxFit.contain,
+    );
+
+    final pinWidget = enabled
+        ? pin
+        : ColorFiltered(
+            colorFilter: ColorFilter.mode(disabledColor, BlendMode.srcIn),
+            child: pin,
+          );
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        pinWidget,
+        const SizedBox(width: 3),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+            color: enabled ? enabledColor : disabledColor,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -778,20 +897,14 @@ class _MapFiltersDraggablePanel extends StatelessWidget {
                 ),
               ],
             ),
-            child: SafeArea(
-              top: false,
-              child: _buildContent(context, state),
-            ),
+            child: SafeArea(top: false, child: _buildContent(context, state)),
           ),
         );
       },
     );
   }
 
-  Widget _buildContent(
-    BuildContext context,
-    GeneralUserMapFiltersState state,
-  ) {
+  Widget _buildContent(BuildContext context, GeneralUserMapFiltersState state) {
     if (state.status == GeneralUserMapFiltersStatus.loading ||
         state.status == GeneralUserMapFiltersStatus.initial) {
       return const Padding(
@@ -807,18 +920,19 @@ class _MapFiltersDraggablePanel extends StatelessWidget {
           message: state.message,
           onRetry: () {
             context.read<GeneralUserMapFiltersBloc>().add(
-                  const LoadGeneralUserMapFilters(),
-                );
+              const LoadGeneralUserMapFilters(),
+            );
           },
         ),
       );
     }
 
-    final heading = titleStyle ??
+    final heading =
+        titleStyle ??
         Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: const Color(0xFF2D3238),
-              fontWeight: FontWeight.w700,
-            );
+          color: const Color(0xFF2D3238),
+          fontWeight: FontWeight.w700,
+        );
 
     return ListView(
       controller: scrollController,
@@ -844,12 +958,7 @@ class _MapFiltersDraggablePanel extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
-        Center(
-          child: Text(
-            'Toggles and Filters',
-            style: heading,
-          ),
-        ),
+        Center(child: Text('Toggles and Filters', style: heading)),
         const SizedBox(height: 14),
         const Divider(color: Color(0xFFD2D2D2), thickness: 1),
         const SizedBox(height: 14),
@@ -860,8 +969,8 @@ class _MapFiltersDraggablePanel extends StatelessWidget {
           value: state.trajectoryEnabled,
           onChanged: (_) {
             context.read<GeneralUserMapFiltersBloc>().add(
-                  const ToggleTrajectory(),
-                );
+              const ToggleTrajectory(),
+            );
           },
         ),
         AppSwitchSettingTile(
@@ -869,8 +978,8 @@ class _MapFiltersDraggablePanel extends StatelessWidget {
           value: state.gpsPointsEnabled,
           onChanged: (_) {
             context.read<GeneralUserMapFiltersBloc>().add(
-                  const ToggleGpsPoints(),
-                );
+              const ToggleGpsPoints(),
+            );
           },
         ),
         AppSwitchSettingTile(
@@ -878,8 +987,8 @@ class _MapFiltersDraggablePanel extends StatelessWidget {
           value: state.batteryStatusEnabled,
           onChanged: (_) {
             context.read<GeneralUserMapFiltersBloc>().add(
-                  const ToggleBatteryStatus(),
-                );
+              const ToggleBatteryStatus(),
+            );
           },
         ),
         AppSwitchSettingTile(
@@ -887,8 +996,8 @@ class _MapFiltersDraggablePanel extends StatelessWidget {
           value: state.gprsSignalEnabled,
           onChanged: (_) {
             context.read<GeneralUserMapFiltersBloc>().add(
-                  const ToggleGprsSignal(),
-                );
+              const ToggleGprsSignal(),
+            );
           },
         ),
         const SizedBox(height: 10),
@@ -901,8 +1010,8 @@ class _MapFiltersDraggablePanel extends StatelessWidget {
           selected: state.statusFilterEnabled,
           onTap: () {
             context.read<GeneralUserMapFiltersBloc>().add(
-                  const ToggleStatusFilter(),
-                );
+              const ToggleStatusFilter(),
+            );
           },
         ),
         AppCheckboxSettingTile(
@@ -910,8 +1019,8 @@ class _MapFiltersDraggablePanel extends StatelessWidget {
           selected: state.signalStrengthEnabled,
           onTap: () {
             context.read<GeneralUserMapFiltersBloc>().add(
-                  const ToggleSignalStrengthFilter(),
-                );
+              const ToggleSignalStrengthFilter(),
+            );
           },
         ),
         AppCheckboxSettingTile(
@@ -919,8 +1028,8 @@ class _MapFiltersDraggablePanel extends StatelessWidget {
           selected: state.locationZoneFilterEnabled,
           onTap: () {
             context.read<GeneralUserMapFiltersBloc>().add(
-                  const ToggleLocationZoneFilter(),
-                );
+              const ToggleLocationZoneFilter(),
+            );
           },
         ),
         const SizedBox(height: 10),
@@ -933,8 +1042,8 @@ class _MapFiltersDraggablePanel extends StatelessWidget {
           selected: state.mapType == MapDisplayType.satellite,
           onTap: () {
             context.read<GeneralUserMapFiltersBloc>().add(
-                  const ChangeMapDisplayType(MapDisplayType.satellite),
-                );
+              const ChangeMapDisplayType(MapDisplayType.satellite),
+            );
           },
         ),
         AppRadioSettingTile(
@@ -942,8 +1051,8 @@ class _MapFiltersDraggablePanel extends StatelessWidget {
           selected: state.mapType == MapDisplayType.terrain,
           onTap: () {
             context.read<GeneralUserMapFiltersBloc>().add(
-                  const ChangeMapDisplayType(MapDisplayType.terrain),
-                );
+              const ChangeMapDisplayType(MapDisplayType.terrain),
+            );
           },
         ),
       ],

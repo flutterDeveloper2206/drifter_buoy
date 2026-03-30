@@ -1,10 +1,9 @@
 import 'package:drifter_buoy/core/utils/app_logger.dart';
+import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_buoy_trajectory_view.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_filters/general_user_trajectory_filters_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_filters/general_user_trajectory_filters_state.dart';
-import 'package:drifter_buoy/features/general_user/presentation/widgets/dummy_buoy_map_view.dart';
-import 'package:drifter_buoy/features/general_user/presentation/widgets/dummy_trajectory_live_map_view.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_view/general_user_trajectory_view_mapper.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:latlong2/latlong.dart';
 
 class GeneralUserTrajectoryFiltersBloc
     extends
@@ -12,8 +11,10 @@ class GeneralUserTrajectoryFiltersBloc
           GeneralUserTrajectoryFiltersEvent,
           GeneralUserTrajectoryFiltersState
         > {
-  GeneralUserTrajectoryFiltersBloc()
-    : super(const GeneralUserTrajectoryFiltersState.initial()) {
+  GeneralUserTrajectoryFiltersBloc({
+    required GeneralUserGetBuoyTrajectoryView getBuoyTrajectoryView,
+  }) : _getBuoyTrajectoryView = getBuoyTrajectoryView,
+       super(const GeneralUserTrajectoryFiltersState.initial()) {
     on<LoadGeneralUserTrajectoryFilters>(_onLoadGeneralUserTrajectoryFilters);
     on<ToggleGpsCoordinatesFilter>(_onToggleGpsCoordinatesFilter);
     on<ToggleTimestampsFilter>(_onToggleTimestampsFilter);
@@ -26,6 +27,8 @@ class GeneralUserTrajectoryFiltersBloc
     );
   }
 
+  final GeneralUserGetBuoyTrajectoryView _getBuoyTrajectoryView;
+
   Future<void> _onLoadGeneralUserTrajectoryFilters(
     LoadGeneralUserTrajectoryFilters event,
     Emitter<GeneralUserTrajectoryFiltersState> emit,
@@ -34,33 +37,45 @@ class GeneralUserTrajectoryFiltersBloc
     emit(
       state.copyWith(
         status: GeneralUserTrajectoryFiltersStatus.loading,
+        buoyId: event.buoyId,
         message: '',
       ),
     );
 
-    try {
-      await Future<void>.delayed(const Duration(milliseconds: 180));
-      emit(
-        state.copyWith(
-          status: GeneralUserTrajectoryFiltersStatus.loaded,
-          buoyId: event.buoyId,
-          trajectoryPoints: _dummyTrajectoryPoints(),
-        ),
-      );
-      AppLogger.i('LoadGeneralUserTrajectoryFilters success');
-    } catch (error, stackTrace) {
-      AppLogger.e(
-        'LoadGeneralUserTrajectoryFilters failed',
-        error: error,
-        stackTrace: stackTrace,
-      );
-      emit(
-        state.copyWith(
-          status: GeneralUserTrajectoryFiltersStatus.error,
-          message: 'Unable to load trajectory filters.',
-        ),
-      );
-    }
+    final (fromDate, toDate) = defaultTrajectoryApiDateRange();
+    final result = await _getBuoyTrajectoryView(
+      buoyId: event.buoyId,
+      fromDate: fromDate,
+      toDate: toDate,
+    );
+
+    result.fold(
+      (failure) {
+        AppLogger.w(
+          'LoadGeneralUserTrajectoryFilters failed: ${failure.message}',
+        );
+        emit(
+          state.copyWith(
+            status: GeneralUserTrajectoryFiltersStatus.error,
+            trajectoryPoints: const [],
+            message: failure.message,
+          ),
+        );
+      },
+      (response) {
+        final points = mapTrajectoryRowsToPoints(response.result);
+        emit(
+          state.copyWith(
+            status: GeneralUserTrajectoryFiltersStatus.loaded,
+            trajectoryPoints: points,
+            message: '',
+          ),
+        );
+        AppLogger.i(
+          'LoadGeneralUserTrajectoryFilters success: ${points.length} points',
+        );
+      },
+    );
   }
 
   void _onToggleGpsCoordinatesFilter(
@@ -104,40 +119,5 @@ class GeneralUserTrajectoryFiltersBloc
     }
 
     emit(state.copyWith(zoom: (state.zoom - 0.7).clamp(3, 17).toDouble()));
-  }
-
-  List<TrajectoryBuoyPoint> _dummyTrajectoryPoints() {
-    return const [
-      TrajectoryBuoyPoint(
-        position: LatLng(37.812, -122.430),
-        status: BuoyStatus.active,
-        label: '10:00 am',
-        secondaryLabel: '10:00 GMT',
-      ),
-      TrajectoryBuoyPoint(
-        position: LatLng(37.772, -122.409),
-        status: BuoyStatus.active,
-        label: '12:00 pm',
-        secondaryLabel: '12:00 GMT',
-      ),
-      TrajectoryBuoyPoint(
-        position: LatLng(37.744, -122.396),
-        status: BuoyStatus.batteryLow,
-        label: '3:00 pm',
-        secondaryLabel: '15:00 GMT',
-      ),
-      TrajectoryBuoyPoint(
-        position: LatLng(37.734, -122.368),
-        status: BuoyStatus.active,
-        label: '05:00 pm',
-        secondaryLabel: '17:00 GMT',
-      ),
-      TrajectoryBuoyPoint(
-        position: LatLng(37.728, -122.344),
-        status: BuoyStatus.active,
-        label: '09:30 pm',
-        secondaryLabel: '21:30 GMT',
-      ),
-    ];
   }
 }

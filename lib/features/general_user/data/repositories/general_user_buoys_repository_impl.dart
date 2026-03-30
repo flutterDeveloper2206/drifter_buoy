@@ -4,6 +4,7 @@ import 'package:drifter_buoy/features/general_user/data/models/user_view_buoy_da
 import 'package:drifter_buoy/features/general_user/data/models/user_view_buoy_dashboard_get_all_buoys_status_response.dart';
 import 'package:drifter_buoy/features/general_user/data/models/user_view_buoy_dashboard_get_buoy_data_overview_response.dart';
 import 'package:drifter_buoy/features/general_user/data/models/user_view_buoy_dashboard_get_buoy_metrics_response.dart';
+import 'package:drifter_buoy/features/general_user/data/models/user_view_buoy_dashboard_get_buoy_trajectory_view_response.dart';
 import 'package:drifter_buoy/features/general_user/domain/repositories/general_user_buoys_repository.dart';
 
 class GeneralUserBuoysRepositoryImpl implements GeneralUserBuoysRepository {
@@ -38,6 +39,20 @@ class GeneralUserBuoysRepositoryImpl implements GeneralUserBuoysRepository {
     required String toDate,
   }) {
     return _remoteDataSource.getBuoyMetrics(
+      buoyId: buoyId,
+      fromDate: fromDate,
+      toDate: toDate,
+    );
+  }
+
+  @override
+  ResultFuture<UserViewBuoyDashboardGetBuoyTrajectoryViewResponse>
+  getBuoyTrajectoryView({
+    required String buoyId,
+    required String fromDate,
+    required String toDate,
+  }) {
+    return _remoteDataSource.getBuoyTrajectoryView(
       buoyId: buoyId,
       fromDate: fromDate,
       toDate: toDate,

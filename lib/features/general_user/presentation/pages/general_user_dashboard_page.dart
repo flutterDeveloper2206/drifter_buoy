@@ -13,12 +13,13 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/dashboard/g
 import 'package:drifter_buoy/features/general_user/data/models/user_map_dashboard_get_buoy_dashboard_response.dart';
 import 'package:drifter_buoy/features/general_user/data/models/user_map_dashboard_get_buoy_map_dashboard_response.dart';
 import 'package:drifter_buoy/features/general_user/presentation/widgets/dummy_buoy_map_view.dart';
-import 'package:drifter_buoy/features/general_user/presentation/widgets/google_maps_buoy_preview.dart';
+import 'package:drifter_buoy/features/general_user/presentation/widgets/general_user_google_map_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/map_filters/general_user_map_filters_event.dart';
 
 class GeneralUserDashboardPage extends StatelessWidget {
   const GeneralUserDashboardPage({super.key});
@@ -335,8 +336,56 @@ class _MapPreviewCard extends StatelessWidget {
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
-      child: GoogleMapsBuoyPreview(buoys: buoyMarkers, height: 360),
+      child: IgnorePointer(
+        child: SizedBox(
+          height: 360,
+          width: double.infinity,
+          child: GeneralUserGoogleMapView(
+            buoys: buoyMarkers,
+            zoomLevel: _calculatePreviewZoom(buoyMarkers),
+            mapType: MapDisplayType.terrain,
+            showDeviceName: true,
+            showBatteryStatus: false,
+            selectedBuoy: null,
+            boundsPaddingPx: 44,
+          ),
+        ),
+      ),
     );
+  }
+
+  double _calculatePreviewZoom(List<DummyBuoy> buoys) {
+    if (buoys.isEmpty) {
+      return 10.3;
+    }
+    if (buoys.length == 1) {
+      return 13.0;
+    }
+
+    var minLat = buoys.first.position.latitude;
+    var maxLat = buoys.first.position.latitude;
+    var minLng = buoys.first.position.longitude;
+    var maxLng = buoys.first.position.longitude;
+
+    for (final b in buoys.skip(1)) {
+      final lat = b.position.latitude;
+      final lng = b.position.longitude;
+      if (lat < minLat) minLat = lat;
+      if (lat > maxLat) maxLat = lat;
+      if (lng < minLng) minLng = lng;
+      if (lng > maxLng) maxLng = lng;
+    }
+
+    final latSpan = (maxLat - minLat).abs();
+    final lngSpan = (maxLng - minLng).abs();
+    final span = latSpan > lngSpan ? latSpan : lngSpan;
+
+    if (span <= 0.01) return 13.2;
+    if (span <= 0.03) return 12.3;
+    if (span <= 0.06) return 11.6;
+    if (span <= 0.12) return 10.8;
+    if (span <= 0.22) return 10.0;
+    return 9.4;
   }
 }
 

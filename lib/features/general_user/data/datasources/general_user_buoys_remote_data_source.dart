@@ -8,6 +8,7 @@ import 'package:drifter_buoy/features/general_user/data/models/user_view_buoy_da
 import 'package:drifter_buoy/features/general_user/data/models/user_view_buoy_dashboard_get_all_buoys_status_response.dart';
 import 'package:drifter_buoy/features/general_user/data/models/user_view_buoy_dashboard_get_buoy_data_overview_response.dart';
 import 'package:drifter_buoy/features/general_user/data/models/user_view_buoy_dashboard_get_buoy_metrics_response.dart';
+import 'package:drifter_buoy/features/general_user/data/models/user_view_buoy_dashboard_get_buoy_trajectory_view_response.dart';
 import 'package:drifter_buoy/features/general_user/data/utils/general_user_buoy_id_for_api.dart';
 
 class GeneralUserBuoysRemoteDataSource {
@@ -123,6 +124,43 @@ class GeneralUserBuoysRemoteDataSource {
         }
 
         return UserViewBuoyDashboardGetBuoyMetricsResponse.fromJson(data);
+      },
+    );
+  }
+
+  ResultFuture<UserViewBuoyDashboardGetBuoyTrajectoryViewResponse>
+  getBuoyTrajectoryView({
+    required String buoyId,
+    required String fromDate,
+    required String toDate,
+  }) {
+    final id = normalizeBuoyIdForGeneralUserApi(buoyId);
+    final form = FormData.fromMap(<String, dynamic>{
+      'buoyId': id,
+      'fromDate': fromDate.trim(),
+      'toDate': toDate.trim(),
+    });
+
+    return _apiService.post<UserViewBuoyDashboardGetBuoyTrajectoryViewResponse>(
+      ApiEndpoints.getBuoyTrajectoryViewUrl,
+      data: form,
+      parser: (dynamic data) {
+        if (data is String) {
+          final decoded = jsonDecode(data);
+          if (decoded is Map<String, dynamic>) {
+            return UserViewBuoyDashboardGetBuoyTrajectoryViewResponse.fromJson(
+              decoded,
+            );
+          }
+        }
+
+        if (data is! Map<String, dynamic>) {
+          throw Exception('Invalid get buoy trajectory response format');
+        }
+
+        return UserViewBuoyDashboardGetBuoyTrajectoryViewResponse.fromJson(
+          data,
+        );
       },
     );
   }

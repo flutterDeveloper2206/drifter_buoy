@@ -1,20 +1,23 @@
 import 'package:drifter_buoy/core/utils/app_logger.dart';
+import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_buoy_trajectory_view.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_view/general_user_trajectory_view_event.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_view/general_user_trajectory_view_mapper.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_view/general_user_trajectory_view_state.dart';
-import 'package:drifter_buoy/features/general_user/presentation/widgets/dummy_buoy_map_view.dart';
-import 'package:drifter_buoy/features/general_user/presentation/widgets/dummy_trajectory_live_map_view.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:latlong2/latlong.dart';
 
 class GeneralUserTrajectoryViewBloc
     extends
         Bloc<GeneralUserTrajectoryViewEvent, GeneralUserTrajectoryViewState> {
-  GeneralUserTrajectoryViewBloc()
-    : super(const GeneralUserTrajectoryViewState.initial()) {
+  GeneralUserTrajectoryViewBloc({
+    required GeneralUserGetBuoyTrajectoryView getBuoyTrajectoryView,
+  }) : _getBuoyTrajectoryView = getBuoyTrajectoryView,
+       super(const GeneralUserTrajectoryViewState.initial()) {
     on<LoadGeneralUserTrajectoryView>(_onLoadGeneralUserTrajectoryView);
     on<ZoomInGeneralUserTrajectoryView>(_onZoomInGeneralUserTrajectoryView);
     on<ZoomOutGeneralUserTrajectoryView>(_onZoomOutGeneralUserTrajectoryView);
   }
+
+  final GeneralUserGetBuoyTrajectoryView _getBuoyTrajectoryView;
 
   Future<void> _onLoadGeneralUserTrajectoryView(
     LoadGeneralUserTrajectoryView event,
@@ -24,33 +27,43 @@ class GeneralUserTrajectoryViewBloc
     emit(
       state.copyWith(
         status: GeneralUserTrajectoryViewStatus.loading,
+        buoyId: event.buoyId,
         message: '',
       ),
     );
 
-    try {
-      await Future<void>.delayed(const Duration(milliseconds: 180));
-      emit(
-        state.copyWith(
-          status: GeneralUserTrajectoryViewStatus.loaded,
-          buoyId: event.buoyId,
-          trajectoryPoints: _dummyTrajectoryPoints(),
-        ),
-      );
-      AppLogger.i('LoadGeneralUserTrajectoryView success');
-    } catch (error, stackTrace) {
-      AppLogger.e(
-        'LoadGeneralUserTrajectoryView failed',
-        error: error,
-        stackTrace: stackTrace,
-      );
-      emit(
-        state.copyWith(
-          status: GeneralUserTrajectoryViewStatus.error,
-          message: 'Unable to load trajectory view.',
-        ),
-      );
-    }
+    final (fromDate, toDate) = defaultTrajectoryApiDateRange();
+    final result = await _getBuoyTrajectoryView(
+      buoyId: event.buoyId,
+      fromDate: fromDate,
+      toDate: toDate,
+    );
+
+    result.fold(
+      (failure) {
+        AppLogger.w('LoadGeneralUserTrajectoryView failed: ${failure.message}');
+        emit(
+          state.copyWith(
+            status: GeneralUserTrajectoryViewStatus.error,
+            trajectoryPoints: const [],
+            message: failure.message,
+          ),
+        );
+      },
+      (response) {
+        final points = mapTrajectoryRowsToPoints(response.result);
+        emit(
+          state.copyWith(
+            status: GeneralUserTrajectoryViewStatus.loaded,
+            trajectoryPoints: points,
+            message: '',
+          ),
+        );
+        AppLogger.i(
+          'LoadGeneralUserTrajectoryView success: ${points.length} points',
+        );
+      },
+    );
   }
 
   void _onZoomInGeneralUserTrajectoryView(
@@ -73,40 +86,5 @@ class GeneralUserTrajectoryViewBloc
     }
 
     emit(state.copyWith(zoom: (state.zoom - 0.7).clamp(3, 17).toDouble()));
-  }
-
-  List<TrajectoryBuoyPoint> _dummyTrajectoryPoints() {
-    return const [
-      TrajectoryBuoyPoint(
-        position: LatLng(37.809, -122.429),
-        status: BuoyStatus.active,
-        label: '10:20 GMT/',
-        secondaryLabel: '03:39 IST',
-      ),
-      TrajectoryBuoyPoint(
-        position: LatLng(37.774, -122.415),
-        status: BuoyStatus.active,
-        label: '10:20 GMT/',
-        secondaryLabel: '03:39 IST',
-      ),
-      TrajectoryBuoyPoint(
-        position: LatLng(37.746, -122.401),
-        status: BuoyStatus.active,
-        label: '10:20 GMT/',
-        secondaryLabel: '03:39 IST',
-      ),
-      TrajectoryBuoyPoint(
-        position: LatLng(37.734, -122.372),
-        status: BuoyStatus.active,
-        label: '10:20 GMT/',
-        secondaryLabel: '03:39 IST',
-      ),
-      TrajectoryBuoyPoint(
-        position: LatLng(37.729, -122.347),
-        status: BuoyStatus.active,
-        label: '10:20 GMT/',
-        secondaryLabel: '03:39 IST',
-      ),
-    ];
   }
 }
