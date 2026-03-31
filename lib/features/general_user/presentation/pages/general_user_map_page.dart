@@ -27,6 +27,8 @@ class GeneralUserMapPage extends StatefulWidget {
 
 class _GeneralUserMapPageState extends State<GeneralUserMapPage> {
   gmaps.GoogleMapController? _mapController;
+  final DraggableScrollableController _filtersSheetController =
+      DraggableScrollableController();
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   late bool _mapSearchOpen;
@@ -49,9 +51,34 @@ class _GeneralUserMapPageState extends State<GeneralUserMapPage> {
 
   @override
   void dispose() {
+    _filtersSheetController.dispose();
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
+  }
+
+  Future<void> _toggleFiltersSheet() async {
+    if (!_filtersSheetController.isAttached) {
+      return;
+    }
+    final current = _sheetExtent;
+    final target = current < 0.40 ? 0.65 : 0.14;
+    await _filtersSheetController.animateTo(
+      target,
+      duration: const Duration(milliseconds: 240),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  Future<void> _collapseFiltersSheet() async {
+    if (!_filtersSheetController.isAttached || _sheetExtent <= 0.16) {
+      return;
+    }
+    await _filtersSheetController.animateTo(
+      0.14,
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   void _closeMapSearch() {
@@ -328,6 +355,18 @@ class _GeneralUserMapPageState extends State<GeneralUserMapPage> {
                         },
                       ),
                     ),
+                  if (_sheetExtent > 0.16)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      top: 0,
+                      bottom: sheetLift,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: _collapseFiltersSheet,
+                        child: const SizedBox.expand(),
+                      ),
+                    ),
                   Align(
                     alignment: Alignment.bottomCenter,
                     child:
@@ -342,14 +381,19 @@ class _GeneralUserMapPageState extends State<GeneralUserMapPage> {
                             return false;
                           },
                           child: DraggableScrollableSheet(
+                            controller: _filtersSheetController,
                             initialChildSize: 0.14,
                             minChildSize: 0.12,
                             maxChildSize: 0.72,
                             snap: true,
                             snapSizes: const [0.14, 0.65],
+                            snapAnimationDuration: const Duration(
+                              milliseconds: 220,
+                            ),
                             builder: (context, scrollController) {
                               return _MapFiltersDraggablePanel(
                                 scrollController: scrollController,
+                                onHeaderTap: _toggleFiltersSheet,
                                 titleStyle: textTheme.titleMedium?.copyWith(
                                   color: const Color(0xFF2D3238),
                                   fontWeight: FontWeight.w700,
@@ -873,10 +917,12 @@ class _LegendPinItem extends StatelessWidget {
 class _MapFiltersDraggablePanel extends StatelessWidget {
   const _MapFiltersDraggablePanel({
     required this.scrollController,
+    this.onHeaderTap,
     this.titleStyle,
   });
 
   final ScrollController scrollController;
+  final VoidCallback? onHeaderTap;
   final TextStyle? titleStyle;
 
   @override
@@ -940,25 +986,48 @@ class _MapFiltersDraggablePanel extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
         Center(
-          child: Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: const Color(0xFFC9CED0),
-              borderRadius: BorderRadius.circular(4),
+          child: InkWell(
+            onTap: onHeaderTap,
+            borderRadius: BorderRadius.circular(20),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFC9CED0),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
             ),
           ),
         ),
         const SizedBox(height: 8),
         Center(
-          child: Icon(
-            Icons.keyboard_arrow_up,
-            size: 20,
-            color: Colors.grey.shade600,
+          child: InkWell(
+            onTap: onHeaderTap,
+            borderRadius: BorderRadius.circular(20),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+              child: Icon(
+                Icons.keyboard_arrow_up,
+                size: 20,
+                color: Colors.grey.shade600,
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 4),
-        Center(child: Text('Toggles and Filters', style: heading)),
+        Center(
+          child: InkWell(
+            onTap: onHeaderTap,
+            borderRadius: BorderRadius.circular(10),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+              child: Text('Toggles and Filters', style: heading),
+            ),
+          ),
+        ),
         const SizedBox(height: 14),
         const Divider(color: Color(0xFFD2D2D2), thickness: 1),
         const SizedBox(height: 14),
