@@ -9,6 +9,9 @@ class GeneralUserBuoyOverviewData extends Equatable {
   final String batteryVoltage;
   final String gpsLatitude;
   final String gpsLongitude;
+  /// Degrees–minutes–seconds from API (e.g. `19°59'54.9 N`). Shown in Metrics when set.
+  final String latitudeDMS;
+  final String longitudeDMS;
   final String signalStrength;
   final bool isBatteryLow;
   final List<LatLng> trajectoryPoints;
@@ -20,10 +23,24 @@ class GeneralUserBuoyOverviewData extends Equatable {
     required this.batteryVoltage,
     required this.gpsLatitude,
     required this.gpsLongitude,
+    required this.latitudeDMS,
+    required this.longitudeDMS,
     required this.signalStrength,
     required this.isBatteryLow,
     required this.trajectoryPoints,
   });
+
+  /// Two-line GPS text for the Metrics card: prefers DMS when both present.
+  String get gpsDisplayLines {
+    final dLat = latitudeDMS.trim();
+    final dLon = longitudeDMS.trim();
+    if (dLat.isNotEmpty && dLon.isNotEmpty) {
+      return '$dLat\n$dLon';
+    }
+    final line1 = dLat.isNotEmpty ? dLat : gpsLatitude;
+    final line2 = dLon.isNotEmpty ? dLon : gpsLongitude;
+    return '$line1\n$line2';
+  }
 
   @override
   List<Object> get props => [
@@ -33,6 +50,8 @@ class GeneralUserBuoyOverviewData extends Equatable {
         batteryVoltage,
         gpsLatitude,
         gpsLongitude,
+        latitudeDMS,
+        longitudeDMS,
         signalStrength,
         isBatteryLow,
         trajectoryPoints,

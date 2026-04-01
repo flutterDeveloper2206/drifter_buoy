@@ -66,7 +66,9 @@ class _GeneralUserTrajectoryViewPageState
                   GeneralUserTrajectoryViewState
                 >(
                   builder: (context, state) {
-                    final filters = context.watch<GeneralUserTrajectoryFiltersBloc>().state;
+                    final filters = context
+                        .watch<GeneralUserTrajectoryFiltersBloc>()
+                        .state;
                     return Stack(
                       children: [
                         Positioned.fill(
@@ -82,7 +84,7 @@ class _GeneralUserTrajectoryViewPageState
                                     if (GoRouter.of(context).canPop()) {
                                       context.pop();
                                     } else {
-                                      context.go(AppRoutes.buoyOverviewPath);
+                                      context.go(AppRoutes.dashboardPath);
                                     }
                                   },
                                   icon: Icons.arrow_back,
@@ -119,9 +121,7 @@ class _GeneralUserTrajectoryViewPageState
                         ),
                         Align(
                           alignment: Alignment.bottomCenter,
-                          child: _BottomTogglePanel(
-                            onTap: _openFiltersSheet,
-                          ),
+                          child: _BottomTogglePanel(onTap: _openFiltersSheet),
                         ),
                       ],
                     );
@@ -175,7 +175,8 @@ class _GeneralUserTrajectoryViewPageState
           child: GoogleTrajectoryLiveMapView(
             points: points,
             initialZoom: state.zoom,
-            showLabels: filters.status == GeneralUserTrajectoryFiltersStatus.loaded
+            showLabels:
+                filters.status == GeneralUserTrajectoryFiltersStatus.loaded
                 ? filters.gpsCoordinatesEnabled
                 : true,
             showSecondaryLabels:

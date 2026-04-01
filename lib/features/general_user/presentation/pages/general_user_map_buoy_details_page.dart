@@ -264,7 +264,7 @@ class _BuoyDetailsCard extends StatelessWidget {
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Last Update : ${detail.lastUpdate}',
+                  'Last Upddddate : ${detail.lastUpdate}',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: const Color(0xFF6A6A6A),
                     fontWeight: FontWeight.w700,

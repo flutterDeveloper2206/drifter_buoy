@@ -579,7 +579,7 @@ class _MapSelectedBuoyCard extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                'Last Update : 10:20 AM',
+                'Last Update : ${buoy.lastUpdate}',
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   color: const Color(0xFF6A7077),
                   fontWeight: FontWeight.w600,
@@ -925,6 +925,12 @@ class _MapFiltersDraggablePanel extends StatelessWidget {
   final VoidCallback? onHeaderTap;
   final TextStyle? titleStyle;
 
+  /// Lets the sheet drag even when list content is shorter than the viewport,
+  /// and pairs correctly with [DraggableScrollableSheet]'s scroll controller.
+  static const ScrollPhysics _sheetScrollPhysics = AlwaysScrollableScrollPhysics(
+    parent: BouncingScrollPhysics(),
+  );
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<GeneralUserMapFiltersBloc, GeneralUserMapFiltersState>(
@@ -943,6 +949,7 @@ class _MapFiltersDraggablePanel extends StatelessWidget {
                 ),
               ],
             ),
+            clipBehavior: Clip.antiAlias,
             child: SafeArea(top: false, child: _buildContent(context, state)),
           ),
         );
@@ -953,23 +960,33 @@ class _MapFiltersDraggablePanel extends StatelessWidget {
   Widget _buildContent(BuildContext context, GeneralUserMapFiltersState state) {
     if (state.status == GeneralUserMapFiltersStatus.loading ||
         state.status == GeneralUserMapFiltersStatus.initial) {
-      return const Padding(
-        padding: EdgeInsets.fromLTRB(16, 16, 16, 28),
-        child: GeneralUserMapFiltersShimmer(),
+      return ListView(
+        controller: scrollController,
+        primary: false,
+        physics: _sheetScrollPhysics,
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+        children: const [
+          GeneralUserMapFiltersShimmer(),
+        ],
       );
     }
 
     if (state.status == GeneralUserMapFiltersStatus.error) {
-      return Padding(
+      return ListView(
+        controller: scrollController,
+        primary: false,
+        physics: _sheetScrollPhysics,
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-        child: AppErrorView(
-          message: state.message,
-          onRetry: () {
-            context.read<GeneralUserMapFiltersBloc>().add(
-              const LoadGeneralUserMapFilters(),
-            );
-          },
-        ),
+        children: [
+          AppErrorView(
+            message: state.message,
+            onRetry: () {
+              context.read<GeneralUserMapFiltersBloc>().add(
+                const LoadGeneralUserMapFilters(),
+              );
+            },
+          ),
+        ],
       );
     }
 
@@ -982,7 +999,9 @@ class _MapFiltersDraggablePanel extends StatelessWidget {
 
     return ListView(
       controller: scrollController,
-      physics: const BouncingScrollPhysics(),
+      primary: false,
+      physics: _sheetScrollPhysics,
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
         Center(
@@ -1092,15 +1111,7 @@ class _MapFiltersDraggablePanel extends StatelessWidget {
             );
           },
         ),
-        AppCheckboxSettingTile(
-          label: 'Location / Zone',
-          selected: state.locationZoneFilterEnabled,
-          onTap: () {
-            context.read<GeneralUserMapFiltersBloc>().add(
-              const ToggleLocationZoneFilter(),
-            );
-          },
-        ),
+
         const SizedBox(height: 10),
         const Divider(color: Color(0xFFD2D2D2), thickness: 1),
         const SizedBox(height: 14),

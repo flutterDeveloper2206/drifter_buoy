@@ -368,9 +368,9 @@ class _MetricsCard extends StatelessWidget {
                   ),
                   Expanded(
                     child: _MetricColumn(
-                      icon: Icons.gps_fixed_rounded,
+                      icon: Icons.map_outlined,
                       title: 'GPS',
-                      value: '${data.gpsLatitude}\n${data.gpsLongitude}',
+                      value: data.gpsDisplayLines,
                     ),
                   ),
                   Expanded(

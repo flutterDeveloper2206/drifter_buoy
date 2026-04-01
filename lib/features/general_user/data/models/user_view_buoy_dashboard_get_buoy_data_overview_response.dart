@@ -89,6 +89,8 @@ class BuoyDataOverviewMetricsRow extends Equatable {
   final double batteryVoltage;
   final double latitude;
   final double longitude;
+  final String latitudeDMS;
+  final String longitudeDMS;
   final String signalStrength;
   final String isBatteryLow;
 
@@ -96,6 +98,8 @@ class BuoyDataOverviewMetricsRow extends Equatable {
     required this.batteryVoltage,
     required this.latitude,
     required this.longitude,
+    required this.latitudeDMS,
+    required this.longitudeDMS,
     required this.signalStrength,
     required this.isBatteryLow,
   });
@@ -105,6 +109,16 @@ class BuoyDataOverviewMetricsRow extends Equatable {
       batteryVoltage: _toDouble(json['batteryVoltage']),
       latitude: _toDouble(json['latitude']),
       longitude: _toDouble(json['longitude']),
+      latitudeDMS: _readString(json, const [
+        'latitudeDMS',
+        'LatitudeDMS',
+        'latitude_dms',
+      ]),
+      longitudeDMS: _readString(json, const [
+        'longitudeDMS',
+        'LongitudeDMS',
+        'longitude_dms',
+      ]),
       signalStrength: (json['signalStrength'] ?? '').toString(),
       isBatteryLow: (json['isBatteryLow'] ?? '').toString(),
     );
@@ -115,9 +129,20 @@ class BuoyDataOverviewMetricsRow extends Equatable {
         batteryVoltage,
         latitude,
         longitude,
+        latitudeDMS,
+        longitudeDMS,
         signalStrength,
         isBatteryLow,
       ];
+}
+
+String _readString(Map<String, dynamic> json, List<String> keys) {
+  for (final key in keys) {
+    if (json.containsKey(key) && json[key] != null) {
+      return json[key].toString().trim();
+    }
+  }
+  return '';
 }
 
 class BuoyDataOverviewTrajectoryRow extends Equatable {

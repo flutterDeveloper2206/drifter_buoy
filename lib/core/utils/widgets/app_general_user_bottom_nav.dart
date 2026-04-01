@@ -34,7 +34,8 @@ class AppGeneralUserBottomNav extends StatelessWidget {
     // Default navigation for the general-user bottom tabs.
     //
     // Rules:
-    // - Home/Buoys/Map always use `go` (replace current tab page).
+    // - Home/Buoys use `go` (replace current tab page).
+    // - Map opens Trajectory View with `push` so back returns to the previous tab.
     // - Export/Setup use `push` when coming from a "main" tab (so back returns
     //   to that tab), otherwise `go` (replace) to keep the stack clean.
     final shouldPushForSecondaryTab = switch (selectedTab) {
@@ -50,7 +51,7 @@ class AppGeneralUserBottomNav extends StatelessWidget {
       case GeneralUserBottomNavTab.buoys:
         context.go(AppRoutes.buoysPath);
       case GeneralUserBottomNavTab.map:
-        context.go(AppRoutes.mapPath);
+        context.push(AppRoutes.trajectoryViewPath);
       case GeneralUserBottomNavTab.export:
         if (shouldPushForSecondaryTab) {
           context.push(AppRoutes.exportSelectionPath);
@@ -95,12 +96,12 @@ class AppGeneralUserBottomNav extends StatelessWidget {
             selected: selectedTab == GeneralUserBottomNavTab.buoys,
             onTap: () => _handleTap(context, GeneralUserBottomNavTab.buoys),
           ),
-          _BottomNavItem(
-            svgAssetPath: AppAssets.icMap,
-            label: 'Map',
-            selected: selectedTab == GeneralUserBottomNavTab.map,
-            onTap: () => _handleTap(context, GeneralUserBottomNavTab.map),
-          ),
+          // _BottomNavItem(
+          //   svgAssetPath: AppAssets.icMap,
+          //   label: 'Map',
+          //   selected: selectedTab == GeneralUserBottomNavTab.map,
+          //   onTap: () => _handleTap(context, GeneralUserBottomNavTab.map),
+          // ),
           _BottomNavItem(
             svgAssetPath: AppAssets.icExport,
             label: 'Export',

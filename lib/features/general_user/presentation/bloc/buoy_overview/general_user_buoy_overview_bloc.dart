@@ -147,7 +147,7 @@ class GeneralUserBuoyOverviewBloc
         : '—';
 
     final batteryVoltage = metrics != null
-        ? '${metrics.batteryVoltage} V'
+        ? '${_formatBatteryVoltage(metrics.batteryVoltage)} v'
         : '—';
 
     double? displayLat;
@@ -169,6 +169,9 @@ class GeneralUserBuoyOverviewBloc
     final gpsLongitude =
         displayLon != null ? displayLon.toStringAsFixed(5) : '—';
 
+    final latitudeDms = (metrics?.latitudeDMS ?? '').trim();
+    final longitudeDms = (metrics?.longitudeDMS ?? '').trim();
+
     final signalStrength = (metrics?.signalStrength ?? '').trim().isNotEmpty
         ? metrics!.signalStrength.trim()
         : '—';
@@ -189,10 +192,19 @@ class GeneralUserBuoyOverviewBloc
       batteryVoltage: batteryVoltage,
       gpsLatitude: gpsLatitude,
       gpsLongitude: gpsLongitude,
+      latitudeDMS: latitudeDms,
+      longitudeDMS: longitudeDms,
       signalStrength: signalStrength,
       isBatteryLow: isBatteryLow,
       trajectoryPoints: trajectoryPoints,
     );
+  }
+
+  String _formatBatteryVoltage(double v) {
+    if (v == v.roundToDouble()) {
+      return v.toStringAsFixed(0);
+    }
+    return v.toStringAsFixed(1);
   }
 
   List<LatLng> _buildTrajectoryPoints({

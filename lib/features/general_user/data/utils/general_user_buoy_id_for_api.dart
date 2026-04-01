@@ -3,6 +3,9 @@
 /// - Strips a leading `DB-` / `DB` prefix (case-insensitive).
 /// - Zero-pads a single numeric digit so JSON `1` / `"1"` becomes `01` when
 ///   the backend expects two-character ids.
+///
+/// **Not** used for the trajectory-view API: that endpoint expects the full id
+/// (e.g. `DB-01`); stripping would send `01` and fail or return wrong data.
 String normalizeBuoyIdForGeneralUserApi(String raw) {
   final trimmed = raw.trim();
   if (trimmed.isEmpty) {
@@ -22,3 +25,8 @@ String normalizeBuoyIdForGeneralUserApi(String raw) {
   }
   return tail;
 }
+
+/// `GetBuoyTrajectoryView` expects the same buoy id as the rest of the app
+/// (e.g. `DB-01`), not the normalized numeric tail from
+/// [normalizeBuoyIdForGeneralUserApi].
+String buoyIdForTrajectoryApi(String raw) => raw.trim();

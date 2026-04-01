@@ -197,10 +197,14 @@ class GeneralUserDashboardPage extends StatelessWidget {
                         case GeneralUserBottomNavTab.buoys:
                           context.go(AppRoutes.buoysPath);
                         case GeneralUserBottomNavTab.map:
-                          if (state is GeneralUserDashboardLoaded) {
-                            context.go(AppRoutes.mapPath, extra: state.mapData);
+                          if (state is GeneralUserDashboardLoaded &&
+                              state.mapData.isNotEmpty) {
+                            context.push(
+                              AppRoutes.trajectoryViewPath,
+                              extra: state.mapData.first.buoyId,
+                            );
                           } else {
-                            context.go(AppRoutes.mapPath);
+                            context.push(AppRoutes.trajectoryViewPath);
                           }
                         case GeneralUserBottomNavTab.export:
                           context.push(AppRoutes.exportSelectionPath);

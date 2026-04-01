@@ -12,6 +12,7 @@ class DummyBuoy extends Equatable {
   final String battery;
   final String gps;
   final String signal;
+  final String lastUpdate;
 
   DummyBuoy({
     required Object? id,
@@ -20,10 +21,12 @@ class DummyBuoy extends Equatable {
     Object? battery = '—',
     Object? gps = '—',
     Object? signal = '—',
+    Object? lastUpdate = '10:20 AM',
   })  : id = _safeLabel(id, fallback: 'DB - --'),
         battery = _safeLabel(battery, fallback: '—'),
         gps = _safeLabel(gps, fallback: '—'),
-        signal = _safeLabel(signal, fallback: '—');
+        signal = _safeLabel(signal, fallback: '—'),
+        lastUpdate = _safeLabel(lastUpdate, fallback: '—');
 
   @override
   List<Object> get props => [
@@ -34,6 +37,7 @@ class DummyBuoy extends Equatable {
         battery,
         gps,
         signal,
+        lastUpdate,
       ];
 }
 

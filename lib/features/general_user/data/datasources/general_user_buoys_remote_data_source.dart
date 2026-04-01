@@ -134,7 +134,7 @@ class GeneralUserBuoysRemoteDataSource {
     required String fromDate,
     required String toDate,
   }) {
-    final id = normalizeBuoyIdForGeneralUserApi(buoyId);
+    final id = buoyIdForTrajectoryApi(buoyId);
     final form = FormData.fromMap(<String, dynamic>{
       'buoyId': id,
       'fromDate': fromDate.trim(),

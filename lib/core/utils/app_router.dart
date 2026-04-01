@@ -468,10 +468,30 @@ List<DummyBuoy>? _toPreloadedMapBuoys(dynamic extra) {
         (e) => DummyBuoy(
           id: e.buoyId,
           position: LatLng(e.latitude, e.longitude),
-          status: _statusFromApi(e.buoyStatus),
+          status: _mapStatusFromDashboardItem(e),
+          battery: e.batteryDisplay,
+          gps: e.gpsDisplay.isNotEmpty ? e.gpsDisplay : '—',
+          signal: e.signalDisplay,
+          lastUpdate: e.lastUpdate.isNotEmpty ? e.lastUpdate : '—',
         ),
       )
       .toList(growable: false);
+}
+
+BuoyStatus _mapStatusFromDashboardItem(
+  UserMapDashboardGetBuoyMapDashboardItem e,
+) {
+  final low = e.isBatteryLow.trim().toLowerCase();
+  final looksLow = low == 'yes' || low == 'true' || low == '1';
+  final statusRaw = e.buoyStatus.trim();
+  if (statusRaw.isEmpty && looksLow) {
+    return BuoyStatus.batteryLow;
+  }
+  final fromApi = _statusFromApi(e.buoyStatus);
+  if (looksLow && fromApi == BuoyStatus.active) {
+    return BuoyStatus.batteryLow;
+  }
+  return fromApi;
 }
 
 BuoyStatus _statusFromApi(String status) {
