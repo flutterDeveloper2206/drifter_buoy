@@ -371,6 +371,7 @@ class _BrandFooter extends StatelessWidget {
           'Azista',
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
             color: const Color(0xFFC93333),
+            fontSize: 20,
             fontWeight: FontWeight.w700,
             letterSpacing: 0.2,
           ),

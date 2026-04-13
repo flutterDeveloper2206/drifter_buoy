@@ -8,7 +8,7 @@ typedef TrajectoryApiDateRange = (String fromDate, String toDate);
 
 TrajectoryApiDateRange defaultTrajectoryApiDateRange() {
   final to = todayLocal();
-  final from = to.subtract(const Duration(days: 4));
+  final from = to.subtract(const Duration(days: 0));
   return (formatReportApiDate(from), formatReportApiDate(to));
 }
 
