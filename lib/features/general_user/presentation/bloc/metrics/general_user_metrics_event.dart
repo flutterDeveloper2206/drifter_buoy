@@ -1,6 +1,12 @@
 import 'package:equatable/equatable.dart';
 
-enum GeneralUserMetricsDateRange { last24Hours, last7Days, last30Days, custom }
+enum GeneralUserMetricsDateRange {
+  last5Hours,
+  last12Hours,
+  last18Hours,
+  last24Hours,
+  custom,
+}
 
 abstract class GeneralUserMetricsEvent extends Equatable {
   const GeneralUserMetricsEvent();

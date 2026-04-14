@@ -74,7 +74,7 @@ class GeneralUserTrajectoryViewBloc
       return;
     }
 
-    emit(state.copyWith(zoom: (state.zoom + 0.7).clamp(3, 17).toDouble()));
+    emit(state.copyWith(zoom: (state.zoom + 0.7).clamp(3, 21).toDouble()));
   }
 
   void _onZoomOutGeneralUserTrajectoryView(
@@ -85,6 +85,6 @@ class GeneralUserTrajectoryViewBloc
       return;
     }
 
-    emit(state.copyWith(zoom: (state.zoom - 0.7).clamp(3, 17).toDouble()));
+    emit(state.copyWith(zoom: (state.zoom - 0.7).clamp(3, 21).toDouble()));
   }
 }

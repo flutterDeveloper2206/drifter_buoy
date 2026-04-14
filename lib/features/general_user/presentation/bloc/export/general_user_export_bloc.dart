@@ -286,11 +286,14 @@ class GeneralUserExportBloc
             bytes = await buildDynamicPdf(
               columnOrder: cols,
               rows: response.rows,
-              title:
-                  'Buoy data — ${state.selectedBuoyIds.length} buoys (${dates.$1} → ${dates.$2})',
             );
           }
+          final fileBuoyId = state.selectedBuoyIds.length == 1
+              ? state.selectedBuoyIds.first
+              : 'MultipleBuoys';
           final name = exportMultiBuoyDataReportFileName(
+            buoyId: fileBuoyId,
+            reportType: 'DataReport',
             fromDate: dates.$1,
             toDate: dates.$2,
             csv: state.format == ExportFormat.csv,
@@ -406,11 +409,11 @@ class GeneralUserExportBloc
             bytes = await buildDynamicPdf(
               columnOrder: cols,
               rows: response.rows,
-              title: 'Buoy distance — $bid (${dates.$1} → ${dates.$2})',
             );
           }
           final name = exportReportFileName(
             buoyId: bid,
+            reportType: 'DistanceReport',
             fromDate: dates.$1,
             toDate: dates.$2,
             csv: state.format == ExportFormat.csv,

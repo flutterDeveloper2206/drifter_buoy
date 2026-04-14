@@ -9,12 +9,18 @@ class TrajectoryBuoyPoint extends Equatable {
   final BuoyStatus status;
   final String label;
   final String? secondaryLabel;
+  final String gpsLabel;
+  final String timestampLabel;
+  final String batteryLabel;
 
   const TrajectoryBuoyPoint({
     required this.position,
     required this.status,
     required this.label,
     this.secondaryLabel,
+    required this.gpsLabel,
+    required this.timestampLabel,
+    required this.batteryLabel,
   });
 
   TrajectoryBuoyPoint copyWith({
@@ -22,12 +28,18 @@ class TrajectoryBuoyPoint extends Equatable {
     BuoyStatus? status,
     String? label,
     String? secondaryLabel,
+    String? gpsLabel,
+    String? timestampLabel,
+    String? batteryLabel,
   }) {
     return TrajectoryBuoyPoint(
       position: position ?? this.position,
       status: status ?? this.status,
       label: label ?? this.label,
       secondaryLabel: secondaryLabel ?? this.secondaryLabel,
+      gpsLabel: gpsLabel ?? this.gpsLabel,
+      timestampLabel: timestampLabel ?? this.timestampLabel,
+      batteryLabel: batteryLabel ?? this.batteryLabel,
     );
   }
 
@@ -38,6 +50,9 @@ class TrajectoryBuoyPoint extends Equatable {
     status,
     label,
     secondaryLabel ?? '',
+    gpsLabel,
+    timestampLabel,
+    batteryLabel,
   ];
 }
 

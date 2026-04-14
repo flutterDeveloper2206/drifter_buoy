@@ -110,77 +110,90 @@ class _LoadedOverviewBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final data = state.data;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              AppIconCircleButton(
-                onTap: () {
-                  if (GoRouter.of(context).canPop()) {
-                    context.pop();
-                  } else {
-                    context.go(AppRoutes.mapBuoyDetailsPath);
-                  }
-                },
-                icon: Icons.arrow_back,
-              ),
-              Expanded(
-                child: Center(
-                  child: Text(
-                    data.id,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: const Color(0xFF2A2F34),
-                      fontWeight: FontWeight.w700,
+    return RefreshIndicator(
+      color: const Color(0xFF1F88D1),
+      edgeOffset: 84,
+      displacement: 28,
+      onRefresh: () async {
+        final bloc = context.read<GeneralUserBuoyOverviewBloc>();
+        bloc.add(LoadGeneralUserBuoyOverview(buoyId: data.id));
+        await bloc.stream.firstWhere(
+          (s) => s is! GeneralUserBuoyOverviewLoading,
+        );
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                AppIconCircleButton(
+                  onTap: () {
+                    if (GoRouter.of(context).canPop()) {
+                      context.pop();
+                    } else {
+                      context.go(AppRoutes.mapBuoyDetailsPath);
+                    }
+                  },
+                  icon: Icons.arrow_back,
+                ),
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      data.id,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: const Color(0xFF2A2F34),
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 48),
-            ],
-          ),
-          const SizedBox(height: 18),
-          _OverviewTabBar(
-            selectedTab: state.selectedTab,
-            onTabChanged: (tab) {
-              if (tab == GeneralUserBuoyOverviewTab.trajectory) {
-                context.push(AppRoutes.trajectoryViewPath, extra: data.id);
-                return;
-              }
+                const SizedBox(width: 48),
+              ],
+            ),
+            const SizedBox(height: 18),
+            _OverviewTabBar(
+              selectedTab: state.selectedTab,
+              onTabChanged: (tab) {
+                if (tab == GeneralUserBuoyOverviewTab.trajectory) {
+                  context.push(AppRoutes.trajectoryViewPath, extra: data.id);
+                  return;
+                }
 
-              context.read<GeneralUserBuoyOverviewBloc>().add(
-                ChangeGeneralUserBuoyOverviewTab(tab),
-              );
-            },
-          ),
-          const SizedBox(height: 18),
-          _BuoyHeaderCard(data: data),
-          const SizedBox(height: 16),
-          _MetricsCard(
-            data: data,
-            onTap: () => context.push(
-              AppRoutes.metricsPath,
-              extra: GeneralUserMetricsRouteExtra(
-                buoyId: data.id.replaceAll(' ', ''),
-                focusBatterySection: true,
+                context.read<GeneralUserBuoyOverviewBloc>().add(
+                  ChangeGeneralUserBuoyOverviewTab(tab),
+                );
+              },
+            ),
+            const SizedBox(height: 18),
+            _BuoyHeaderCard(data: data),
+            const SizedBox(height: 16),
+            _MetricsCard(
+              data: data,
+              onTap: () => context.push(
+                AppRoutes.metricsPath,
+                extra: GeneralUserMetricsRouteExtra(
+                  buoyId: data.id.replaceAll(' ', ''),
+                  focusBatterySection: true,
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          _TrajectoryCard(
-            onArrowTap: () =>
-                context.push(AppRoutes.trajectoryViewPath, extra: data.id),
-          ),
-          const SizedBox(height: 16),
-          _DeviceActionsCard(
-            onExportTap: () => context.push(
-              AppRoutes.exportPath,
-              extra: GeneralUserExportBuoyDistanceExtra(buoyId: data.id),
+            const SizedBox(height: 16),
+            _TrajectoryCard(
+              onArrowTap: () =>
+                  context.push(AppRoutes.trajectoryViewPath, extra: data.id),
             ),
-          ),
-        ],
+            const SizedBox(height: 16),
+            _DeviceActionsCard(
+              onExportTap: () => context.push(
+                AppRoutes.exportPath,
+                extra: GeneralUserExportBuoyDistanceExtra(buoyId: data.id),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -438,7 +451,7 @@ class _TrajectoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap:onArrowTap ,
+      onTap: onArrowTap ,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),

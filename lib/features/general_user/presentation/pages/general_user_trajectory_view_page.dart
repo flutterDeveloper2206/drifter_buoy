@@ -57,7 +57,7 @@ class _GeneralUserTrajectoryViewPageState
                 current.status == GeneralUserTrajectoryViewStatus.loaded,
             listener: (_, state) {
               _mapController?.animateCamera(
-                gmaps.CameraUpdate.zoomTo(state.zoom.clamp(3, 17)),
+                gmaps.CameraUpdate.zoomTo(state.zoom.clamp(3, 21)),
               );
             },
             child:
@@ -175,13 +175,17 @@ class _GeneralUserTrajectoryViewPageState
           child: GoogleTrajectoryLiveMapView(
             points: points,
             initialZoom: state.zoom,
-            showLabels:
+            showGpsCoordinates:
                 filters.status == GeneralUserTrajectoryFiltersStatus.loaded
                 ? filters.gpsCoordinatesEnabled
                 : true,
-            showSecondaryLabels:
+            showTimestamps:
                 filters.status == GeneralUserTrajectoryFiltersStatus.loaded
                 ? filters.timestampsEnabled
+                : false,
+            showBatteryLogs:
+                filters.status == GeneralUserTrajectoryFiltersStatus.loaded
+                ? filters.batteryLogsEnabled
                 : false,
             interactive: true,
             onControllerReady: (c) => _mapController = c,

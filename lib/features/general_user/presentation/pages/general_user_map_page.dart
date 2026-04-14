@@ -345,12 +345,22 @@ class _GeneralUserMapPageState extends State<GeneralUserMapPage> {
                       left: 14,
                       right: 14,
                       bottom: sheetLift + 88,
-                      child: _MapSelectedBuoyCard(
-                        buoy: _activeSelectedBuoyForState(state)!,
-                        onTap: () {
-                          context.push(
-                            AppRoutes.buoyOverviewPath,
-                            extra: _activeSelectedBuoyForState(state)!.id,
+                      child: BlocBuilder<
+                        GeneralUserMapFiltersBloc,
+                        GeneralUserMapFiltersState
+                      >(
+                        builder: (context, filtersState) {
+                          return _MapSelectedBuoyCard(
+                            buoy: _activeSelectedBuoyForState(state)!,
+                            showBattery: filtersState.batteryStatusEnabled,
+                            showGps: filtersState.gpsPointsEnabled,
+                            showSignal: filtersState.gprsSignalEnabled,
+                            onTap: () {
+                              context.push(
+                                AppRoutes.buoyOverviewPath,
+                                extra: _activeSelectedBuoyForState(state)!.id,
+                              );
+                            },
                           );
                         },
                       ),
@@ -511,9 +521,18 @@ class _GeneralUserMapPageState extends State<GeneralUserMapPage> {
 }
 
 class _MapSelectedBuoyCard extends StatelessWidget {
-  const _MapSelectedBuoyCard({required this.buoy, this.onTap});
+  const _MapSelectedBuoyCard({
+    required this.buoy,
+    required this.showBattery,
+    required this.showGps,
+    required this.showSignal,
+    this.onTap,
+  });
 
   final DummyBuoy buoy;
+  final bool showBattery;
+  final bool showGps;
+  final bool showSignal;
   final VoidCallback? onTap;
 
   @override
@@ -588,27 +607,30 @@ class _MapSelectedBuoyCard extends StatelessWidget {
               const SizedBox(height: 14),
               Row(
                 children: [
-                  Expanded(
-                    child: _MetricColumn(
-                      icon: Icons.battery_5_bar_rounded,
-                      value: buoy.battery,
-                      label: 'Battery',
+                  if (showBattery)
+                    Expanded(
+                      child: _MetricColumn(
+                        icon: Icons.battery_5_bar_rounded,
+                        value: buoy.battery,
+                        label: 'Battery',
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: _MetricColumn(
-                      icon: Icons.map_outlined,
-                      value: buoy.gps,
-                      label: 'GPS',
+                  if (showGps)
+                    Expanded(
+                      child: _MetricColumn(
+                        icon: Icons.map_outlined,
+                        value: buoy.gps,
+                        label: 'GPS',
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: _MetricColumn(
-                      icon: Icons.signal_cellular_alt_rounded,
-                      value: buoy.signal,
-                      label: 'Signal',
+                  if (showSignal)
+                    Expanded(
+                      child: _MetricColumn(
+                        icon: Icons.signal_cellular_alt_rounded,
+                        value: buoy.signal,
+                        label: 'Signal',
+                      ),
                     ),
-                  ),
                 ],
               ),
             ],
@@ -1042,15 +1064,6 @@ class _MapFiltersDraggablePanel extends StatelessWidget {
         const SizedBox(height: 14),
         const _SheetSectionTitle(label: 'Toggles'),
         const SizedBox(height: 8),
-        AppSwitchSettingTile(
-          label: 'Trajectory',
-          value: state.trajectoryEnabled,
-          onChanged: (_) {
-            context.read<GeneralUserMapFiltersBloc>().add(
-              const ToggleTrajectory(),
-            );
-          },
-        ),
         AppSwitchSettingTile(
           label: 'GPS points',
           value: state.gpsPointsEnabled,

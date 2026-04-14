@@ -74,11 +74,13 @@ class GeneralUserMetricsBloc
 
   Future<void> _fetchAndEmit(Emitter<GeneralUserMetricsState> emit) async {
     final (fromDate, toDate) = _apiDateStrings(state);
+    final hourlyData = _hourlyDataForRange(state.dateRange);
 
     final result = await _getBuoyMetrics(
       buoyId: state.buoyId.trim(),
       fromDate: fromDate,
       toDate: toDate,
+      hourlyData: hourlyData,
     );
 
     result.fold(
@@ -267,17 +269,19 @@ DateTime? _parseMetricsDateTime(String raw) {
         : s.customStart!;
     return (_formatApiDate(start), _formatApiDate(end));
   }
-  final start = switch (s.dateRange) {
-    GeneralUserMetricsDateRange.last24Hours =>
-      today.subtract(const Duration(days: 1)),
-    GeneralUserMetricsDateRange.last7Days =>
-      today.subtract(const Duration(days: 6)),
-    GeneralUserMetricsDateRange.last30Days =>
-      today.subtract(const Duration(days: 29)),
-    GeneralUserMetricsDateRange.custom =>
-      today.subtract(const Duration(days: 29)),
-  };
+  // API expects dates in day granularity; hour window is controlled by HourlyData.
+  final start = today.subtract(const Duration(days: 1));
   return (_formatApiDate(start), _formatApiDate(today));
+}
+
+int _hourlyDataForRange(GeneralUserMetricsDateRange range) {
+  return switch (range) {
+    GeneralUserMetricsDateRange.last5Hours => 5,
+    GeneralUserMetricsDateRange.last12Hours => 12,
+    GeneralUserMetricsDateRange.last18Hours => 18,
+    GeneralUserMetricsDateRange.last24Hours => 24,
+    GeneralUserMetricsDateRange.custom => 24,
+  };
 }
 
 String _formatApiDate(DateTime d) {

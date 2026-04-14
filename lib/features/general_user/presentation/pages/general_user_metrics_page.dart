@@ -2,21 +2,18 @@ import 'dart:math' as math;
 
 import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_icon_circle_button.dart';
-import 'package:drifter_buoy/core/utils/widgets/app_loader.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/metrics/general_user_metrics_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/metrics/general_user_metrics_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/metrics/general_user_metrics_state.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_export_page.dart';
+import 'package:drifter_buoy/features/general_user/presentation/widgets/general_user_loading_shimmers.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 class GeneralUserMetricsPage extends StatelessWidget {
-  const GeneralUserMetricsPage({
-    super.key,
-    this.focusBatterySection = false,
-  });
+  const GeneralUserMetricsPage({super.key, this.focusBatterySection = false});
 
   /// When true, scroll to the battery voltage section after data loads.
   final bool focusBatterySection;
@@ -31,7 +28,7 @@ class GeneralUserMetricsPage extends StatelessWidget {
             return switch (state.status) {
               GeneralUserMetricsStatus.initial ||
               GeneralUserMetricsStatus.loading =>
-                const AppLoader(),
+                const GeneralUserMetricsShimmer(),
               GeneralUserMetricsStatus.error => AppErrorView(
                 message: state.message,
                 onRetry: () {
@@ -74,7 +71,9 @@ class _MetricsLoadedBodyState extends State<_MetricsLoadedBody> {
   void initState() {
     super.initState();
     if (widget.focusBatterySection) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollBatteryIntoView());
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _scrollBatteryIntoView(),
+      );
     }
   }
 
@@ -84,7 +83,9 @@ class _MetricsLoadedBodyState extends State<_MetricsLoadedBody> {
     if (widget.focusBatterySection &&
         !oldWidget.focusBatterySection &&
         !_didScrollToBattery) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollBatteryIntoView());
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _scrollBatteryIntoView(),
+      );
     }
   }
 
@@ -98,7 +99,9 @@ class _MetricsLoadedBodyState extends State<_MetricsLoadedBody> {
       if (_batteryScrollAttempts > 24) {
         return;
       }
-      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollBatteryIntoView());
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _scrollBatteryIntoView(),
+      );
       return;
     }
     _didScrollToBattery = true;
@@ -184,8 +187,7 @@ class _MetricsLoadedBodyState extends State<_MetricsLoadedBody> {
                       onChanged: (range) async {
                         if (range == null) return;
                         if (range == GeneralUserMetricsDateRange.custom) {
-                          final picked =
-                              await showExportThemedDateRangePicker(
+                          final picked = await showExportThemedDateRangePicker(
                             context: context,
                             description:
                                 'Choose start and end dates for metrics.',
@@ -207,17 +209,17 @@ class _MetricsLoadedBodyState extends State<_MetricsLoadedBody> {
                             return;
                           }
                           context.read<GeneralUserMetricsBloc>().add(
-                                ApplyGeneralUserMetricsCustomRange(
-                                  start: picked.start,
-                                  end: picked.end,
-                                ),
-                              );
+                            ApplyGeneralUserMetricsCustomRange(
+                              start: picked.start,
+                              end: picked.end,
+                            ),
+                          );
                           return;
                         }
                         if (!context.mounted) return;
                         context.read<GeneralUserMetricsBloc>().add(
-                              ChangeGeneralUserMetricsDateRange(range),
-                            );
+                          ChangeGeneralUserMetricsDateRange(range),
+                        );
                       },
                     ),
                   ),
@@ -287,33 +289,33 @@ class _MetricsLoadedBodyState extends State<_MetricsLoadedBody> {
                       ),
                     ],
                   ),
-                const SizedBox(height: 12),
-                Text(
-                  state.batteryVoltage,
-                  style: textTheme.headlineSmall?.copyWith(
-                    color: const Color(0xFF1D2329),
-                    fontWeight: FontWeight.w800,
+                  const SizedBox(height: 12),
+                  Text(
+                    state.batteryVoltage,
+                    style: textTheme.headlineSmall?.copyWith(
+                      color: const Color(0xFF1D2329),
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  height: 220,
-                  child: state.batteryPoints.isEmpty
-                      ? Center(
-                          child: Text(
-                            'No chart data',
-                            style: textTheme.bodyMedium?.copyWith(
-                              color: const Color(0xFF70757A),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: 220,
+                    child: state.batteryPoints.isEmpty
+                        ? Center(
+                            child: Text(
+                              'No chart data',
+                              style: textTheme.bodyMedium?.copyWith(
+                                color: const Color(0xFF70757A),
+                              ),
                             ),
+                          )
+                        : _BatteryAreaChart(
+                            points: state.batteryPoints,
+                            xLabels: state.xAxisLabels,
                           ),
-                        )
-                      : _BatteryAreaChart(
-                          points: state.batteryPoints,
-                          xLabels: state.xAxisLabels,
-                        ),
-                ),
-              ],
-            ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -349,9 +351,10 @@ class _WhiteCard extends StatelessWidget {
 
 String _dateRangeLabel(GeneralUserMetricsDateRange range) {
   return switch (range) {
+    GeneralUserMetricsDateRange.last5Hours => 'Last 5 Hrs',
+    GeneralUserMetricsDateRange.last12Hours => 'Last 12 Hrs',
+    GeneralUserMetricsDateRange.last18Hours => 'Last 18 Hrs',
     GeneralUserMetricsDateRange.last24Hours => 'Last 24 Hrs',
-    GeneralUserMetricsDateRange.last7Days => 'Last 7 Days',
-    GeneralUserMetricsDateRange.last30Days => 'Last 30 Days',
     GeneralUserMetricsDateRange.custom => 'Custom',
   };
 }
@@ -376,10 +379,7 @@ String _formatMetricsDisplayDate(DateTime d) {
 }
 
 class _BatteryAreaChart extends StatelessWidget {
-  const _BatteryAreaChart({
-    required this.points,
-    required this.xLabels,
-  });
+  const _BatteryAreaChart({required this.points, required this.xLabels});
 
   final List<double> points;
   final List<String> xLabels;
@@ -460,9 +460,9 @@ class _BatteryAreaChart extends StatelessWidget {
                       child: Text(
                         xLabels[j],
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: const Color(0xFF5C6368),
-                              fontWeight: FontWeight.w600,
-                            ),
+                          color: const Color(0xFF5C6368),
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     );
                   }

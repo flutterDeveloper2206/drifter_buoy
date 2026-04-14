@@ -2,7 +2,6 @@ import 'package:drifter_buoy/core/constants/app_routes.dart';
 import 'package:drifter_buoy/core/utils/widgets/animated_list_entrance.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_flushbar.dart';
-import 'package:drifter_buoy/core/utils/widgets/app_general_user_bottom_nav.dart';
 import 'package:drifter_buoy/core/utils/widgets/general_user_back_navigation_scope.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_general_user_main_app_bar.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_info_metric_item.dart';
@@ -83,86 +82,101 @@ class _GeneralUserBuoysPageState extends State<GeneralUserBuoysPage> {
                         );
                       }
 
-                      return Column(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
-                            child: _StatusSummaryCard(
-                              activeCount: state.activeCount,
-                              offlineCount: state.offlineCount,
-                              batteryLowCount: state.batteryLowCount,
-                              total: state.totalBuoys,
+                      return RefreshIndicator(
+                        color: const Color(0xFF1F88D1),
+                        onRefresh: () async {
+                          final bloc = context.read<GeneralUserBuoysBloc>();
+                          bloc.add(const LoadGeneralUserBuoys());
+                          await bloc.stream.firstWhere(
+                            (s) => s.status != GeneralUserBuoysStatus.loading,
+                          );
+                        },
+                        child: ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+                              child: _StatusSummaryCard(
+                                activeCount: state.activeCount,
+                                offlineCount: state.offlineCount,
+                                batteryLowCount: state.batteryLowCount,
+                                total: state.totalBuoys,
+                              ),
                             ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                            child: _SearchCard(
-                              controller: _searchController,
-                              onChanged: (value) {
-                                context.read<GeneralUserBuoysBloc>().add(
-                                  UpdateGeneralUserBuoysQuery(value),
-                                );
-                              },
-                              onSearchTap: () =>
-                                  _handleSearchTap(context, state),
-                              onClearTap: state.query.trim().isNotEmpty
-                                  ? () {
-                                      context.read<GeneralUserBuoysBloc>().add(
-                                        const ClearGeneralUserBuoysQuery(),
-                                      );
-                                    }
-                                  : null,
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                              child: _SearchCard(
+                                controller: _searchController,
+                                onChanged: (value) {
+                                  context.read<GeneralUserBuoysBloc>().add(
+                                    UpdateGeneralUserBuoysQuery(value),
+                                  );
+                                },
+                                onSearchTap: () =>
+                                    _handleSearchTap(context, state),
+                                onClearTap: state.query.trim().isNotEmpty
+                                    ? () {
+                                        context.read<GeneralUserBuoysBloc>().add(
+                                          const ClearGeneralUserBuoysQuery(),
+                                        );
+                                      }
+                                    : null,
+                              ),
                             ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                            child: _FilterRow(
-                              selectedFilter: state.selectedFilter,
-                              onFilterTap: (filter) {
-                                context.read<GeneralUserBuoysBloc>().add(
-                                  ChangeGeneralUserBuoysFilter(filter),
-                                );
-                              },
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                              child: _FilterRow(
+                                selectedFilter: state.selectedFilter,
+                                onFilterTap: (filter) {
+                                  context.read<GeneralUserBuoysBloc>().add(
+                                    ChangeGeneralUserBuoysFilter(filter),
+                                  );
+                                },
+                              ),
                             ),
-                          ),
-                          Expanded(
-                            child: state.filteredBuoys.isEmpty
-                                ? _EmptyBuoysView(
+                            if (state.filteredBuoys.isEmpty)
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                                child: SizedBox(
+                                  height:
+                                      MediaQuery.of(context).size.height * 0.42,
+                                  child: _EmptyBuoysView(
                                     query: state.query,
                                     selectedFilter: state.selectedFilter,
-                                  )
-                                : ListView.separated(
-                                    padding: const EdgeInsets.fromLTRB(
-                                      16,
-                                      0,
-                                      16,
-                                      8,
-                                    ),
-                                    itemCount: state.filteredBuoys.length,
-                                    separatorBuilder: (_, __) =>
-                                        const SizedBox(height: 10),
-                                    itemBuilder: (context, index) {
-                                      final buoy = state.filteredBuoys[index];
-                                      return AnimatedListEntrance(
-                                        index: index,
-                                        child: _BuoyCard(
-                                          buoy: buoy,
-                                          onTap: () => context.push(
-                                            AppRoutes.buoyOverviewPath,
-                                            extra: buoy.id.replaceAll(' ', ''),
-                                          ),
-                                        ),
-                                      );
-                                    },
                                   ),
-                          ),
-                        ],
+                                ),
+                              )
+                            else
+                              ...state.filteredBuoys.asMap().entries.map((entry) {
+                                final index = entry.key;
+                                final buoy = entry.value;
+                                return Padding(
+                                  padding: EdgeInsets.fromLTRB(
+                                    16,
+                                    0,
+                                    16,
+                                    index == state.filteredBuoys.length - 1
+                                        ? 0
+                                        : 10,
+                                  ),
+                                  child: AnimatedListEntrance(
+                                    index: index,
+                                    child: _BuoyCard(
+                                      buoy: buoy,
+                                      onTap: () => context.push(
+                                        AppRoutes.buoyOverviewPath,
+                                        extra: buoy.id.replaceAll(' ', ''),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }),
+                          ],
+                        ),
                       );
                     },
                   ),
-                ),
-                const AppGeneralUserBottomNavForSession(
-                  selectedTab: GeneralUserBottomNavTab.buoys,
                 ),
               ],
             ),

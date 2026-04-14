@@ -1,8 +1,5 @@
 import 'package:drifter_buoy/core/constants/app_assets.dart';
 import 'package:drifter_buoy/core/constants/app_routes.dart';
-import 'package:drifter_buoy/core/storage/auth_session_store.dart';
-import 'package:drifter_buoy/core/utils/injection_container.dart';
-import 'package:drifter_buoy/core/utils/widgets/app_general_user_bottom_nav.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_general_user_main_app_bar.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_shimmer.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
@@ -30,12 +27,6 @@ class GeneralUserDashboardPage extends StatelessWidget {
 
     return BlocBuilder<GeneralUserDashboardBloc, GeneralUserDashboardState>(
       builder: (context, state) {
-        final showSetup = switch (state) {
-          GeneralUserDashboardInitial() =>
-            sl<AuthSessionStore>().cachedIsAdmin ?? false,
-          _ => state.isAdmin,
-        };
-
         Widget body;
         if (state is GeneralUserDashboardLoaded) {
           final loadedState = state;
@@ -65,7 +56,7 @@ class GeneralUserDashboardPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Last Update : 10:20 AM',
+                    'Last Update : ${_dashboardLastUpdateLabel(loadedState.mapData)}',
                     style: textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF1F88D1),
@@ -116,64 +107,65 @@ class GeneralUserDashboardPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 28),
                   GestureDetector(
-                  onTap: (){
-                    context.go(
-                      AppRoutes.mapPath,
-                      extra: loadedState.mapData,
-                    );
-                  },
-                  child:Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.fromLTRB(14, 14, 10, 12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.07),
-                          blurRadius: 14,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(left: 2, right: 4),
-                          child: Row(
-                            children: [
-                              Text(
-                                "Buoy's Map View",
-                                style: textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  color: const Color(0xFF2E343A),
-                                ),
-                              ),
-                              const Spacer(),
-                              IconButton(
-                                visualDensity: VisualDensity.compact,
-                                onPressed: () {
-                                  context.go(
-                                    AppRoutes.mapPath,
-                                    extra: loadedState.mapData,
-                                  );
-                                },
-                                icon: const Icon(Icons.arrow_forward, size: 22),
-                                color: const Color(0xFF23282D),
-                              ),
-                            ],
+                    onTap: () {
+                      context.go(AppRoutes.mapPath, extra: loadedState.mapData);
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.fromLTRB(14, 14, 10, 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.07),
+                            blurRadius: 14,
+                            offset: const Offset(0, 4),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        _MapPreviewCard(
-                          dashboardData: dashboardData,
-                          mapData: loadedState.mapData,
-                        ),
-                      ],
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(left: 2, right: 4),
+                            child: Row(
+                              children: [
+                                Text(
+                                  "Buoy's Map View",
+                                  style: textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF2E343A),
+                                  ),
+                                ),
+                                const Spacer(),
+                                IconButton(
+                                  visualDensity: VisualDensity.compact,
+                                  onPressed: () {
+                                    context.go(
+                                      AppRoutes.mapPath,
+                                      extra: loadedState.mapData,
+                                    );
+                                  },
+                                  icon: const Icon(
+                                    Icons.arrow_forward,
+                                    size: 22,
+                                  ),
+                                  color: const Color(0xFF23282D),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          _MapPreviewCard(
+                            dashboardData: dashboardData,
+                            mapData: loadedState.mapData,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),],
+                ],
               ),
             ),
           );
@@ -206,32 +198,6 @@ class GeneralUserDashboardPage extends StatelessWidget {
                 children: [
                   const AppGeneralUserMainAppBar(),
                   Expanded(child: body),
-                  AppGeneralUserBottomNav(
-                    selectedTab: GeneralUserBottomNavTab.home,
-                    onTap: (tab) {
-                      switch (tab) {
-                        case GeneralUserBottomNavTab.home:
-                          context.go(AppRoutes.dashboardPath);
-                        case GeneralUserBottomNavTab.buoys:
-                          context.go(AppRoutes.buoysPath);
-                        case GeneralUserBottomNavTab.map:
-                          if (state is GeneralUserDashboardLoaded &&
-                              state.mapData.isNotEmpty) {
-                            context.push(
-                              AppRoutes.trajectoryViewPath,
-                              extra: state.mapData.first.buoyId,
-                            );
-                          } else {
-                            context.push(AppRoutes.trajectoryViewPath);
-                          }
-                        case GeneralUserBottomNavTab.export:
-                          context.push(AppRoutes.exportSelectionPath);
-                        case GeneralUserBottomNavTab.setup:
-                          context.push(AppRoutes.setupPath);
-                      }
-                    },
-                    showSetup: showSetup,
-                  ),
                 ],
               ),
             ),
@@ -356,22 +322,24 @@ class _MapPreviewCard extends StatelessWidget {
       );
     }
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: SizedBox(
-        height: 360,
-        width: double.infinity,
-        child: GeneralUserGoogleMapView(
-          buoys: buoyMarkers,
-          zoomLevel: _calculatePreviewZoom(buoyMarkers),
-          mapType: MapDisplayType.terrain,
-          showDeviceName: true,
-          showBatteryStatus: false,
-          selectedBuoy: null,
-          boundsPaddingPx: 100,
-          fitBoundsLatitudeExpansionDeg: 0.003,
-          showEmbeddedZoomControls: true,
-          showFitAllBuoysControl: true,
+    return IgnorePointer(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: SizedBox(
+          height: 320,
+          width: double.infinity,
+          child: GeneralUserGoogleMapView(
+            buoys: buoyMarkers,
+            zoomLevel: _calculatePreviewZoom(buoyMarkers),
+            mapType: MapDisplayType.terrain,
+            showDeviceName: true,
+            showBatteryStatus: false,
+            selectedBuoy: null,
+            boundsPaddingPx: 100,
+            fitBoundsLatitudeExpansionDeg: 0.003,
+            showEmbeddedZoomControls: true,
+            showFitAllBuoysControl: true,
+          ),
         ),
       ),
     );
@@ -410,6 +378,22 @@ class _MapPreviewCard extends StatelessWidget {
     if (span <= 0.22) return 10.0;
     return 9.4;
   }
+}
+
+String _dashboardLastUpdateLabel(
+  List<UserMapDashboardGetBuoyMapDashboardItem> mapData,
+) {
+  for (final item in mapData) {
+    final v = item.lastUpdate.trim();
+    if (v.isNotEmpty && v != '—') {
+      return v;
+    }
+  }
+  final now = TimeOfDay.now();
+  final hour = now.hourOfPeriod == 0 ? 12 : now.hourOfPeriod;
+  final minute = now.minute.toString().padLeft(2, '0');
+  final period = now.period == DayPeriod.am ? 'AM' : 'PM';
+  return '$hour:$minute $period';
 }
 
 class _DashboardShimmer extends StatelessWidget {

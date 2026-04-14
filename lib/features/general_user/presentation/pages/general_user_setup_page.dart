@@ -1,6 +1,6 @@
 import 'package:drifter_buoy/core/constants/app_routes.dart';
+import 'package:drifter_buoy/core/utils/widgets/animated_list_entrance.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
-import 'package:drifter_buoy/core/utils/widgets/app_general_user_bottom_nav.dart';
 import 'package:drifter_buoy/core/utils/widgets/general_user_back_navigation_scope.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_general_user_main_app_bar.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_devices/general_user_setup_devices_bloc.dart';
@@ -37,162 +37,211 @@ class _GeneralUserSetupPageState extends State<GeneralUserSetupPage> {
         body: SafeArea(
           child:
               BlocListener<
-              GeneralUserSetupDevicesBloc,
-              GeneralUserSetupDevicesState
-            >(
-              listenWhen: (previous, current) =>
-                  previous.query != current.query,
-              listener: (_, state) {
-                if (_searchController.text == state.query) {
-                  return;
-                }
-                _searchController.text = state.query;
-                _searchController.selection = TextSelection.collapsed(
-                  offset: _searchController.text.length,
-                );
-              },
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const AppGeneralUserMainAppBar(),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Set Up',
-                          style: textTheme.titleLarge?.copyWith(
-                            color: const Color(0xFF242A2F),
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const Spacer(),
-                        TextButton.icon(
-                          onPressed: () =>
-                              context.push(AppRoutes.setupDetailPath),
-                          icon: const Icon(
-                            Icons.add,
-                            size: 22,
-                            color: Color(0xFF206BBE),
-                          ),
-                          label: Text(
-                            'Add New',
-                            style: textTheme.titleSmall?.copyWith(
-                              color: const Color(0xFF206BBE),
+                GeneralUserSetupDevicesBloc,
+                GeneralUserSetupDevicesState
+              >(
+                listenWhen: (previous, current) =>
+                    previous.query != current.query,
+                listener: (_, state) {
+                  if (_searchController.text == state.query) {
+                    return;
+                  }
+                  _searchController.text = state.query;
+                  _searchController.selection = TextSelection.collapsed(
+                    offset: _searchController.text.length,
+                  );
+                },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const AppGeneralUserMainAppBar(),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Set Up',
+                            style: textTheme.titleLarge?.copyWith(
+                              color: const Color(0xFF242A2F),
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                          const Spacer(),
+                          TextButton.icon(
+                            onPressed: () =>
+                                context.push(AppRoutes.setupDetailPath),
+                            icon: const Icon(
+                              Icons.add,
+                              size: 22,
+                              color: Color(0xFF206BBE),
+                            ),
+                            label: Text(
+                              'Add New',
+                              style: textTheme.titleSmall?.copyWith(
+                                color: const Color(0xFF206BBE),
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child:
-                        BlocBuilder<
-                          GeneralUserSetupDevicesBloc,
-                          GeneralUserSetupDevicesState
-                        >(
-                          builder: (context, state) {
-                            if (state.status ==
-                                    GeneralUserSetupDevicesStatus.loading ||
-                                state.status ==
-                                    GeneralUserSetupDevicesStatus.initial) {
-                              return const GeneralUserBuoysShimmer();
-                            }
+                    Expanded(
+                      child:
+                          BlocBuilder<
+                            GeneralUserSetupDevicesBloc,
+                            GeneralUserSetupDevicesState
+                          >(
+                            builder: (context, state) {
+                              if (state.status ==
+                                      GeneralUserSetupDevicesStatus.loading ||
+                                  state.status ==
+                                      GeneralUserSetupDevicesStatus.initial) {
+                                return const GeneralUserBuoysShimmer();
+                              }
 
-                            if (state.status ==
-                                GeneralUserSetupDevicesStatus.error) {
-                              return AppErrorView(
-                                message: state.message,
-                                onRetry: () {
-                                  context
-                                      .read<GeneralUserSetupDevicesBloc>()
-                                      .add(const LoadGeneralUserSetupDevices());
+                              if (state.status ==
+                                  GeneralUserSetupDevicesStatus.error) {
+                                return AppErrorView(
+                                  message: state.message,
+                                  onRetry: () {
+                                    context
+                                        .read<GeneralUserSetupDevicesBloc>()
+                                        .add(
+                                          const LoadGeneralUserSetupDevices(),
+                                        );
+                                  },
+                                );
+                              }
+
+                              return RefreshIndicator(
+                                color: const Color(0xFF1F88D1),
+                                onRefresh: () async {
+                                  final bloc = context
+                                      .read<GeneralUserSetupDevicesBloc>();
+                                  bloc.add(const LoadGeneralUserSetupDevices());
+                                  await bloc.stream.firstWhere(
+                                    (s) =>
+                                        s.status !=
+                                        GeneralUserSetupDevicesStatus.loading,
+                                  );
                                 },
-                              );
-                            }
-
-                            return Column(
-                              children: [
-                                Padding(
+                                child: ListView(
+                                  physics:
+                                      const AlwaysScrollableScrollPhysics(),
                                   padding: const EdgeInsets.fromLTRB(
-                                    16,
-                                    12,
-                                    16,
-                                    12,
+                                    0,
+                                    0,
+                                    0,
+                                    8,
                                   ),
-                                  child: _SetupSearchBar(
-                                    controller: _searchController,
-                                    onChanged: (value) {
-                                      context
-                                          .read<GeneralUserSetupDevicesBloc>()
-                                          .add(
-                                            UpdateGeneralUserSetupDevicesQuery(
-                                              value,
-                                            ),
-                                          );
-                                    },
-                                    onSearchTap: () {
-                                      FocusScope.of(context).unfocus();
-                                    },
-                                    onClearTap: state.query.trim().isNotEmpty
-                                        ? () {
-                                            context
-                                                .read<
-                                                  GeneralUserSetupDevicesBloc
-                                                >()
-                                                .add(
-                                                  const ClearGeneralUserSetupDevicesQuery(),
-                                                );
-                                            FocusScope.of(context).unfocus();
-                                          }
-                                        : null,
-                                  ),
-                                ),
-                                Expanded(
-                                  child: state.filteredDevices.isEmpty
-                                      ? _SetupEmptyView(
-                                          searchQuery: state.query,
-                                        )
-                                      : ListView.separated(
-                                          padding: const EdgeInsets.fromLTRB(
-                                            16,
-                                            0,
-                                            16,
-                                            8,
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.fromLTRB(
+                                        16,
+                                        12,
+                                        16,
+                                        12,
+                                      ),
+                                      child: _SetupSearchBar(
+                                        controller: _searchController,
+                                        onChanged: (value) {
+                                          context
+                                              .read<
+                                                GeneralUserSetupDevicesBloc
+                                              >()
+                                              .add(
+                                                UpdateGeneralUserSetupDevicesQuery(
+                                                  value,
+                                                ),
+                                              );
+                                        },
+                                        onSearchTap: () {
+                                          FocusScope.of(context).unfocus();
+                                        },
+                                        onClearTap:
+                                            state.query.trim().isNotEmpty
+                                            ? () {
+                                                context
+                                                    .read<
+                                                      GeneralUserSetupDevicesBloc
+                                                    >()
+                                                    .add(
+                                                      const ClearGeneralUserSetupDevicesQuery(),
+                                                    );
+                                                FocusScope.of(
+                                                  context,
+                                                ).unfocus();
+                                              }
+                                            : null,
+                                      ),
+                                    ),
+                                    if (state.filteredDevices.isEmpty)
+                                      Padding(
+                                        padding: const EdgeInsets.fromLTRB(
+                                          16,
+                                          0,
+                                          16,
+                                          0,
+                                        ),
+                                        child: SizedBox(
+                                          height:
+                                              MediaQuery.of(
+                                                context,
+                                              ).size.height *
+                                              0.5,
+                                          child: _SetupEmptyView(
+                                            searchQuery: state.query,
                                           ),
-                                          itemCount:
-                                              state.filteredDevices.length,
-                                          separatorBuilder: (_, __) =>
-                                              const SizedBox(height: 12),
-                                          itemBuilder: (context, index) {
-                                            final item =
-                                                state.filteredDevices[index];
-                                            return _SetupDeviceCard(
-                                              item: item,
-                                              onTap: () => context.push(
-                                                AppRoutes.setupDetailPath,
-                                                extra: item.id,
+                                        ),
+                                      )
+                                    else
+                                      ...state.filteredDevices
+                                          .asMap()
+                                          .entries
+                                          .map((entry) {
+                                            final index = entry.key;
+                                            final item = entry.value;
+                                            return Padding(
+                                              padding: EdgeInsets.fromLTRB(
+                                                16,
+                                                0,
+                                                16,
+                                                index ==
+                                                        state
+                                                                .filteredDevices
+                                                                .length -
+                                                            1
+                                                    ? 0
+                                                    : 12,
+                                              ),
+                                              child: AnimatedListEntrance(
+                                                index: index,
+                                                child: _SetupDeviceCard(
+                                                  item: item,
+                                                  onTap: () => context.push(
+                                                    AppRoutes.setupDetailPath,
+                                                    extra: item.id,
+                                                  ),
+                                                ),
                                               ),
                                             );
-                                          },
-                                        ),
+                                          }),
+                                  ],
                                 ),
-                              ],
-                            );
-                          },
-                        ),
-                  ),
-                  const AppGeneralUserBottomNavForSession(
-                    selectedTab: GeneralUserBottomNavTab.setup,
-                  ),
-                ],
+                              );
+                            },
+                          ),
+                    ),
+                  ],
+                ),
               ),
-            ),
         ),
       ),
     );

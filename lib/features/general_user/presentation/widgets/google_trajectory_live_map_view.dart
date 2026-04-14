@@ -12,16 +12,18 @@ class GoogleTrajectoryLiveMapView extends StatefulWidget {
     super.key,
     required this.points,
     required this.initialZoom,
-    this.showLabels = true,
-    this.showSecondaryLabels = false,
+    this.showGpsCoordinates = true,
+    this.showTimestamps = false,
+    this.showBatteryLogs = false,
     this.interactive = true,
     this.onControllerReady,
   });
 
   final List<TrajectoryBuoyPoint> points;
   final double initialZoom;
-  final bool showLabels;
-  final bool showSecondaryLabels;
+  final bool showGpsCoordinates;
+  final bool showTimestamps;
+  final bool showBatteryLogs;
   final bool interactive;
   final ValueChanged<GoogleMapController>? onControllerReady;
 
@@ -68,8 +70,9 @@ class _GoogleTrajectoryLiveMapViewState
     super.didUpdateWidget(oldWidget);
     final pointsChanged = oldWidget.points != widget.points;
     final labelsChanged =
-        oldWidget.showLabels != widget.showLabels ||
-        oldWidget.showSecondaryLabels != widget.showSecondaryLabels;
+        oldWidget.showTimestamps != widget.showTimestamps ||
+        oldWidget.showGpsCoordinates != widget.showGpsCoordinates ||
+        oldWidget.showBatteryLogs != widget.showBatteryLogs;
     if (pointsChanged || labelsChanged) {
       _didFit = false;
       if (labelsChanged) {
@@ -115,7 +118,7 @@ class _GoogleTrajectoryLiveMapViewState
   }
 
   String _cacheKey(TrajectoryBuoyPoint p) {
-    return '${p.status.name}|${p.label}|${p.secondaryLabel}|${widget.showLabels}|${widget.showSecondaryLabels}';
+    return '${p.status.name}|${p.gpsLabel}|${p.timestampLabel}|${p.batteryLabel}|${widget.showGpsCoordinates}|${widget.showTimestamps}|${widget.showBatteryLogs}';
   }
 
   Future<void> _ensureMarkerIcon(TrajectoryBuoyPoint p) async {
@@ -131,10 +134,7 @@ class _GoogleTrajectoryLiveMapViewState
 
     final bytes = await _buildMarkerBytes(
       base: base,
-      label: widget.showLabels ? p.label : null,
-      secondary: widget.showLabels && widget.showSecondaryLabels
-          ? p.secondaryLabel
-          : null,
+      lines: _markerLinesForPoint(p),
     );
     if (bytes == null) return;
     _markerIconCache[key] = BitmapDescriptor.bytes(bytes);
@@ -142,8 +142,7 @@ class _GoogleTrajectoryLiveMapViewState
 
   Future<Uint8List?> _buildMarkerBytes({
     required ui.Image base,
-    required String? label,
-    required String? secondary,
+    required List<String> lines,
   }) async {
     final pinW = 30.0;
     final pinH = 40.0;
@@ -155,14 +154,12 @@ class _GoogleTrajectoryLiveMapViewState
     );
 
     TextPainter? tp;
-    if (label != null && label.trim().isNotEmpty) {
-      final txt = secondary != null && secondary.trim().isNotEmpty
-          ? '$label\n$secondary'
-          : label;
+    if (lines.isNotEmpty) {
+      final txt = lines.join('\n');
       tp = TextPainter(
         text: TextSpan(text: txt, style: labelStyle),
         textDirection: TextDirection.ltr,
-        maxLines: 2,
+        maxLines: 3,
       )..layout();
     }
 
@@ -203,19 +200,41 @@ class _GoogleTrajectoryLiveMapViewState
       final pos = LatLng(p.position.latitude, p.position.longitude);
       final key = _cacheKey(p);
       final icon = _markerIconCache[key];
+      final isStart = i == 0;
       markers.add(
         Marker(
           markerId: MarkerId('trajectory_$i'),
           position: pos,
           zIndexInt: i == widget.points.length - 1 ? 2 : 1,
-          icon:
-              icon ??
-              BitmapDescriptor.defaultMarkerWithHue(_hueForStatus(p.status)),
-          infoWindow: InfoWindow(title: p.label),
+          icon: isStart
+              ? BitmapDescriptor.defaultMarkerWithHue(
+                  BitmapDescriptor.hueAzure,
+                )
+              : (icon ??
+                    BitmapDescriptor.defaultMarkerWithHue(
+                      _hueForStatus(p.status),
+                    )),
+          infoWindow: InfoWindow(
+            title: isStart ? 'Start' : p.gpsLabel,
+          ),
         ),
       );
     }
     return markers;
+  }
+
+  List<String> _markerLinesForPoint(TrajectoryBuoyPoint point) {
+    final lines = <String>[];
+    if (widget.showGpsCoordinates) {
+      lines.add(point.gpsLabel);
+    }
+    if (widget.showBatteryLogs) {
+      lines.add('Battery: ${point.batteryLabel}');
+    }
+    if (widget.showTimestamps) {
+      lines.add(point.timestampLabel);
+    }
+    return lines;
   }
 
   double _hueForStatus(BuoyStatus status) {

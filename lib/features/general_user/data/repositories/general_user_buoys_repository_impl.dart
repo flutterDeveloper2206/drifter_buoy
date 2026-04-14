@@ -37,11 +37,13 @@ class GeneralUserBuoysRepositoryImpl implements GeneralUserBuoysRepository {
     required String buoyId,
     required String fromDate,
     required String toDate,
+    required int hourlyData,
   }) {
     return _remoteDataSource.getBuoyMetrics(
       buoyId: buoyId,
       fromDate: fromDate,
       toDate: toDate,
+      hourlyData: hourlyData,
     );
   }
 

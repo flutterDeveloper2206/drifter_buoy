@@ -98,12 +98,14 @@ class GeneralUserBuoysRemoteDataSource {
     required String buoyId,
     required String fromDate,
     required String toDate,
+    required int hourlyData,
   }) {
     final id = normalizeBuoyIdForGeneralUserApi(buoyId);
     final form = FormData.fromMap(<String, dynamic>{
       'BuoyId': id,
       'FromDate': fromDate.trim(),
       'ToDate': toDate.trim(),
+      'HourlyData': hourlyData,
     });
 
     return _apiService.post<UserViewBuoyDashboardGetBuoyMetricsResponse>(

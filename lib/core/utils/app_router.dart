@@ -1,21 +1,17 @@
 import 'package:drifter_buoy/core/constants/app_routes.dart';
-import 'package:drifter_buoy/core/storage/auth_session_store.dart';
 import 'package:drifter_buoy/core/utils/injection_container.dart';
 import 'package:drifter_buoy/core/utils/navigation_service.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoys/general_user_buoys_bloc.dart';
-import 'package:drifter_buoy/features/general_user/presentation/bloc/buoys/general_user_buoys_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/alerts/general_user_alerts_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/alerts/general_user_alerts_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/create_password/general_user_create_password_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_create_password_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_alerts_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/dashboard/general_user_dashboard_bloc.dart';
-import 'package:drifter_buoy/features/general_user/presentation/bloc/dashboard/general_user_dashboard_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/profile/general_user_profile_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/profile/general_user_profile_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_profile_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_devices/general_user_setup_devices_bloc.dart';
-import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_devices/general_user_setup_devices_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_setup_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_setup_detail_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_detail/general_user_setup_detail_bloc.dart';
@@ -28,6 +24,7 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/self_test_d
 import 'package:drifter_buoy/features/general_user/presentation/bloc/self_test_debug/general_user_self_test_debug_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_buoys_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_dashboard_page.dart';
+import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_main_shell_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_export_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_export_selection_page.dart';
 import 'package:drifter_buoy/features/general_user/presentation/pages/general_user_forgot_password_page.dart';
@@ -46,7 +43,6 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/buoy_overvi
 import 'package:drifter_buoy/features/general_user/presentation/bloc/export/general_user_export_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/export/general_user_export_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/export_selection/general_user_export_selection_bloc.dart';
-import 'package:drifter_buoy/features/general_user/presentation/bloc/export_selection/general_user_export_selection_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/map/general_user_map_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/map/general_user_map_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/map_buoy_details/general_user_map_buoy_details_bloc.dart';
@@ -144,39 +140,84 @@ class AppRouter {
           );
         },
       ),
-      GoRoute(
-        path: AppRoutes.dashboardPath,
-        name: AppRoutes.dashboardName,
-        pageBuilder: (context, state) {
-          final extra = state.extra;
-          // Tab bar uses `go(dashboard)` without `extra`; fall back to session role cache.
-          final isAdmin = extra is bool
-              ? extra
-              : (sl<AuthSessionStore>().cachedIsAdmin ?? false);
-          return _tabTransitionPage(
-            state: state,
-            child: BlocProvider<GeneralUserDashboardBloc>(
-              create: (_) =>
-                  sl<GeneralUserDashboardBloc>()
-                    ..add(LoadGeneralUserDashboard(isAdmin: isAdmin)),
-              child: const GeneralUserDashboardPage(),
-            ),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) {
+          return MultiBlocProvider(
+            providers: [
+              BlocProvider<GeneralUserDashboardBloc>(
+                create: (_) => sl<GeneralUserDashboardBloc>(),
+              ),
+              BlocProvider<GeneralUserBuoysBloc>(
+                create: (_) => sl<GeneralUserBuoysBloc>(),
+              ),
+              BlocProvider<GeneralUserExportSelectionBloc>(
+                create: (_) => sl<GeneralUserExportSelectionBloc>(),
+              ),
+              BlocProvider<GeneralUserSetupDevicesBloc>(
+                create: (_) => sl<GeneralUserSetupDevicesBloc>(),
+              ),
+            ],
+            child: GeneralUserMainShellPage(navigationShell: navigationShell),
           );
         },
-      ),
-      GoRoute(
-        path: AppRoutes.buoysPath,
-        name: AppRoutes.buoysName,
-        pageBuilder: (context, state) {
-          return _tabTransitionPage(
-            state: state,
-            child: BlocProvider<GeneralUserBuoysBloc>(
-              create: (_) =>
-                  sl<GeneralUserBuoysBloc>()..add(const LoadGeneralUserBuoys()),
-              child: const GeneralUserBuoysPage(),
-            ),
-          );
-        },
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.dashboardPath,
+                name: AppRoutes.dashboardName,
+                pageBuilder: (context, state) {
+                  return _tabTransitionPage(
+                    state: state,
+                    child: const GeneralUserDashboardPage(),
+                  );
+                },
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.buoysPath,
+                name: AppRoutes.buoysName,
+                pageBuilder: (context, state) {
+                  return _tabTransitionPage(
+                    state: state,
+                    child: const GeneralUserBuoysPage(),
+                  );
+                },
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.exportSelectionPath,
+                name: AppRoutes.exportSelectionName,
+                pageBuilder: (context, state) {
+                  return _tabTransitionPage(
+                    state: state,
+                    child: const GeneralUserExportSelectionPage(),
+                  );
+                },
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.setupPath,
+                name: AppRoutes.setupName,
+                pageBuilder: (context, state) {
+                  return _tabTransitionPage(
+                    state: state,
+                    child: const GeneralUserSetupPage(),
+                  );
+                },
+              ),
+            ],
+          ),
+        ],
       ),
       GoRoute(
         path: AppRoutes.mapPath,
@@ -318,21 +359,6 @@ class AppRouter {
         },
       ),
       GoRoute(
-        path: AppRoutes.exportSelectionPath,
-        name: AppRoutes.exportSelectionName,
-        pageBuilder: (context, state) {
-          return _tabTransitionPage(
-            state: state,
-            child: BlocProvider<GeneralUserExportSelectionBloc>(
-              create: (_) =>
-                  sl<GeneralUserExportSelectionBloc>()
-                    ..add(const LoadGeneralUserExportSelection()),
-              child: const GeneralUserExportSelectionPage(),
-            ),
-          );
-        },
-      ),
-      GoRoute(
         path: AppRoutes.alertsPath,
         name: AppRoutes.alertsName,
         builder: (context, state) {
@@ -352,20 +378,6 @@ class AppRouter {
                 sl<GeneralUserProfileBloc>()
                   ..add(const LoadGeneralUserProfile()),
             child: const GeneralUserProfilePage(),
-          );
-        },
-      ),
-      GoRoute(
-        path: AppRoutes.setupPath,
-        name: AppRoutes.setupName,
-        pageBuilder: (context, state) {
-          return _tabTransitionPage(
-            state: state,
-            child: BlocProvider<GeneralUserSetupDevicesBloc>(
-              create: (_) => sl<GeneralUserSetupDevicesBloc>()
-                ..add(const LoadGeneralUserSetupDevices()),
-              child: const GeneralUserSetupPage(),
-            ),
           );
         },
       ),

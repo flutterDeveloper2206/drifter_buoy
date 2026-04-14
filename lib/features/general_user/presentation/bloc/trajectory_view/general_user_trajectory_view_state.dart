@@ -25,7 +25,7 @@ class GeneralUserTrajectoryViewState extends Equatable {
       zoom = 10.3,
       message = '';
 
-  bool get canZoomIn => zoom < 17;
+  bool get canZoomIn => zoom < 21;
 
   bool get canZoomOut => zoom > 3;
 

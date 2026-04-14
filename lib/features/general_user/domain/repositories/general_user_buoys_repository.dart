@@ -19,6 +19,7 @@ abstract class GeneralUserBuoysRepository {
     required String buoyId,
     required String fromDate,
     required String toDate,
+    required int hourlyData,
   });
 
   ResultFuture<UserViewBuoyDashboardGetBuoyTrajectoryViewResponse>

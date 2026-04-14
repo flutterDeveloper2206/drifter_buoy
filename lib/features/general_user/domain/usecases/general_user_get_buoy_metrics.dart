@@ -12,11 +12,13 @@ class GeneralUserGetBuoyMetrics {
     required String buoyId,
     required String fromDate,
     required String toDate,
+    required int hourlyData,
   }) {
     return _repository.getBuoyMetrics(
       buoyId: buoyId,
       fromDate: fromDate,
       toDate: toDate,
+      hourlyData: hourlyData,
     );
   }
 }

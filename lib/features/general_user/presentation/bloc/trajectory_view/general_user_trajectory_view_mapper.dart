@@ -37,6 +37,10 @@ List<TrajectoryBuoyPoint> mapTrajectoryRowsToPoints(
           status: _statusForRow(row),
           label: _labelForRow(row),
           secondaryLabel: _secondaryLabelForRow(row),
+          gpsLabel:
+              '${row.latitude.toStringAsFixed(5)}, ${row.longitude.toStringAsFixed(5)}',
+          timestampLabel: _timestampForRow(row),
+          batteryLabel: _batteryForRow(row),
         ),
       )
       .toList(growable: false);
@@ -56,6 +60,11 @@ BuoyStatus _statusForRow(BuoyTrajectoryViewRowModel row) {
 }
 
 String _labelForRow(BuoyTrajectoryViewRowModel row) {
+  // Keep legacy label for compatibility; map rendering uses gps/timestamp labels.
+  return _timestampForRow(row);
+}
+
+String _timestampForRow(BuoyTrajectoryViewRowModel row) {
   final dt = _parseApiDateTime(row.datetime);
   if (dt == null) {
     return row.datetime.trim();
@@ -71,6 +80,13 @@ String? _secondaryLabelForRow(BuoyTrajectoryViewRowModel row) {
   }
 
   return '${_twoDigits(dt.day)}-${_monthLabel(dt.month)}-${dt.year}';
+}
+
+String _batteryForRow(BuoyTrajectoryViewRowModel row) {
+  if (row.batteryVoltage < 0) {
+    return '—';
+  }
+  return '${row.batteryVoltage.toStringAsFixed(1)} V';
 }
 
 DateTime? _parseApiDateTime(String raw) {

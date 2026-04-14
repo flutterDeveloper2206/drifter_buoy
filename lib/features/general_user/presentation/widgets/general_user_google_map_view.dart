@@ -578,52 +578,52 @@ class _GeneralUserGoogleMapViewState extends State<GeneralUserGoogleMapView> {
       clipBehavior: Clip.hardEdge,
       children: [
         map,
-        if (widget.showEmbeddedZoomControls || widget.showFitAllBuoysControl)
-          Positioned(
-            right: 6,
-            top: 6,
-            child: Material(
-              color: Colors.white.withValues(alpha: 0.92),
-              elevation: 2,
-              borderRadius: BorderRadius.circular(10),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (widget.showEmbeddedZoomControls) ...[
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      tooltip: 'Zoom in',
-                      onPressed: () => _nudgeZoom(1),
-                      icon: const Icon(Icons.add, size: 20),
-                      color: const Color(0xFF23282D),
-                    ),
-                    const SizedBox(height: 2),
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      tooltip: 'Zoom out',
-                      onPressed: () => _nudgeZoom(-1),
-                      icon: const Icon(Icons.remove, size: 20),
-                      color: const Color(0xFF23282D),
-                    ),
-                  ],
-                  if (widget.showFitAllBuoysControl) ...[
-                    if (widget.showEmbeddedZoomControls)
-                      const SizedBox(height: 4),
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      tooltip: 'Fit all buoys',
-                      onPressed: () {
-                        _didInitialFit = false;
-                        _scheduleFitCamera();
-                      },
-                      icon: const Icon(Icons.my_location, size: 20),
-                      color: const Color(0xFF23282D),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
+        // if (widget.showEmbeddedZoomControls || widget.showFitAllBuoysControl)
+        //   Positioned(
+        //     right: 6,
+        //     top: 6,
+        //     child: Material(
+        //       color: Colors.white.withValues(alpha: 0.92),
+        //       elevation: 2,
+        //       borderRadius: BorderRadius.circular(10),
+        //       child: Column(
+        //         mainAxisSize: MainAxisSize.min,
+        //         children: [
+        //           if (widget.showEmbeddedZoomControls) ...[
+        //             IconButton(
+        //               visualDensity: VisualDensity.compact,
+        //               tooltip: 'Zoom in',
+        //               onPressed: () => _nudgeZoom(1),
+        //               icon: const Icon(Icons.add, size: 20),
+        //               color: const Color(0xFF23282D),
+        //             ),
+        //             const SizedBox(height: 2),
+        //             IconButton(
+        //               visualDensity: VisualDensity.compact,
+        //               tooltip: 'Zoom out',
+        //               onPressed: () => _nudgeZoom(-1),
+        //               icon: const Icon(Icons.remove, size: 20),
+        //               color: const Color(0xFF23282D),
+        //             ),
+        //           ],
+        //           if (widget.showFitAllBuoysControl) ...[
+        //             if (widget.showEmbeddedZoomControls)
+        //               const SizedBox(height: 4),
+        //             IconButton(
+        //               visualDensity: VisualDensity.compact,
+        //               tooltip: 'Fit all buoys',
+        //               onPressed: () {
+        //                 _didInitialFit = false;
+        //                 _scheduleFitCamera();
+        //               },
+        //               icon: const Icon(Icons.my_location, size: 20),
+        //               color: const Color(0xFF23282D),
+        //             ),
+        //           ],
+        //         ],
+        //       ),
+        //     ),
+        //   ),
       ],
     );
   }
