@@ -84,7 +84,9 @@ class _GeneralUserSetupPageState extends State<GeneralUserSetupPage> {
                             ),
                           ),
                           style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
                         ),
                       ],
