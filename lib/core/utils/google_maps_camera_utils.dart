@@ -4,11 +4,16 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 /// Fits the map camera so all [points] are visible with [paddingPx] inset.
 /// For a single point, uses [singlePointZoom] instead of bounds.
+///
+/// [expandLatitudeDeg] nudges the bounds north/south: custom markers are
+/// anchored at the bottom, so graphics extend above the northernmost
+/// [LatLng]; a small expansion avoids clipping at the top edge.
 Future<void> fitGoogleMapToPoints({
   required GoogleMapController controller,
   required List<LatLng> points,
   double paddingPx = 48,
   double singlePointZoom = 11,
+  double expandLatitudeDeg = 0,
 }) async {
   if (points.isEmpty) {
     return;
@@ -43,9 +48,11 @@ Future<void> fitGoogleMapToPoints({
     maxLng = mid + minSpan / 2;
   }
 
+  final north = maxLat + expandLatitudeDeg;
+  final south = minLat - expandLatitudeDeg;
   final bounds = LatLngBounds(
-    southwest: LatLng(minLat, minLng),
-    northeast: LatLng(maxLat, maxLng),
+    southwest: LatLng(south, minLng),
+    northeast: LatLng(north, maxLng),
   );
 
   await controller.animateCamera(

@@ -41,122 +41,133 @@ class GeneralUserDashboardPage extends StatelessWidget {
           final loadedState = state;
           final dashboardData = loadedState.data;
           final summary = dashboardData.summary;
-          body = SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Dashboard',
-                  style: textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF23282D),
+          body = RefreshIndicator(
+            color: const Color(0xFF1F88D1),
+            onRefresh: () async {
+              final bloc = context.read<GeneralUserDashboardBloc>();
+              bloc.add(LoadGeneralUserDashboard(isAdmin: loadedState.isAdmin));
+              await bloc.stream.firstWhere(
+                (s) => s is! GeneralUserDashboardLoading,
+              );
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Dashboard',
+                    style: textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF23282D),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Last Update : 10:20 AM',
-                  style: textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1F88D1),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Last Update : 10:20 AM',
+                    style: textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF1F88D1),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 24),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF2F2F2),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _StatItem(
-                          icon: Icons.wifi,
-                          iconColor: Color(0xFF4AAF5D),
-                          title: 'Active Buoys',
-                          value: summary.activeBuoys.toString(),
-                          total: '/${summary.totalBuoys}',
+                  const SizedBox(height: 24),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 16,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF2F2F2),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _StatItem(
+                            icon: Icons.wifi,
+                            iconColor: Color(0xFF4AAF5D),
+                            title: 'Active Buoys',
+                            value: summary.activeBuoys.toString(),
+                            total: '/${summary.totalBuoys}',
+                          ),
                         ),
-                      ),
-                      Expanded(
-                        child: _StatItem(
-                          icon: Icons.wifi_off,
-                          iconColor: Color(0xFFE85A54),
-                          title: 'Offline Buoys',
-                          value: summary.offlineBuoys.toString(),
-                          total: '/${summary.totalBuoys}',
+                        Expanded(
+                          child: _StatItem(
+                            icon: Icons.wifi_off,
+                            iconColor: Color(0xFFE85A54),
+                            title: 'Offline Buoys',
+                            value: summary.offlineBuoys.toString(),
+                            total: '/${summary.totalBuoys}',
+                          ),
                         ),
-                      ),
-                      Expanded(
-                        child: _StatItem(
-                          svgAssetPath: AppAssets.icBatteryLow,
-                          iconColor: Color(0xFF4F95DA),
-                          title: 'Battery Low',
-                          value: summary.batteryLowBuoys.toString(),
-                          total: '/${summary.totalBuoys}',
+                        Expanded(
+                          child: _StatItem(
+                            svgAssetPath: AppAssets.icBatteryLow,
+                            iconColor: Color(0xFF4F95DA),
+                            title: 'Battery Low',
+                            value: summary.batteryLowBuoys.toString(),
+                            total: '/${summary.totalBuoys}',
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 28),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.fromLTRB(14, 14, 10, 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.07),
-                        blurRadius: 14,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(left: 2, right: 4),
-                        child: Row(
-                          children: [
-                            Text(
-                              "Buoy's Map View",
-                              style: textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFF2E343A),
+                  const SizedBox(height: 28),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.fromLTRB(14, 14, 10, 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.07),
+                          blurRadius: 14,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(left: 2, right: 4),
+                          child: Row(
+                            children: [
+                              Text(
+                                "Buoy's Map View",
+                                style: textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF2E343A),
+                                ),
                               ),
-                            ),
-                            const Spacer(),
-                            IconButton(
-                              visualDensity: VisualDensity.compact,
-                              onPressed: () {
-                                context.go(
-                                  AppRoutes.mapPath,
-                                  extra: loadedState.mapData,
-                                );
-                              },
-                              icon: const Icon(Icons.arrow_forward, size: 22),
-                              color: const Color(0xFF23282D),
-                            ),
-                          ],
+                              const Spacer(),
+                              IconButton(
+                                visualDensity: VisualDensity.compact,
+                                onPressed: () {
+                                  context.go(
+                                    AppRoutes.mapPath,
+                                    extra: loadedState.mapData,
+                                  );
+                                },
+                                icon: const Icon(Icons.arrow_forward, size: 22),
+                                color: const Color(0xFF23282D),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      _MapPreviewCard(
-                        dashboardData: dashboardData,
-                        mapData: loadedState.mapData,
-                      ),
-                    ],
+                        const SizedBox(height: 8),
+                        _MapPreviewCard(
+                          dashboardData: dashboardData,
+                          mapData: loadedState.mapData,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         } else if (state is GeneralUserDashboardError) {
@@ -340,19 +351,20 @@ class _MapPreviewCard extends StatelessWidget {
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
-      child: IgnorePointer(
-        child: SizedBox(
-          height: 360,
-          width: double.infinity,
-          child: GeneralUserGoogleMapView(
-            buoys: buoyMarkers,
-            zoomLevel: _calculatePreviewZoom(buoyMarkers),
-            mapType: MapDisplayType.terrain,
-            showDeviceName: true,
-            showBatteryStatus: false,
-            selectedBuoy: null,
-            boundsPaddingPx: 44,
-          ),
+      child: SizedBox(
+        height: 360,
+        width: double.infinity,
+        child: GeneralUserGoogleMapView(
+          buoys: buoyMarkers,
+          zoomLevel: _calculatePreviewZoom(buoyMarkers),
+          mapType: MapDisplayType.terrain,
+          showDeviceName: true,
+          showBatteryStatus: false,
+          selectedBuoy: null,
+          boundsPaddingPx: 100,
+          fitBoundsLatitudeExpansionDeg: 0.003,
+          showEmbeddedZoomControls: true,
+          showFitAllBuoysControl: true,
         ),
       ),
     );

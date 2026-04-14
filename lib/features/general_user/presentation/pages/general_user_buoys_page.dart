@@ -1,4 +1,5 @@
 import 'package:drifter_buoy/core/constants/app_routes.dart';
+import 'package:drifter_buoy/core/utils/widgets/animated_list_entrance.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_flushbar.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_general_user_bottom_nav.dart';
@@ -36,136 +37,137 @@ class _GeneralUserBuoysPageState extends State<GeneralUserBuoysPage> {
         backgroundColor: const Color(0xFFDDE1E4),
         body: SafeArea(
           child: BlocListener<GeneralUserBuoysBloc, GeneralUserBuoysState>(
-          listenWhen: (previous, current) => previous.query != current.query,
-          listener: (_, state) {
-            if (_searchController.text == state.query) {
-              return;
-            }
+            listenWhen: (previous, current) => previous.query != current.query,
+            listener: (_, state) {
+              if (_searchController.text == state.query) {
+                return;
+              }
 
-            _searchController.text = state.query;
-            _searchController.selection = TextSelection.collapsed(
-              offset: _searchController.text.length,
-            );
-          },
-          child: Column(
-            children: [
-              const AppGeneralUserMainAppBar(),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    "Buoy's",
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: const Color(0xFF242A2F),
-                      fontWeight: FontWeight.w700,
+              _searchController.text = state.query;
+              _searchController.selection = TextSelection.collapsed(
+                offset: _searchController.text.length,
+              );
+            },
+            child: Column(
+              children: [
+                const AppGeneralUserMainAppBar(),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      "Buoy's",
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: const Color(0xFF242A2F),
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              Expanded(
-                child: BlocBuilder<GeneralUserBuoysBloc, GeneralUserBuoysState>(
-                  builder: (context, state) {
-                    if (state.status == GeneralUserBuoysStatus.loading ||
-                        state.status == GeneralUserBuoysStatus.initial) {
-                      return const GeneralUserBuoysShimmer();
-                    }
+                Expanded(
+                  child: BlocBuilder<GeneralUserBuoysBloc, GeneralUserBuoysState>(
+                    builder: (context, state) {
+                      if (state.status == GeneralUserBuoysStatus.loading ||
+                          state.status == GeneralUserBuoysStatus.initial) {
+                        return const GeneralUserBuoysShimmer();
+                      }
 
-                    if (state.status == GeneralUserBuoysStatus.error) {
-                      return AppErrorView(
-                        message: state.message,
-                        onRetry: () {
-                          context.read<GeneralUserBuoysBloc>().add(
-                            const LoadGeneralUserBuoys(),
-                          );
-                        },
-                      );
-                    }
+                      if (state.status == GeneralUserBuoysStatus.error) {
+                        return AppErrorView(
+                          message: state.message,
+                          onRetry: () {
+                            context.read<GeneralUserBuoysBloc>().add(
+                              const LoadGeneralUserBuoys(),
+                            );
+                          },
+                        );
+                      }
 
-                    return Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
-                          child: _StatusSummaryCard(
-                            activeCount: state.activeCount,
-                            offlineCount: state.offlineCount,
-                            batteryLowCount: state.batteryLowCount,
-                            total: state.totalBuoys,
+                      return Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+                            child: _StatusSummaryCard(
+                              activeCount: state.activeCount,
+                              offlineCount: state.offlineCount,
+                              batteryLowCount: state.batteryLowCount,
+                              total: state.totalBuoys,
+                            ),
                           ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                          child: _SearchCard(
-                            controller: _searchController,
-                            onChanged: (value) {
-                              context.read<GeneralUserBuoysBloc>().add(
-                                UpdateGeneralUserBuoysQuery(value),
-                              );
-                            },
-                            onSearchTap: () => _handleSearchTap(context, state),
-                            onClearTap: state.query.trim().isNotEmpty
-                                ? () {
-                                    context.read<GeneralUserBuoysBloc>().add(
-                                      const ClearGeneralUserBuoysQuery(),
-                                    );
-                                  }
-                                : null,
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                            child: _SearchCard(
+                              controller: _searchController,
+                              onChanged: (value) {
+                                context.read<GeneralUserBuoysBloc>().add(
+                                  UpdateGeneralUserBuoysQuery(value),
+                                );
+                              },
+                              onSearchTap: () =>
+                                  _handleSearchTap(context, state),
+                              onClearTap: state.query.trim().isNotEmpty
+                                  ? () {
+                                      context.read<GeneralUserBuoysBloc>().add(
+                                        const ClearGeneralUserBuoysQuery(),
+                                      );
+                                    }
+                                  : null,
+                            ),
                           ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                          child: _FilterRow(
-                            selectedFilter: state.selectedFilter,
-                            onFilterTap: (filter) {
-                              context.read<GeneralUserBuoysBloc>().add(
-                                ChangeGeneralUserBuoysFilter(filter),
-                              );
-                            },
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                            child: _FilterRow(
+                              selectedFilter: state.selectedFilter,
+                              onFilterTap: (filter) {
+                                context.read<GeneralUserBuoysBloc>().add(
+                                  ChangeGeneralUserBuoysFilter(filter),
+                                );
+                              },
+                            ),
                           ),
-                        ),
-                        Expanded(
-                          child: state.filteredBuoys.isEmpty
-                              ? _EmptyBuoysView(
-                                  query: state.query,
-                                  selectedFilter: state.selectedFilter,
-                                )
-                              : ListView.separated(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    16,
-                                    0,
-                                    16,
-                                    8,
-                                  ),
-                                  itemCount: state.filteredBuoys.length,
-                                  separatorBuilder: (_, __) =>
-                                      const SizedBox(height: 10),
-                                  itemBuilder: (context, index) {
-                                    final buoy = state.filteredBuoys[index];
-                                    return _AnimatedListItem(
-                                      index: index,
-                                      child: _BuoyCard(
-                                        buoy: buoy,
-                                        onTap: () => context.push(
-                                          AppRoutes.buoyOverviewPath,
-                                          extra: buoy.id.replaceAll(' ', ''),
+                          Expanded(
+                            child: state.filteredBuoys.isEmpty
+                                ? _EmptyBuoysView(
+                                    query: state.query,
+                                    selectedFilter: state.selectedFilter,
+                                  )
+                                : ListView.separated(
+                                    padding: const EdgeInsets.fromLTRB(
+                                      16,
+                                      0,
+                                      16,
+                                      8,
+                                    ),
+                                    itemCount: state.filteredBuoys.length,
+                                    separatorBuilder: (_, __) =>
+                                        const SizedBox(height: 10),
+                                    itemBuilder: (context, index) {
+                                      final buoy = state.filteredBuoys[index];
+                                      return AnimatedListEntrance(
+                                        index: index,
+                                        child: _BuoyCard(
+                                          buoy: buoy,
+                                          onTap: () => context.push(
+                                            AppRoutes.buoyOverviewPath,
+                                            extra: buoy.id.replaceAll(' ', ''),
+                                          ),
                                         ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                        ),
-                      ],
-                    );
-                  },
+                                      );
+                                    },
+                                  ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
                 ),
-              ),
-              const AppGeneralUserBottomNavForSession(
-                selectedTab: GeneralUserBottomNavTab.buoys,
-              ),
-            ],
+                const AppGeneralUserBottomNavForSession(
+                  selectedTab: GeneralUserBottomNavTab.buoys,
+                ),
+              ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }
@@ -629,35 +631,6 @@ class _EmptyBuoysView extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _AnimatedListItem extends StatelessWidget {
-  final int index;
-  final Widget child;
-
-  const _AnimatedListItem({required this.index, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    final start = (index * 0.04).clamp(0.0, 0.6);
-    final end = (start + 0.35).clamp(0.0, 1.0);
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: 1),
-      duration: const Duration(milliseconds: 650),
-      curve: Interval(start, end, curve: Curves.easeOutCubic),
-      builder: (context, progress, animatedChild) {
-        final offsetY = (1 - progress) * 12;
-        return Opacity(
-          opacity: progress,
-          child: Transform.translate(
-            offset: Offset(0, offsetY),
-            child: animatedChild,
-          ),
-        );
-      },
-      child: child,
     );
   }
 }

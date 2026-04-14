@@ -23,6 +23,10 @@ class GeneralUserGoogleMapView extends StatefulWidget {
     this.onMapTap,
     this.onControllerReady,
     this.boundsPaddingPx = 64,
+    this.fitBoundsLatitudeExpansionDeg = 0,
+    this.showEmbeddedZoomControls = false,
+    this.showNativeZoomControls = false,
+    this.showFitAllBuoysControl = false,
   });
 
   final List<DummyBuoy> buoys;
@@ -35,6 +39,19 @@ class GeneralUserGoogleMapView extends StatefulWidget {
   final VoidCallback? onMapTap;
   final ValueChanged<GoogleMapController>? onControllerReady;
   final double boundsPaddingPx;
+
+  /// Extra north/south span for [fitGoogleMapToPoints] so bottom-anchored
+  /// custom markers (pin + label) are not clipped at the map edge.
+  final double fitBoundsLatitudeExpansionDeg;
+
+  /// Inset +/- buttons (works on all platforms; use in small previews).
+  final bool showEmbeddedZoomControls;
+
+  /// Android-only native zoom buttons (often redundant with [showEmbeddedZoomControls]).
+  final bool showNativeZoomControls;
+
+  /// Shows a control that refits the camera to all [buoys] (dashboard preview).
+  final bool showFitAllBuoysControl;
 
   @override
   State<GeneralUserGoogleMapView> createState() =>
@@ -73,7 +90,8 @@ class _GeneralUserGoogleMapViewState extends State<GeneralUserGoogleMapView> {
   void didUpdateWidget(covariant GeneralUserGoogleMapView oldWidget) {
     super.didUpdateWidget(oldWidget);
     final buoysChanged = !listEquals(oldWidget.buoys, widget.buoys);
-    final selectedChanged = oldWidget.selectedBuoy?.id != widget.selectedBuoy?.id;
+    final selectedChanged =
+        oldWidget.selectedBuoy?.id != widget.selectedBuoy?.id;
     final labelConfigChanged =
         oldWidget.showDeviceName != widget.showDeviceName ||
         oldWidget.showBatteryStatus != widget.showBatteryStatus;
@@ -107,9 +125,7 @@ class _GeneralUserGoogleMapViewState extends State<GeneralUserGoogleMapView> {
         position: pos,
         zIndexInt: isSelected ? 2 : 1,
         consumeTapEvents: false,
-        infoWindow: InfoWindow(
-          title: b.id,
-        ),
+        infoWindow: InfoWindow(title: b.id),
         icon: icon,
         onTap: () => widget.onBuoyTap?.call(b),
       );
@@ -124,10 +140,7 @@ class _GeneralUserGoogleMapViewState extends State<GeneralUserGoogleMapView> {
     };
   }
 
-  BitmapDescriptor _markerIconFor(
-    DummyBuoy buoy, {
-    required bool isSelected,
-  }) {
+  BitmapDescriptor _markerIconFor(DummyBuoy buoy, {required bool isSelected}) {
     if (widget.showDeviceName) {
       final cached = _labelMarkerCache[_labelMarkerCacheKey(buoy, isSelected)];
       if (cached != null) {
@@ -139,22 +152,28 @@ class _GeneralUserGoogleMapViewState extends State<GeneralUserGoogleMapView> {
     // While icons are loading, fall back to default pins.
     if (isSelected) {
       return switch (buoy.status) {
-        BuoyStatus.active => _activeSelectedIcon ??
-            BitmapDescriptor.defaultMarkerWithHue(_hueForStatus(buoy.status)),
-        BuoyStatus.offline => _offlineSelectedIcon ??
-            BitmapDescriptor.defaultMarkerWithHue(_hueForStatus(buoy.status)),
-        BuoyStatus.batteryLow => _batteryLowSelectedIcon ??
-            BitmapDescriptor.defaultMarkerWithHue(_hueForStatus(buoy.status)),
+        BuoyStatus.active =>
+          _activeSelectedIcon ??
+              BitmapDescriptor.defaultMarkerWithHue(_hueForStatus(buoy.status)),
+        BuoyStatus.offline =>
+          _offlineSelectedIcon ??
+              BitmapDescriptor.defaultMarkerWithHue(_hueForStatus(buoy.status)),
+        BuoyStatus.batteryLow =>
+          _batteryLowSelectedIcon ??
+              BitmapDescriptor.defaultMarkerWithHue(_hueForStatus(buoy.status)),
       };
     }
 
     return switch (buoy.status) {
-      BuoyStatus.active => _activeIcon ??
-          BitmapDescriptor.defaultMarkerWithHue(_hueForStatus(buoy.status)),
-      BuoyStatus.offline => _offlineIcon ??
-          BitmapDescriptor.defaultMarkerWithHue(_hueForStatus(buoy.status)),
-      BuoyStatus.batteryLow => _batteryLowIcon ??
-          BitmapDescriptor.defaultMarkerWithHue(_hueForStatus(buoy.status)),
+      BuoyStatus.active =>
+        _activeIcon ??
+            BitmapDescriptor.defaultMarkerWithHue(_hueForStatus(buoy.status)),
+      BuoyStatus.offline =>
+        _offlineIcon ??
+            BitmapDescriptor.defaultMarkerWithHue(_hueForStatus(buoy.status)),
+      BuoyStatus.batteryLow =>
+        _batteryLowIcon ??
+            BitmapDescriptor.defaultMarkerWithHue(_hueForStatus(buoy.status)),
     };
   }
 
@@ -194,8 +213,8 @@ class _GeneralUserGoogleMapViewState extends State<GeneralUserGoogleMapView> {
       const assetOffline = 'assets/images/red.png';
       const assetBatteryLow = 'assets/images/yellow.png';
 
-      const normal = 46.0;
-      const selected = 62.0;
+      const normal = 40.0;
+      const selected = 54.0;
 
       // Load base PNGs as ui.Image for compositing labels.
       _imgGreen ??= await _loadUiImage(assetActive);
@@ -255,8 +274,7 @@ class _GeneralUserGoogleMapViewState extends State<GeneralUserGoogleMapView> {
   }
 
   String _labelMarkerCacheKey(DummyBuoy buoy, bool isSelected) {
-    final battery =
-        widget.showBatteryStatus ? buoy.battery.trim() : '';
+    final battery = widget.showBatteryStatus ? buoy.battery.trim() : '';
     return '${buoy.status.name}|$isSelected|${buoy.id}|$battery';
   }
 
@@ -312,6 +330,25 @@ class _GeneralUserGoogleMapViewState extends State<GeneralUserGoogleMapView> {
     setState(() {
       _markers = _buildMarkers();
     });
+    // First fit uses default pins; labeled bitmaps are taller — refit once labels exist.
+    if (widget.showDeviceName && _allLabeledMarkersReady()) {
+      _didInitialFit = false;
+      _scheduleFitCamera();
+    }
+  }
+
+  bool _allLabeledMarkersReady() {
+    if (!widget.showDeviceName || widget.buoys.isEmpty) {
+      return true;
+    }
+    final selectedId = widget.selectedBuoy?.id;
+    for (final b in widget.buoys) {
+      final key = _labelMarkerCacheKey(b, b.id == selectedId);
+      if (!_labelMarkerCache.containsKey(key)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   Future<ui.Image> _loadUiImage(String assetPath) async {
@@ -327,13 +364,13 @@ class _GeneralUserGoogleMapViewState extends State<GeneralUserGoogleMapView> {
     required bool selected,
     String? battery,
   }) async {
-    // Target sizes roughly matching the reference screenshot.
-    final pinW = selected ? 72.0 : 56.0;
-    final pinH = selected ? 96.0 : 78.0;
-    final fontSize = selected ? 18.0 : 13.0;
-    final batteryFont = selected ? 12.5 : 11.0;
+    // Slightly smaller than original so markers don’t dominate the map.
+    final pinW = selected ? 62.0 : 48.0;
+    final pinH = selected ? 82.0 : 66.0;
+    final fontSize = selected ? 16.0 : 11.5;
+    final batteryFont = selected ? 11.0 : 10.0;
     final paddingTop = 2.0;
-    final paddingBottom = selected ? 6.0 : 5.0;
+    final paddingBottom = selected ? 5.0 : 4.0;
 
     final textPainter = TextPainter(
       text: TextSpan(
@@ -378,10 +415,7 @@ class _GeneralUserGoogleMapViewState extends State<GeneralUserGoogleMapView> {
     final size = Size(desiredW, totalH);
 
     // Transparent background.
-    canvas.drawRect(
-      Offset.zero & size,
-      Paint()..color = Colors.transparent,
-    );
+    canvas.drawRect(Offset.zero & size, Paint()..color = Colors.transparent);
 
     // Draw pin image centered.
     final pinRect = Rect.fromLTWH(
@@ -440,9 +474,9 @@ class _GeneralUserGoogleMapViewState extends State<GeneralUserGoogleMapView> {
     }
 
     final img = await recorder.endRecording().toImage(
-          size.width.ceil(),
-          size.height.ceil(),
-        );
+      size.width.ceil(),
+      size.height.ceil(),
+    );
     final bytes = await img.toByteData(format: ui.ImageByteFormat.png);
     return bytes?.buffer.asUint8List();
   }
@@ -475,11 +509,22 @@ class _GeneralUserGoogleMapViewState extends State<GeneralUserGoogleMapView> {
         points: points,
         paddingPx: widget.boundsPaddingPx,
         singlePointZoom: widget.zoomLevel.clamp(3, 17).toDouble(),
+        expandLatitudeDeg: widget.fitBoundsLatitudeExpansionDeg,
       );
       _didInitialFit = true;
     } on Object catch (_) {
       _didInitialFit = false;
     }
+  }
+
+  Future<void> _nudgeZoom(double delta) async {
+    final c = _controller;
+    if (c == null) {
+      return;
+    }
+    try {
+      await c.animateCamera(CameraUpdate.zoomBy(delta));
+    } on Object catch (_) {}
   }
 
   @override
@@ -492,14 +537,12 @@ class _GeneralUserGoogleMapViewState extends State<GeneralUserGoogleMapView> {
       }
     }
 
-    final first = widget.buoys.isNotEmpty
-        ? widget.buoys.first
-        : null;
+    final first = widget.buoys.isNotEmpty ? widget.buoys.first : null;
     final initial = first != null
         ? LatLng(first.position.latitude, first.position.longitude)
         : const LatLng(20.5937, 78.9629);
 
-    return GoogleMap(
+    final map = GoogleMap(
       initialCameraPosition: CameraPosition(
         target: initial,
         zoom: widget.zoomLevel.clamp(3, 17).toDouble(),
@@ -513,7 +556,8 @@ class _GeneralUserGoogleMapViewState extends State<GeneralUserGoogleMapView> {
       zoomGesturesEnabled: true,
       tiltGesturesEnabled: false,
       myLocationButtonEnabled: false,
-      zoomControlsEnabled: false,
+      zoomControlsEnabled: widget.showNativeZoomControls,
+      minMaxZoomPreference: const MinMaxZoomPreference(3, 21),
       onMapCreated: (controller) {
         _controller = controller;
         widget.onControllerReady?.call(controller);
@@ -523,6 +567,64 @@ class _GeneralUserGoogleMapViewState extends State<GeneralUserGoogleMapView> {
       onTap: (_) {
         widget.onMapTap?.call();
       },
+    );
+
+    if (!widget.showEmbeddedZoomControls && !widget.showFitAllBuoysControl) {
+      return map;
+    }
+
+    return Stack(
+      fit: StackFit.expand,
+      clipBehavior: Clip.hardEdge,
+      children: [
+        map,
+        if (widget.showEmbeddedZoomControls || widget.showFitAllBuoysControl)
+          Positioned(
+            right: 6,
+            top: 6,
+            child: Material(
+              color: Colors.white.withValues(alpha: 0.92),
+              elevation: 2,
+              borderRadius: BorderRadius.circular(10),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (widget.showEmbeddedZoomControls) ...[
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      tooltip: 'Zoom in',
+                      onPressed: () => _nudgeZoom(1),
+                      icon: const Icon(Icons.add, size: 20),
+                      color: const Color(0xFF23282D),
+                    ),
+                    const SizedBox(height: 2),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      tooltip: 'Zoom out',
+                      onPressed: () => _nudgeZoom(-1),
+                      icon: const Icon(Icons.remove, size: 20),
+                      color: const Color(0xFF23282D),
+                    ),
+                  ],
+                  if (widget.showFitAllBuoysControl) ...[
+                    if (widget.showEmbeddedZoomControls)
+                      const SizedBox(height: 4),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      tooltip: 'Fit all buoys',
+                      onPressed: () {
+                        _didInitialFit = false;
+                        _scheduleFitCamera();
+                      },
+                      icon: const Icon(Icons.my_location, size: 20),
+                      color: const Color(0xFF23282D),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+      ],
     );
   }
 

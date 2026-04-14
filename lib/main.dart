@@ -1,15 +1,14 @@
 import 'package:drifter_buoy/app.dart';
+import 'package:drifter_buoy/core/services/firebase_notification_service.dart';
 import 'package:drifter_buoy/core/storage/auth_session_store.dart';
 import 'package:drifter_buoy/core/utils/injection_container.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:logger/logger.dart';
-import 'package:shimmer/main.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initDependencies();
+  await FirebaseNotificationService.instance.initialize();
   // Populate role cache before UI so bottom nav does not flicker on API rebuilds.
   try {
     final store = sl<AuthSessionStore>();
