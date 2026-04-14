@@ -2,7 +2,7 @@ import 'package:drifter_buoy/core/constants/app_routes.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_flushbar.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_icon_circle_button.dart';
-import 'package:drifter_buoy/core/utils/widgets/app_loader.dart';
+import 'package:drifter_buoy/features/general_user/presentation/widgets/general_user_loading_shimmers.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoy_overview/general_user_buoy_overview_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoy_overview/general_user_buoy_overview_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoy_overview/general_user_buoy_overview_state.dart';
@@ -69,7 +69,8 @@ class GeneralUserBuoyOverviewPage extends StatelessWidget {
                     builder: (context, state) {
                       return switch (state) {
                         GeneralUserBuoyOverviewInitial() ||
-                        GeneralUserBuoyOverviewLoading() => const AppLoader(),
+                        GeneralUserBuoyOverviewLoading() =>
+                          const GeneralUserBuoyOverviewShimmer(),
                         GeneralUserBuoyOverviewError(
                           :final message,
                           :final buoyId,

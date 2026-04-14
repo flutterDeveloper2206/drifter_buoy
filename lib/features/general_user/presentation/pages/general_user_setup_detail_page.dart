@@ -196,31 +196,6 @@ class GeneralUserSetupDetailPage extends StatelessWidget {
                           ),
                           const SizedBox(height: 12),
                           _WhiteCard(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Memory Status',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .compactSectionTitle(
-                                        const Color(0xFF1D2329),
-                                      ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  state.memoryStatus,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .compactValueText(
-                                        const Color(0xFF2A2F34),
-                                      ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          _WhiteCard(
                             child: InkWell(
                               onTap: () =>
                                   context.push(AppRoutes.selfTestDebugPath),
@@ -250,41 +225,7 @@ class GeneralUserSetupDetailPage extends StatelessWidget {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 12),
-                          _WhiteCard(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Backup',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .compactSectionTitle(
-                                        const Color(0xFF1D2329),
-                                      ),
-                                ),
-                                const SizedBox(height: 10),
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.cloud_upload_outlined,
-                                      color: _blue.withValues(alpha: 0.85),
-                                      size: 26,
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: Text(
-                                        'Backup Data to Server',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .compactActionText(_blue),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
+
                       ],
                     ),
                   );
