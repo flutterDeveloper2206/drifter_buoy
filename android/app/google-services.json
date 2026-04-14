@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "566752074529",
+    "project_id": "buoy-e145c",
+    "storage_bucket": "buoy-e145c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:566752074529:android:8af408ee8e697288757c60",
+        "android_client_info": {
+          "package_name": "com.drifter_buoy.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAIL6Ha3THBqnKrGcyb3UA21xa4aED9U-I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
