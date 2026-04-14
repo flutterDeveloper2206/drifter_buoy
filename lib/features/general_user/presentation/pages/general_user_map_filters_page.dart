@@ -122,20 +122,37 @@ class GeneralUserMapFiltersPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Center(
-              child: Icon(
-                Icons.keyboard_arrow_down,
-                size: 22,
-                color: Color(0xFF282828),
-              ),
-            ),
-            const SizedBox(height: 6),
-            Center(
-              child: Text(
-                'Toggles and Filters',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: const Color(0xFF2D2D2D),
-                  fontWeight: FontWeight.w700,
+            InkWell(
+              onTap: () {
+                if (GoRouter.of(context).canPop()) {
+                  context.pop();
+                } else {
+                  context.go(AppRoutes.mapPath);
+                }
+              },
+              borderRadius: BorderRadius.circular(16),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Icon(
+                      Icons.keyboard_arrow_down,
+                      size: 22,
+                      color: Color(0xFF282828),
+                    ),
+                    const SizedBox(height: 6),
+                    Center(
+                      child: Text(
+                        'Toggles and Filters',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: const Color(0xFF2D2D2D),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),

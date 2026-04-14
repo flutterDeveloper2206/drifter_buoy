@@ -37,7 +37,7 @@ class GeneralUserMapFiltersState extends Equatable {
       statusFilterEnabled = true,
       signalStrengthEnabled = false,
       locationZoneFilterEnabled = false,
-      mapType = MapDisplayType.satellite,
+      mapType = MapDisplayType.terrain,
       message = '';
 
   GeneralUserMapFiltersState copyWith({

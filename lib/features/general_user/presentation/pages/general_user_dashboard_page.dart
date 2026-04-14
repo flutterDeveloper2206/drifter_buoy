@@ -105,55 +105,63 @@ class GeneralUserDashboardPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 28),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.fromLTRB(14, 14, 10, 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.07),
-                        blurRadius: 14,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(left: 2, right: 4),
-                        child: Row(
-                          children: [
-                            Text(
-                              "Buoy's Map View",
-                              style: textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFF2E343A),
-                              ),
-                            ),
-                            const Spacer(),
-                            IconButton(
-                              visualDensity: VisualDensity.compact,
-                              onPressed: () {
-                                context.go(
-                                  AppRoutes.mapPath,
-                                  extra: loadedState.mapData,
-                                );
-                              },
-                              icon: const Icon(Icons.arrow_forward, size: 22),
-                              color: const Color(0xFF23282D),
-                            ),
-                          ],
+                GestureDetector(
+                  onTap: (){
+                    context.go(
+                      AppRoutes.mapPath,
+                      extra: loadedState.mapData,
+                    );
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.fromLTRB(14, 14, 10, 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.07),
+                          blurRadius: 14,
+                          offset: const Offset(0, 4),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      _MapPreviewCard(
-                        dashboardData: dashboardData,
-                        mapData: loadedState.mapData,
-                      ),
-                    ],
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(left: 2, right: 4),
+                          child: Row(
+                            children: [
+                              Text(
+                                "Buoy's Map View",
+                                style: textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF2E343A),
+                                ),
+                              ),
+                              const Spacer(),
+                              IconButton(
+                                visualDensity: VisualDensity.compact,
+                                onPressed: () {
+                                  context.go(
+                                    AppRoutes.mapPath,
+                                    extra: loadedState.mapData,
+                                  );
+                                },
+                                icon: const Icon(Icons.arrow_forward, size: 22),
+                                color: const Color(0xFF23282D),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        _MapPreviewCard(
+                          dashboardData: dashboardData,
+                          mapData: loadedState.mapData,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
