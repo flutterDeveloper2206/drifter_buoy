@@ -283,20 +283,29 @@ class _FiltersPanel extends StatelessWidget {
             InkWell(
               borderRadius: BorderRadius.circular(16),
               onTap: onCollapseTap,
-              child: const Padding(
-                padding: EdgeInsets.symmetric(vertical: 2),
-                child: Icon(
-                  Icons.keyboard_arrow_down,
-                  size: 24,
-                  color: Color(0xFF2E343A),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Icon(
+                      Icons.keyboard_arrow_down,
+                      size: 24,
+                      color: Color(0xFF2E343A),
+                    ),
+                    const SizedBox(height: 4),
+                    Center(
+                      child: Text(
+                        'Toggles and Filters',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: const Color(0xFF2D2D2D),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ),
-            Text(
-              'Toggles and Filters',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: const Color(0xFF2D2D2D),
-                fontWeight: FontWeight.w700,
               ),
             ),
             const SizedBox(height: 14),

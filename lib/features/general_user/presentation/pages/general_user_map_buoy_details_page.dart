@@ -373,20 +373,29 @@ class _BottomTogglePanel extends StatelessWidget {
             InkWell(
               onTap: onTap,
               borderRadius: BorderRadius.circular(16),
-              child: const Padding(
-                padding: EdgeInsets.symmetric(vertical: 2),
-                child: Icon(
-                  Icons.keyboard_arrow_up,
-                  size: 22,
-                  color: Color(0xFF2E343A),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Icon(
+                      Icons.keyboard_arrow_up,
+                      size: 22,
+                      color: Color(0xFF2E343A),
+                    ),
+                    const SizedBox(height: 2),
+                    Center(
+                      child: Text(
+                        'Toggles and Filters',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: const Color(0xFF2D3238),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ),
-            Text(
-              'Toggles and Filters',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: const Color(0xFF2D3238),
-                fontWeight: FontWeight.w700,
               ),
             ),
             Container(

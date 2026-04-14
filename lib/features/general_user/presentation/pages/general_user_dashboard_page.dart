@@ -115,7 +115,14 @@ class GeneralUserDashboardPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 28),
-                  Container(
+                  GestureDetector(
+                  onTap: (){
+                    context.go(
+                      AppRoutes.mapPath,
+                      extra: loadedState.mapData,
+                    );
+                  },
+                  child:Container(
                     width: double.infinity,
                     padding: const EdgeInsets.fromLTRB(14, 14, 10, 12),
                     decoration: BoxDecoration(
@@ -166,7 +173,7 @@ class GeneralUserDashboardPage extends StatelessWidget {
                       ],
                     ),
                   ),
-                ],
+                ),],
               ),
             ),
           );

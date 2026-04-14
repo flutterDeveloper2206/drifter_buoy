@@ -1004,46 +1004,36 @@ class _MapFiltersDraggablePanel extends StatelessWidget {
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
-        Center(
-          child: InkWell(
-            onTap: onHeaderTap,
-            borderRadius: BorderRadius.circular(20),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFC9CED0),
-                  borderRadius: BorderRadius.circular(4),
+        InkWell(
+          onTap: onHeaderTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(top: 2, bottom: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFC9CED0),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Center(
-          child: InkWell(
-            onTap: onHeaderTap,
-            borderRadius: BorderRadius.circular(20),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-              child: Icon(
-                Icons.keyboard_arrow_up,
-                size: 20,
-                color: Colors.grey.shade600,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Center(
-          child: InkWell(
-            onTap: onHeaderTap,
-            borderRadius: BorderRadius.circular(10),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-              child: Text('Toggles and Filters', style: heading),
+                Icon(
+                  Icons.keyboard_arrow_up,
+                  size: 20,
+                  color: Colors.grey.shade600,
+                ),
+                const SizedBox(height: 4),
+                Center(
+                  child: Text('Toggles and Filters', style: heading),
+                ),
+              ],
             ),
           ),
         ),

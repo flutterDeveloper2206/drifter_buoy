@@ -437,76 +437,79 @@ class _TrajectoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF2F2F2),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Text(
-                'Trajectory View',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: const Color(0xFF2E3238),
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const Spacer(),
-              InkWell(
-                onTap: onArrowTap,
-                borderRadius: BorderRadius.circular(16),
-                child: const Padding(
-                  padding: EdgeInsets.all(2),
-                  child: Icon(
-                    Icons.arrow_forward,
-                    size: 28,
-                    color: Color(0xFF2D3238),
+    return GestureDetector(
+      onTap:onArrowTap ,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF2F2F2),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Text(
+                  'Trajectory View',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: const Color(0xFF2E3238),
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          BlocSelector<
-            GeneralUserBuoyOverviewBloc,
-            GeneralUserBuoyOverviewState,
-            _TrajectoryPreviewVm?
-          >(
-            selector: (s) {
-              if (s is! GeneralUserBuoyOverviewLoaded) {
-                return null;
-              }
-              final d = s.data;
-              return _TrajectoryPreviewVm(
-                buoyId: d.id,
-                points: d.trajectoryPoints,
-                status: _buoyMapStatusForOverview(d),
-              );
-            },
-            builder: (context, vm) {
-              if (vm == null) {
-                return const SizedBox(height: 170);
-              }
-              return SizedBox(
-                height: 190,
-                child: RepaintBoundary(
-                  child: GoogleTrajectoryMapPreview(
-                    trajectoryPoints: vm.points,
-                    buoy: DummyBuoy(
-                      id: vm.buoyId,
-                      position: vm.anchor,
-                      status: vm.status,
+                const Spacer(),
+                InkWell(
+                  onTap: onArrowTap,
+                  borderRadius: BorderRadius.circular(16),
+                  child: const Padding(
+                    padding: EdgeInsets.all(2),
+                    child: Icon(
+                      Icons.arrow_forward,
+                      size: 28,
+                      color: Color(0xFF2D3238),
                     ),
                   ),
                 ),
-              );
-            },
-          ),
-        ],
+              ],
+            ),
+            const SizedBox(height: 8),
+            BlocSelector<
+              GeneralUserBuoyOverviewBloc,
+              GeneralUserBuoyOverviewState,
+              _TrajectoryPreviewVm?
+            >(
+              selector: (s) {
+                if (s is! GeneralUserBuoyOverviewLoaded) {
+                  return null;
+                }
+                final d = s.data;
+                return _TrajectoryPreviewVm(
+                  buoyId: d.id,
+                  points: d.trajectoryPoints,
+                  status: _buoyMapStatusForOverview(d),
+                );
+              },
+              builder: (context, vm) {
+                if (vm == null) {
+                  return const SizedBox(height: 170);
+                }
+                return SizedBox(
+                  height: 190,
+                  child: RepaintBoundary(
+                    child: GoogleTrajectoryMapPreview(
+                      trajectoryPoints: vm.points,
+                      buoy: DummyBuoy(
+                        id: vm.buoyId,
+                        position: vm.anchor,
+                        status: vm.status,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
