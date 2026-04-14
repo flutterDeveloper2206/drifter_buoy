@@ -51,7 +51,7 @@ class _GeneralUserBuoysPageState extends State<GeneralUserBuoysPage> {
               children: [
                 const AppGeneralUserMainAppBar(),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(

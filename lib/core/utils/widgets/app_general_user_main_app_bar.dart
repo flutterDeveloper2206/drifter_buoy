@@ -25,8 +25,8 @@ class AppGeneralUserMainAppBar extends StatelessWidget {
         children: [
           Image.asset(
             AppAssets.icLogo,
-            width: 30,
-            height: 30,
+            width: 60,
+            height: 60,
             fit: BoxFit.contain,
           ),
           const Spacer(),
