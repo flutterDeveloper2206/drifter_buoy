@@ -212,6 +212,68 @@ class GeneralUserBuoysShimmer extends StatelessWidget {
   }
 }
 
+/// Skeleton for [GeneralUserAlertsPage] while notifications are loading.
+class GeneralUserAlertsListShimmer extends StatelessWidget {
+  const GeneralUserAlertsListShimmer({super.key});
+
+  static const _cardBg = Color(0xFFF2F2F2);
+
+  @override
+  Widget build(BuildContext context) {
+    final messageWidth =
+        (MediaQuery.sizeOf(context).width - 32 - 28) * 0.72;
+
+    return AppShimmer(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _box(height: 22, width: 260, radius: 8),
+            const SizedBox(height: 20),
+            Expanded(
+              child: ListView.separated(
+                physics: const AlwaysScrollableScrollPhysics(),
+                itemCount: 6,
+                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                itemBuilder: (_, __) {
+                  return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                    decoration: BoxDecoration(
+                      color: _cardBg,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _box(height: 12, width: 140, radius: 6),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(child: _box(height: 18, radius: 6)),
+                            _circle(10),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        _box(height: 14, radius: 4),
+                        const SizedBox(height: 6),
+                        _box(height: 14, width: messageWidth, radius: 4),
+                        const SizedBox(height: 8),
+                        _box(height: 12, width: 112, radius: 4),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class GeneralUserExportSelectionShimmer extends StatelessWidget {
   const GeneralUserExportSelectionShimmer({super.key});
 

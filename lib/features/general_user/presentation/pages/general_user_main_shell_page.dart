@@ -1,6 +1,8 @@
 import 'package:drifter_buoy/core/constants/app_routes.dart';
 import 'package:drifter_buoy/core/storage/auth_session_store.dart';
+import 'package:drifter_buoy/core/utils/app_logger.dart';
 import 'package:drifter_buoy/core/utils/injection_container.dart';
+import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_register_device_token.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_general_user_bottom_nav.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoys/general_user_buoys_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoys/general_user_buoys_event.dart';
@@ -71,6 +73,7 @@ class _GeneralUserMainShellPageState extends State<GeneralUserMainShellPage> {
     final isAdmin = sl<AuthSessionStore>().cachedIsAdmin ?? false;
     switch (index) {
       case 0:
+        _registerDeviceTokenForHomeDashboard();
         context.read<GeneralUserDashboardBloc>().add(
               LoadGeneralUserDashboard(isAdmin: isAdmin),
             );
@@ -91,6 +94,19 @@ class _GeneralUserMainShellPageState extends State<GeneralUserMainShellPage> {
       default:
         return;
     }
+  }
+
+  /// Home tab hosts [GeneralUserDashboardPage]; register FCM token when user
+  /// lands on home / dashboard (including switching back from other tabs).
+  void _registerDeviceTokenForHomeDashboard() {
+    sl<GeneralUserRegisterDeviceToken>()().then((result) {
+      result.fold(
+        (failure) => AppLogger.w(
+          'Device token registration skipped or failed: ${failure.message}',
+        ),
+        (_) => AppLogger.i('Device token registered with backend'),
+      );
+    });
   }
 
   @override

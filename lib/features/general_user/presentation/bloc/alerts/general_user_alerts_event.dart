@@ -8,5 +8,10 @@ abstract class GeneralUserAlertsEvent extends Equatable {
 }
 
 class LoadGeneralUserAlerts extends GeneralUserAlertsEvent {
-  const LoadGeneralUserAlerts();
+  const LoadGeneralUserAlerts({this.isPullToRefresh = false});
+
+  final bool isPullToRefresh;
+
+  @override
+  List<Object?> get props => [isPullToRefresh];
 }

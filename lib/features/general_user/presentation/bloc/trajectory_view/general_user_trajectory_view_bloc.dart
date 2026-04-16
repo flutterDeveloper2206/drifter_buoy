@@ -13,8 +13,7 @@ class GeneralUserTrajectoryViewBloc
   }) : _getBuoyTrajectoryView = getBuoyTrajectoryView,
        super(const GeneralUserTrajectoryViewState.initial()) {
     on<LoadGeneralUserTrajectoryView>(_onLoadGeneralUserTrajectoryView);
-    on<ZoomInGeneralUserTrajectoryView>(_onZoomInGeneralUserTrajectoryView);
-    on<ZoomOutGeneralUserTrajectoryView>(_onZoomOutGeneralUserTrajectoryView);
+    on<SyncGeneralUserTrajectoryMapZoom>(_onSyncGeneralUserTrajectoryMapZoom);
   }
 
   final GeneralUserGetBuoyTrajectoryView _getBuoyTrajectoryView;
@@ -66,25 +65,10 @@ class GeneralUserTrajectoryViewBloc
     );
   }
 
-  void _onZoomInGeneralUserTrajectoryView(
-    ZoomInGeneralUserTrajectoryView event,
+  void _onSyncGeneralUserTrajectoryMapZoom(
+    SyncGeneralUserTrajectoryMapZoom event,
     Emitter<GeneralUserTrajectoryViewState> emit,
   ) {
-    if (!state.canZoomIn) {
-      return;
-    }
-
-    emit(state.copyWith(zoom: (state.zoom + 0.7).clamp(3, 21).toDouble()));
-  }
-
-  void _onZoomOutGeneralUserTrajectoryView(
-    ZoomOutGeneralUserTrajectoryView event,
-    Emitter<GeneralUserTrajectoryViewState> emit,
-  ) {
-    if (!state.canZoomOut) {
-      return;
-    }
-
-    emit(state.copyWith(zoom: (state.zoom - 0.7).clamp(3, 21).toDouble()));
+    emit(state.copyWith(zoom: event.zoom.clamp(3, 21)));
   }
 }

@@ -1,7 +1,7 @@
 import 'package:drifter_buoy/core/constants/app_routes.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_icon_circle_button.dart';
-import 'package:drifter_buoy/core/utils/widgets/app_loader.dart';
+import 'package:drifter_buoy/features/general_user/presentation/widgets/general_user_loading_shimmers.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/alerts/general_user_alerts_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/alerts/general_user_alerts_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/alerts/general_user_alerts_state.dart';
@@ -23,9 +23,13 @@ class GeneralUserAlertsPage extends StatelessWidget {
             Expanded(
               child: BlocBuilder<GeneralUserAlertsBloc, GeneralUserAlertsState>(
                 builder: (context, state) {
-                  if (state.status == GeneralUserAlertsStatus.loading ||
-                      state.status == GeneralUserAlertsStatus.initial) {
-                    return const AppLoader();
+                  final showFullScreenLoader =
+                      state.status == GeneralUserAlertsStatus.initial ||
+                      (state.status == GeneralUserAlertsStatus.loading &&
+                          !state.isRefreshing);
+
+                  if (showFullScreenLoader) {
+                    return const GeneralUserAlertsListShimmer();
                   }
 
                   if (state.status == GeneralUserAlertsStatus.error) {
@@ -33,8 +37,8 @@ class GeneralUserAlertsPage extends StatelessWidget {
                       message: state.message,
                       onRetry: () {
                         context.read<GeneralUserAlertsBloc>().add(
-                          const LoadGeneralUserAlerts(),
-                        );
+                              const LoadGeneralUserAlerts(),
+                            );
                       },
                     );
                   }
@@ -54,14 +58,49 @@ class GeneralUserAlertsPage extends StatelessWidget {
                         ),
                         const SizedBox(height: 20),
                         Expanded(
-                          child: ListView.separated(
-                            itemCount: state.alerts.length,
-                            separatorBuilder: (_, __) =>
-                                const SizedBox(height: 10),
-                            itemBuilder: (context, index) {
-                              final alert = state.alerts[index];
-                              return _AlertCard(alert: alert);
+                          child: RefreshIndicator(
+                            color: const Color(0xFF1F88D1),
+                            onRefresh: () async {
+                              final bloc =
+                                  context.read<GeneralUserAlertsBloc>();
+                              bloc.add(
+                                const LoadGeneralUserAlerts(
+                                  isPullToRefresh: true,
+                                ),
+                              );
+                              await bloc.stream.firstWhere(
+                                (s) => !s.isRefreshing,
+                              );
                             },
+                            child: state.alerts.isEmpty
+                                ? ListView(
+                                    physics:
+                                        const AlwaysScrollableScrollPhysics(),
+                                    children: const [
+                                      SizedBox(height: 120),
+                                      Center(
+                                        child: Text(
+                                          'No notifications yet.',
+                                          style: TextStyle(
+                                            color: Color(0xFF545B61),
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 15,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : ListView.separated(
+                                    physics:
+                                        const AlwaysScrollableScrollPhysics(),
+                                    itemCount: state.alerts.length,
+                                    separatorBuilder: (_, __) =>
+                                        const SizedBox(height: 10),
+                                    itemBuilder: (context, index) {
+                                      final alert = state.alerts[index];
+                                      return _AlertCard(alert: alert);
+                                    },
+                                  ),
                           ),
                         ),
                       ],
@@ -101,9 +140,9 @@ class _Header extends StatelessWidget {
               child: Text(
                 'Alerts & Notifications',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: const Color(0xFF262C31),
-                  fontWeight: FontWeight.w700,
-                ),
+                      color: const Color(0xFF262C31),
+                      fontWeight: FontWeight.w700,
+                    ),
               ),
             ),
           ),
@@ -121,6 +160,14 @@ class _AlertCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final metaParts = <String>[
+      if (alert.notificationType.trim().isNotEmpty)
+        alert.notificationType.trim(),
+      if (alert.priorityLevel.trim().isNotEmpty)
+        alert.priorityLevel.trim(),
+    ];
+    final metaLine = metaParts.join(' · ');
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
@@ -131,15 +178,25 @@ class _AlertCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (metaLine.isNotEmpty) ...[
+            Text(
+              metaLine,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: const Color(0xFF7B8288),
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+            const SizedBox(height: 6),
+          ],
           Row(
             children: [
               Expanded(
                 child: Text(
                   alert.title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: const Color(0xFF2A2F34),
-                    fontWeight: FontWeight.w700,
-                  ),
+                        color: const Color(0xFF2A2F34),
+                        fontWeight: FontWeight.w700,
+                      ),
                 ),
               ),
               if (alert.isUnread)
@@ -150,19 +207,29 @@ class _AlertCard extends StatelessWidget {
           Text(
             alert.message,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: const Color(0xFF545B61),
-              height: 1.25,
-              fontWeight: FontWeight.w600,
-            ),
+                  color: const Color(0xFF545B61),
+                  height: 1.25,
+                  fontWeight: FontWeight.w600,
+                ),
           ),
           const SizedBox(height: 8),
           Text(
             alert.timeLabel,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: const Color(0xFF7B8288),
-              fontWeight: FontWeight.w600,
-            ),
+                  color: const Color(0xFF7B8288),
+                  fontWeight: FontWeight.w600,
+                ),
           ),
+          if (alert.createdBy.trim().isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              'By ${alert.createdBy.trim()}',
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: const Color(0xFF9AA0A6),
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+          ],
         ],
       ),
     );

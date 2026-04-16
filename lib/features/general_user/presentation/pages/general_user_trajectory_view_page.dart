@@ -29,6 +29,21 @@ class _GeneralUserTrajectoryViewPageState
     extends State<GeneralUserTrajectoryViewPage> {
   gmaps.GoogleMapController? _mapController;
 
+  static const double _zoomStep = 0.9;
+
+  Future<void> _applyMapZoomDelta(double delta) async {
+    final c = _mapController;
+    if (c == null || !mounted) {
+      return;
+    }
+    final z = await c.getZoomLevel();
+    final target = (z + delta).clamp(3.0, 21.0);
+    if ((target - z).abs() < 0.001) {
+      return;
+    }
+    await c.animateCamera(gmaps.CameraUpdate.zoomTo(target));
+  }
+
   void _openFiltersSheet() {
     showModalBottomSheet<void>(
       context: context,
@@ -47,87 +62,63 @@ class _GeneralUserTrajectoryViewPageState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body:
-          BlocListener<
-            GeneralUserTrajectoryViewBloc,
-            GeneralUserTrajectoryViewState
-          >(
-            listenWhen: (previous, current) =>
-                previous.zoom != current.zoom &&
-                current.status == GeneralUserTrajectoryViewStatus.loaded,
-            listener: (_, state) {
-              _mapController?.animateCamera(
-                gmaps.CameraUpdate.zoomTo(state.zoom.clamp(3, 21)),
-              );
-            },
-            child:
-                BlocBuilder<
-                  GeneralUserTrajectoryViewBloc,
-                  GeneralUserTrajectoryViewState
-                >(
-                  builder: (context, state) {
-                    final filters = context
-                        .watch<GeneralUserTrajectoryFiltersBloc>()
-                        .state;
-                    return Stack(
-                      children: [
-                        Positioned.fill(
-                          child: _buildMapLayer(context, state, filters),
-                        ),
-                        SafeArea(
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-                            child: Row(
-                              children: [
-                                AppIconCircleButton(
-                                  onTap: () {
-                                    if (GoRouter.of(context).canPop()) {
-                                      context.pop();
-                                    } else {
-                                      context.go(AppRoutes.dashboardPath);
-                                    }
-                                  },
-                                  icon: Icons.arrow_back,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          top: MediaQuery.paddingOf(context).top + 95,
-                          right: 16,
-                          child: _MapZoomControl(
-                            onZoomIn: state.canZoomIn
-                                ? () => context
-                                      .read<GeneralUserTrajectoryViewBloc>()
-                                      .add(
-                                        const ZoomInGeneralUserTrajectoryView(),
-                                      )
-                                : null,
-                            onZoomOut: state.canZoomOut
-                                ? () => context
-                                      .read<GeneralUserTrajectoryViewBloc>()
-                                      .add(
-                                        const ZoomOutGeneralUserTrajectoryView(),
-                                      )
-                                : null,
-                          ),
-                        ),
-                        const Positioned(
-                          left: 40,
-                          right: 40,
-                          bottom: 124,
-                          child: _MapLegendCard(),
-                        ),
-                        Align(
-                          alignment: Alignment.bottomCenter,
-                          child: _BottomTogglePanel(onTap: _openFiltersSheet),
-                        ),
-                      ],
-                    );
-                  },
+      body: BlocBuilder<
+        GeneralUserTrajectoryViewBloc,
+        GeneralUserTrajectoryViewState
+      >(
+        builder: (context, state) {
+          final filters =
+              context.watch<GeneralUserTrajectoryFiltersBloc>().state;
+          return Stack(
+            children: [
+              Positioned.fill(
+                child: _buildMapLayer(context, state, filters),
+              ),
+              SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                  child: Row(
+                    children: [
+                      AppIconCircleButton(
+                        onTap: () {
+                          if (GoRouter.of(context).canPop()) {
+                            context.pop();
+                          } else {
+                            context.go(AppRoutes.dashboardPath);
+                          }
+                        },
+                        icon: Icons.arrow_back,
+                      ),
+                    ],
+                  ),
                 ),
-          ),
+              ),
+              Positioned(
+                top: MediaQuery.paddingOf(context).top + 95,
+                right: 16,
+                child: _MapZoomControl(
+                  onZoomIn: state.canZoomIn
+                      ? () => _applyMapZoomDelta(_zoomStep)
+                      : null,
+                  onZoomOut: state.canZoomOut
+                      ? () => _applyMapZoomDelta(-_zoomStep)
+                      : null,
+                ),
+              ),
+              const Positioned(
+                left: 40,
+                right: 40,
+                bottom: 124,
+                child: _MapLegendCard(),
+              ),
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: _BottomTogglePanel(onTap: _openFiltersSheet),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -189,6 +180,14 @@ class _GeneralUserTrajectoryViewPageState
                 : false,
             interactive: true,
             onControllerReady: (c) => _mapController = c,
+            onMapZoomChanged: (zoom) {
+              if (!context.mounted) {
+                return;
+              }
+              context.read<GeneralUserTrajectoryViewBloc>().add(
+                    SyncGeneralUserTrajectoryMapZoom(zoom),
+                  );
+            },
           ),
         ),
         if (showInlineLoader)

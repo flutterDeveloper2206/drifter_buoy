@@ -23,27 +23,35 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_detai
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoy_setup/general_user_buoy_setup_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/self_test_debug/general_user_self_test_debug_bloc.dart';
 import 'package:drifter_buoy/features/general_user/data/datasources/general_user_auth_remote_data_source.dart';
+import 'package:drifter_buoy/features/general_user/data/datasources/general_user_device_token_remote_data_source.dart';
 import 'package:drifter_buoy/features/general_user/data/datasources/general_user_profile_remote_data_source.dart';
 import 'package:drifter_buoy/features/general_user/data/datasources/general_user_dashboard_remote_data_source.dart';
 import 'package:drifter_buoy/features/general_user/data/datasources/general_user_export_selection_remote_data_source.dart';
+import 'package:drifter_buoy/features/general_user/data/datasources/general_user_notifications_remote_data_source.dart';
 import 'package:drifter_buoy/features/general_user/data/datasources/general_user_report_remote_data_source.dart';
 import 'package:drifter_buoy/features/general_user/data/repositories/general_user_report_repository_impl.dart';
 import 'package:drifter_buoy/features/general_user/data/datasources/general_user_buoys_remote_data_source.dart';
 import 'package:drifter_buoy/features/general_user/data/repositories/general_user_auth_repository_impl.dart';
+import 'package:drifter_buoy/features/general_user/data/repositories/general_user_device_token_repository_impl.dart';
 import 'package:drifter_buoy/features/general_user/data/repositories/general_user_profile_repository_impl.dart';
 import 'package:drifter_buoy/features/general_user/data/repositories/general_user_dashboard_repository_impl.dart';
 import 'package:drifter_buoy/features/general_user/data/repositories/general_user_export_selection_repository_impl.dart';
+import 'package:drifter_buoy/features/general_user/data/repositories/general_user_notifications_repository_impl.dart';
 import 'package:drifter_buoy/features/general_user/data/repositories/general_user_buoys_repository_impl.dart';
 import 'package:drifter_buoy/features/general_user/domain/repositories/general_user_auth_repository.dart';
+import 'package:drifter_buoy/features/general_user/domain/repositories/general_user_device_token_repository.dart';
 import 'package:drifter_buoy/features/general_user/domain/repositories/general_user_profile_repository.dart';
 import 'package:drifter_buoy/features/general_user/domain/repositories/general_user_dashboard_repository.dart';
 import 'package:drifter_buoy/features/general_user/domain/repositories/general_user_export_selection_repository.dart';
+import 'package:drifter_buoy/features/general_user/domain/repositories/general_user_notifications_repository.dart';
 import 'package:drifter_buoy/features/general_user/domain/repositories/general_user_report_repository.dart';
 import 'package:drifter_buoy/features/general_user/domain/repositories/general_user_buoys_repository.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_login.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_request_verification_code.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_verify_verification_code.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_reset_password.dart';
+import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_register_device_token.dart';
+import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_all_notifications.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_buoy_dashboard.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_buoy_map_dashboard.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_all_buoys_status_for_export.dart';
@@ -63,6 +71,7 @@ import 'package:drifter_buoy/features/sample_feature/domain/usecases/delete_item
 import 'package:drifter_buoy/features/sample_feature/domain/usecases/get_items.dart';
 import 'package:drifter_buoy/features/sample_feature/presentation/bloc/items_bloc.dart';
 import 'package:get_it/get_it.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 import '../../features/general_user/presentation/bloc/setup_devices/general_user_setup_devices_bloc.dart';
 
@@ -115,6 +124,33 @@ Future<void> initDependencies() async {
   if (!sl.isRegistered<GeneralUserLoginBloc>()) {
     sl.registerFactory<GeneralUserLoginBloc>(
       () => GeneralUserLoginBloc(login: sl()),
+    );
+  }
+
+  if (!sl.isRegistered<FirebaseMessaging>()) {
+    sl.registerLazySingleton<FirebaseMessaging>(
+      () => FirebaseMessaging.instance,
+    );
+  }
+
+  if (!sl.isRegistered<GeneralUserDeviceTokenRemoteDataSource>()) {
+    sl.registerLazySingleton<GeneralUserDeviceTokenRemoteDataSource>(
+      () => GeneralUserDeviceTokenRemoteDataSource(apiService: sl()),
+    );
+  }
+
+  if (!sl.isRegistered<GeneralUserDeviceTokenRepository>()) {
+    sl.registerLazySingleton<GeneralUserDeviceTokenRepository>(
+      () => GeneralUserDeviceTokenRepositoryImpl(remoteDataSource: sl()),
+    );
+  }
+
+  if (!sl.isRegistered<GeneralUserRegisterDeviceToken>()) {
+    sl.registerLazySingleton<GeneralUserRegisterDeviceToken>(
+      () => GeneralUserRegisterDeviceToken(
+        repository: sl(),
+        messaging: sl(),
+      ),
     );
   }
 
@@ -280,8 +316,28 @@ Future<void> initDependencies() async {
     ),
   );
 
+  if (!sl.isRegistered<GeneralUserNotificationsRemoteDataSource>()) {
+    sl.registerLazySingleton<GeneralUserNotificationsRemoteDataSource>(
+      () => GeneralUserNotificationsRemoteDataSource(apiService: sl()),
+    );
+  }
+
+  if (!sl.isRegistered<GeneralUserNotificationsRepository>()) {
+    sl.registerLazySingleton<GeneralUserNotificationsRepository>(
+      () => GeneralUserNotificationsRepositoryImpl(remoteDataSource: sl()),
+    );
+  }
+
+  if (!sl.isRegistered<GeneralUserGetAllNotifications>()) {
+    sl.registerLazySingleton<GeneralUserGetAllNotifications>(
+      () => GeneralUserGetAllNotifications(repository: sl()),
+    );
+  }
+
   if (!sl.isRegistered<GeneralUserAlertsBloc>()) {
-    sl.registerFactory<GeneralUserAlertsBloc>(() => GeneralUserAlertsBloc());
+    sl.registerFactory<GeneralUserAlertsBloc>(
+      () => GeneralUserAlertsBloc(getAllNotifications: sl()),
+    );
   }
 
   if (!sl.isRegistered<GeneralUserProfileBloc>()) {

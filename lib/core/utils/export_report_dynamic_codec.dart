@@ -1,8 +1,13 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+
+/// Brand assets for PDF export (declared in [pubspec.yaml] under `flutter.assets`).
+const String _kPdfHeaderLogoAsset = 'assets/icons/ic_logo.png';
+const String _kPdfFooterAzistaAsset = 'assets/icons/ic_azista.png';
 
 /// Stable column order: preserve API response key order.
 ///
@@ -50,6 +55,13 @@ Future<Uint8List> buildDynamicPdf({
   required List<Map<String, String>> rows,
   String? title,
 }) async {
+  final logoBytes = (await rootBundle.load(_kPdfHeaderLogoAsset)).buffer
+      .asUint8List();
+  final azistaBytes = (await rootBundle.load(_kPdfFooterAzistaAsset)).buffer
+      .asUint8List();
+  final logoImage = pw.MemoryImage(logoBytes);
+  final azistaImage = pw.MemoryImage(azistaBytes);
+
   final tableData = <List<String>>[
     for (final row in rows)
       columnOrder.map((k) => row[k] ?? '').toList(growable: false),
@@ -59,7 +71,60 @@ Future<Uint8List> buildDynamicPdf({
   doc.addPage(
     pw.MultiPage(
       pageFormat: PdfPageFormat.a4.landscape,
-      margin: const pw.EdgeInsets.all(28),
+      margin: const pw.EdgeInsets.fromLTRB(28, 52, 28, 56),
+      header: (context) => pw.Container(
+        width: double.infinity,
+        padding: const pw.EdgeInsets.only(bottom: 10),
+        decoration: const pw.BoxDecoration(
+          border: pw.Border(
+            bottom: pw.BorderSide(color: PdfColors.grey400, width: 0.8),
+          ),
+        ),
+        child: pw.Row(
+          crossAxisAlignment: pw.CrossAxisAlignment.center,
+          children: [
+            pw.Image(logoImage, width: 36, height: 36),
+            pw.SizedBox(width: 10),
+            pw.Expanded(
+              child: pw.Text(
+                "Drifter Buoy's",
+                maxLines: 1,
+                style: pw.TextStyle(
+                  fontSize: 15,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColor.fromInt(0xFF1A2F4A),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      footer: (context) => pw.Container(
+        width: double.infinity,
+        padding: const pw.EdgeInsets.only(top: 8),
+        decoration: const pw.BoxDecoration(
+          border: pw.Border(
+            top: pw.BorderSide(color: PdfColors.grey400, width: 0.8),
+          ),
+        ),
+        child: pw.Column(
+          mainAxisSize: pw.MainAxisSize.min,
+          crossAxisAlignment: pw.CrossAxisAlignment.center,
+          children: [
+            pw.Image(azistaImage, width: 26, height: 26),
+            pw.SizedBox(height: 4),
+            pw.Text(
+              'AZISTA',
+              style: pw.TextStyle(
+                fontSize: 12,
+                fontWeight: pw.FontWeight.bold,
+                color: PdfColor.fromInt(0xFFE30613),
+                letterSpacing: 0.6,
+              ),
+            ),
+          ],
+        ),
+      ),
       build: (context) => [
         if (title != null && title.trim().isNotEmpty) ...[
           pw.Text(

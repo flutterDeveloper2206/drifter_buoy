@@ -402,6 +402,7 @@ class _GeneralUserMapPageState extends State<GeneralUserMapPage> {
                             ),
                             builder: (context, scrollController) {
                               return _MapFiltersDraggablePanel(
+                                sheetExtent: _sheetExtent,
                                 scrollController: scrollController,
                                 onHeaderTap: _toggleFiltersSheet,
                                 titleStyle: textTheme.titleMedium?.copyWith(
@@ -938,11 +939,16 @@ class _LegendPinItem extends StatelessWidget {
 
 class _MapFiltersDraggablePanel extends StatelessWidget {
   const _MapFiltersDraggablePanel({
+    required this.sheetExtent,
     required this.scrollController,
     this.onHeaderTap,
     this.titleStyle,
   });
 
+  /// Below this fraction of screen height, show only the peek header (no switches).
+  static const double _expandedContentExtent = 0.32;
+
+  final double sheetExtent;
   final ScrollController scrollController;
   final VoidCallback? onHeaderTap;
   final TextStyle? titleStyle;
@@ -1019,6 +1025,59 @@ class _MapFiltersDraggablePanel extends StatelessWidget {
           fontWeight: FontWeight.w700,
         );
 
+    final peekOnly = sheetExtent < _expandedContentExtent;
+
+    if (peekOnly) {
+      return ListView(
+        controller: scrollController,
+        primary: false,
+        physics: _sheetScrollPhysics,
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
+        children: [
+          InkWell(
+            onTap: onHeaderTap,
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(top: 2, bottom: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFC9CED0),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    Icons.keyboard_arrow_up,
+                    size: 20,
+                    color: Colors.grey.shade600,
+                  ),
+                  const SizedBox(height: 4),
+                  Center(
+                    child: Text(
+                      'Toggles and Filters',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: heading,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
     return ListView(
       controller: scrollController,
       primary: false,
@@ -1053,7 +1112,13 @@ class _MapFiltersDraggablePanel extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Center(
-                  child: Text('Toggles and Filters', style: heading),
+                  child: Text(
+                    'Toggles and Filters',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: heading,
+                  ),
                 ),
               ],
             ),

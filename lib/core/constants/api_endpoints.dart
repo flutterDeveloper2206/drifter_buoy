@@ -45,4 +45,10 @@ class ApiEndpoints {
 
   static const String getBuoyDataReportForExportUrl =
       'http://4.213.34.231:5025/api/Report/Report/GetBuoyDataReportForExport';
+
+  static const String registerDeviceTokenUrl =
+      'http://4.213.34.231:5025/api/admin/DeviceToken/register';
+
+  static const String getAllNotificationsUrl =
+      'http://4.213.34.231:5025/api/admin/Notification/GetAllNotifications';
 }

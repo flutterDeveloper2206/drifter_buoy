@@ -3,6 +3,8 @@ import 'dart:ui' as ui;
 import 'package:drifter_buoy/core/utils/google_maps_camera_utils.dart';
 import 'package:drifter_buoy/features/general_user/presentation/widgets/dummy_buoy_map_view.dart';
 import 'package:drifter_buoy/features/general_user/presentation/widgets/dummy_trajectory_live_map_view.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -17,6 +19,7 @@ class GoogleTrajectoryLiveMapView extends StatefulWidget {
     this.showBatteryLogs = false,
     this.interactive = true,
     this.onControllerReady,
+    this.onMapZoomChanged,
   });
 
   final List<TrajectoryBuoyPoint> points;
@@ -26,6 +29,10 @@ class GoogleTrajectoryLiveMapView extends StatefulWidget {
   final bool showBatteryLogs;
   final bool interactive;
   final ValueChanged<GoogleMapController>? onControllerReady;
+
+  /// Called after the camera is idle (pinch, pan, fit bounds, +/-) with the
+  /// current zoom level so UI state can track limits.
+  final ValueChanged<double>? onMapZoomChanged;
 
   @override
   State<GoogleTrajectoryLiveMapView> createState() =>
@@ -68,19 +75,44 @@ class _GoogleTrajectoryLiveMapViewState
   @override
   void didUpdateWidget(covariant GoogleTrajectoryLiveMapView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final pointsChanged = oldWidget.points != widget.points;
+    final pathChanged = !_sameTrajectoryPath(oldWidget.points, widget.points);
     final labelsChanged =
         oldWidget.showTimestamps != widget.showTimestamps ||
         oldWidget.showGpsCoordinates != widget.showGpsCoordinates ||
         oldWidget.showBatteryLogs != widget.showBatteryLogs;
-    if (pointsChanged || labelsChanged) {
-      _didFit = false;
-      if (labelsChanged) {
-        _markerIconCache.clear();
-      }
+
+    if (labelsChanged) {
+      _markerIconCache.clear();
+    }
+    if (labelsChanged || pathChanged) {
       _schedulePrimeIcons();
+    }
+    if (pathChanged) {
+      _didFit = false;
       _scheduleFit();
     }
+  }
+
+  bool _sameTrajectoryPath(
+    List<TrajectoryBuoyPoint> a,
+    List<TrajectoryBuoyPoint> b,
+  ) {
+    if (identical(a, b)) {
+      return true;
+    }
+    if (a.length != b.length) {
+      return false;
+    }
+    const eps = 1e-7;
+    for (var i = 0; i < a.length; i++) {
+      if ((a[i].position.latitude - b[i].position.latitude).abs() > eps) {
+        return false;
+      }
+      if ((a[i].position.longitude - b[i].position.longitude).abs() > eps) {
+        return false;
+      }
+    }
+    return true;
   }
 
   void _schedulePrimeIcons() {
@@ -337,8 +369,25 @@ class _GoogleTrajectoryLiveMapViewState
         paddingPx: 52,
         singlePointZoom: 12.5,
       );
+      await _notifyMapZoomChanged();
     } on Object {
       _didFit = false;
+    }
+  }
+
+  Future<void> _notifyMapZoomChanged() async {
+    final c = _controller;
+    final onZoom = widget.onMapZoomChanged;
+    if (c == null || onZoom == null) {
+      return;
+    }
+    try {
+      final z = await c.getZoomLevel();
+      if (mounted) {
+        onZoom(z);
+      }
+    } on Object {
+      // Non-fatal: zoom sync is best-effort.
     }
   }
 
@@ -359,6 +408,7 @@ class _GoogleTrajectoryLiveMapViewState
       mapType: MapType.normal,
       markers: _buildMarkers(),
       polylines: _buildPolylines(),
+      minMaxZoomPreference: const MinMaxZoomPreference(3, 21),
       myLocationButtonEnabled: false,
       zoomControlsEnabled: false,
       mapToolbarEnabled: false,
@@ -367,6 +417,14 @@ class _GoogleTrajectoryLiveMapViewState
       scrollGesturesEnabled: widget.interactive,
       zoomGesturesEnabled: widget.interactive,
       tiltGesturesEnabled: false,
+      gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
+        Factory<EagerGestureRecognizer>(() => EagerGestureRecognizer()),
+      },
+      onCameraIdle: () {
+        if (widget.onMapZoomChanged != null) {
+          _notifyMapZoomChanged();
+        }
+      },
       onMapCreated: (controller) {
         _controller = controller;
         widget.onControllerReady?.call(controller);

@@ -16,10 +16,13 @@ class LoadGeneralUserTrajectoryView extends GeneralUserTrajectoryViewEvent {
   List<Object> get props => [buoyId];
 }
 
-class ZoomInGeneralUserTrajectoryView extends GeneralUserTrajectoryViewEvent {
-  const ZoomInGeneralUserTrajectoryView();
-}
+/// Keeps [GeneralUserTrajectoryViewState.zoom] aligned with the Google Map
+/// camera (pinch, fit bounds, or +/- controls) for button enablement.
+class SyncGeneralUserTrajectoryMapZoom extends GeneralUserTrajectoryViewEvent {
+  const SyncGeneralUserTrajectoryMapZoom(this.zoom);
 
-class ZoomOutGeneralUserTrajectoryView extends GeneralUserTrajectoryViewEvent {
-  const ZoomOutGeneralUserTrajectoryView();
+  final double zoom;
+
+  @override
+  List<Object?> get props => [zoom];
 }
