@@ -21,6 +21,7 @@ class GeneralUserExportBloc
     on<LoadGeneralUserExport>(_onLoadGeneralUserExport);
     on<ChangeGeneralUserExportDateRange>(_onChangeDateRange);
     on<ApplyGeneralUserExportCustomRange>(_onApplyCustomRange);
+    on<ChangeGeneralUserExportReportType>(_onChangeReportType);
     on<ChangeGeneralUserExportFormat>(_onChangeFormat);
     on<ExportMultiBuoyDataSaveToDevice>(_onExportMultiDataSave);
     on<ExportMultiBuoyDataShare>(_onExportMultiDataShare);
@@ -70,6 +71,9 @@ class GeneralUserExportBloc
               : ExportDateRange.last24Hours,
           customStart: null,
           customEnd: null,
+          reportType: parsed.mode == GeneralUserExportMode.buoyDistance
+              ? ExportReportType.buoyDistance
+              : ExportReportType.buoyData,
           format: ExportFormat.csv,
           message: '',
           isSuccessMessage: false,
@@ -102,6 +106,23 @@ class GeneralUserExportBloc
         ),
       );
     }
+  }
+
+  Future<void> _onChangeReportType(
+    ChangeGeneralUserExportReportType event,
+    Emitter<GeneralUserExportState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        reportType: event.reportType,
+        message: '',
+        isSuccessMessage: false,
+        clearDeliverable: true,
+        assignBuoyScreenNotice: true,
+        buoyScreenNotice: '',
+      ),
+    );
+    await _refetchReportIfNeeded(emit);
   }
 
   _ParsedRouteExtra _parseRouteExtra(Object? extra) {
@@ -255,12 +276,30 @@ class GeneralUserExportBloc
       ),
     );
 
+    if (state.reportType == ExportReportType.buoyDistance &&
+        state.selectedBuoyIds.length != 1) {
+      emit(
+        state.copyWith(
+          status: GeneralUserExportStatus.loaded,
+          message: 'Buoy Distance Report supports one buoy selection.',
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
+
     final idsCsv = state.selectedBuoyIds.join(',');
-    final outcome = await _getBuoyDataReport(
-      buoyIdsCsv: idsCsv,
-      fromDate: dates.$1,
-      toDate: dates.$2,
-    );
+    final outcome = state.reportType == ExportReportType.buoyDistance
+        ? await _getBuoyDistanceReport(
+            buoyId: state.selectedBuoyIds.first,
+            fromDate: dates.$1,
+            toDate: dates.$2,
+          )
+        : await _getBuoyDataReport(
+            buoyIdsCsv: idsCsv,
+            fromDate: dates.$1,
+            toDate: dates.$2,
+          );
 
     await outcome.foldAsync(
       (failure) async {
@@ -291,9 +330,13 @@ class GeneralUserExportBloc
           final fileBuoyId = state.selectedBuoyIds.length == 1
               ? state.selectedBuoyIds.first
               : 'MultipleBuoys';
+          final reportTypeLabel =
+              state.reportType == ExportReportType.buoyDistance
+              ? 'Distance Report'
+              : 'Data Report';
           final name = exportMultiBuoyDataReportFileName(
             buoyId: fileBuoyId,
-            reportType: 'DataReport',
+            reportType: reportTypeLabel,
             fromDate: dates.$1,
             toDate: dates.$2,
             csv: state.format == ExportFormat.csv,
@@ -379,11 +422,17 @@ class GeneralUserExportBloc
       ),
     );
 
-    final outcome = await _getBuoyDistanceReport(
-      buoyId: bid,
-      fromDate: dates.$1,
-      toDate: dates.$2,
-    );
+    final outcome = state.reportType == ExportReportType.buoyData
+        ? await _getBuoyDataReport(
+            buoyIdsCsv: bid,
+            fromDate: dates.$1,
+            toDate: dates.$2,
+          )
+        : await _getBuoyDistanceReport(
+            buoyId: bid,
+            fromDate: dates.$1,
+            toDate: dates.$2,
+          );
 
     await outcome.foldAsync(
       (failure) async {
@@ -413,7 +462,9 @@ class GeneralUserExportBloc
           }
           final name = exportReportFileName(
             buoyId: bid,
-            reportType: 'DistanceReport',
+            reportType: state.reportType == ExportReportType.buoyDistance
+                ? 'Distance Report'
+                : 'Data Report',
             fromDate: dates.$1,
             toDate: dates.$2,
             csv: state.format == ExportFormat.csv,
@@ -479,11 +530,17 @@ class GeneralUserExportBloc
       ),
     );
 
-    final outcome = await _getBuoyDistanceReport(
-      buoyId: bid,
-      fromDate: dates.$1,
-      toDate: dates.$2,
-    );
+    final outcome = state.reportType == ExportReportType.buoyData
+        ? await _getBuoyDataReport(
+            buoyIdsCsv: bid,
+            fromDate: dates.$1,
+            toDate: dates.$2,
+          )
+        : await _getBuoyDistanceReport(
+            buoyId: bid,
+            fromDate: dates.$1,
+            toDate: dates.$2,
+          );
 
     await outcome.foldAsync(
       (failure) async {
@@ -542,12 +599,32 @@ class GeneralUserExportBloc
       ),
     );
 
+    if (state.reportType == ExportReportType.buoyDistance &&
+        state.selectedBuoyIds.length != 1) {
+      emit(
+        state.copyWith(
+          isReportLoading: false,
+          reportColumns: const [],
+          reportRows: const [],
+          assignBuoyScreenNotice: true,
+          buoyScreenNotice: 'Select exactly one buoy for Distance Report.',
+        ),
+      );
+      return;
+    }
+
     final idsCsv = state.selectedBuoyIds.join(',');
-    final outcome = await _getBuoyDataReport(
-      buoyIdsCsv: idsCsv,
-      fromDate: dates.$1,
-      toDate: dates.$2,
-    );
+    final outcome = state.reportType == ExportReportType.buoyDistance
+        ? await _getBuoyDistanceReport(
+            buoyId: state.selectedBuoyIds.first,
+            fromDate: dates.$1,
+            toDate: dates.$2,
+          )
+        : await _getBuoyDataReport(
+            buoyIdsCsv: idsCsv,
+            fromDate: dates.$1,
+            toDate: dates.$2,
+          );
 
     await outcome.foldAsync(
       (failure) async {

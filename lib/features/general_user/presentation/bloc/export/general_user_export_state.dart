@@ -31,6 +31,7 @@ class GeneralUserExportState extends Equatable {
     required this.dateRange,
     required this.customStart,
     required this.customEnd,
+    required this.reportType,
     required this.format,
     required this.message,
     required this.isSuccessMessage,
@@ -50,6 +51,7 @@ class GeneralUserExportState extends Equatable {
   final ExportDateRange dateRange;
   final DateTime? customStart;
   final DateTime? customEnd;
+  final ExportReportType reportType;
   final ExportFormat format;
   final String message;
   final bool isSuccessMessage;
@@ -71,6 +73,7 @@ class GeneralUserExportState extends Equatable {
       dateRange = ExportDateRange.last24Hours,
       customStart = null,
       customEnd = null,
+      reportType = ExportReportType.buoyData,
       format = ExportFormat.csv,
       message = '',
       isSuccessMessage = false,
@@ -93,6 +96,7 @@ class GeneralUserExportState extends Equatable {
     DateTime? customStart,
     DateTime? customEnd,
     bool clearCustomRange = false,
+    ExportReportType? reportType,
     ExportFormat? format,
     String? message,
     bool? isSuccessMessage,
@@ -116,6 +120,7 @@ class GeneralUserExportState extends Equatable {
       dateRange: dateRange ?? this.dateRange,
       customStart: clearCustomRange ? null : (customStart ?? this.customStart),
       customEnd: clearCustomRange ? null : (customEnd ?? this.customEnd),
+      reportType: reportType ?? this.reportType,
       format: format ?? this.format,
       message: message ?? this.message,
       isSuccessMessage: isSuccessMessage ?? this.isSuccessMessage,
@@ -140,6 +145,7 @@ class GeneralUserExportState extends Equatable {
         dateRange,
         customStart,
         customEnd,
+        reportType,
         format,
         message,
         isSuccessMessage,

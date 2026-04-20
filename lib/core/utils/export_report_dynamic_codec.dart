@@ -55,10 +55,12 @@ Future<Uint8List> buildDynamicPdf({
   required List<Map<String, String>> rows,
   String? title,
 }) async {
-  final logoBytes = (await rootBundle.load(_kPdfHeaderLogoAsset)).buffer
-      .asUint8List();
-  final azistaBytes = (await rootBundle.load(_kPdfFooterAzistaAsset)).buffer
-      .asUint8List();
+  final logoBytes = (await rootBundle.load(
+    _kPdfHeaderLogoAsset,
+  )).buffer.asUint8List();
+  final azistaBytes = (await rootBundle.load(
+    _kPdfFooterAzistaAsset,
+  )).buffer.asUint8List();
   final logoImage = pw.MemoryImage(logoBytes);
   final azistaImage = pw.MemoryImage(azistaBytes);
 
@@ -121,6 +123,18 @@ Future<Uint8List> buildDynamicPdf({
                 color: PdfColor.fromInt(0xFFE30613),
                 letterSpacing: 0.6,
               ),
+            ),
+            pw.SizedBox(height: 4),
+            pw.Text(
+              'Website : https://www.azistaaerospace.com/',
+              textAlign: pw.TextAlign.center,
+              style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.black),
+            ),
+            pw.SizedBox(height: 2),
+            pw.Text(
+              'Email Id: sales@azistaaerospace.com',
+              textAlign: pw.TextAlign.center,
+              style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.black),
             ),
           ],
         ),

@@ -472,6 +472,21 @@ class GeneralUserExportPage extends StatelessWidget {
                                               );
                                         },
                                 ),
+                                const SizedBox(height: 10),
+                                _ReportTypeCard(
+                                  selected: state.reportType,
+                                  onChanged: isExporting
+                                      ? null
+                                      : (type) {
+                                          context
+                                              .read<GeneralUserExportBloc>()
+                                              .add(
+                                                ChangeGeneralUserExportReportType(
+                                                  type,
+                                                ),
+                                              );
+                                        },
+                                ),
                                 if ((state.mode ==
                                             GeneralUserExportMode
                                                 .buoyDistance ||
@@ -885,6 +900,91 @@ class _ExportFormatCardSection extends StatelessWidget {
       return const [];
     }
     return reportRows.first.keys.toList(growable: false);
+  }
+}
+
+class _ReportTypeCard extends StatelessWidget {
+  const _ReportTypeCard({
+    required this.selected,
+    required this.onChanged,
+  });
+
+  final ExportReportType selected;
+  final ValueChanged<ExportReportType>? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final options = const [
+      ExportReportType.buoyData,
+      ExportReportType.buoyDistance,
+    ];
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF2F2F2),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Select Report Type',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: const Color(0xFF30353A),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Container(
+            height: 50,
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF2F2F2),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFF2A86CE), width: 1.4),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<ExportReportType>(
+                value: selected,
+                isExpanded: true,
+                icon: const Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: Color(0xFF272C31),
+                  size: 30,
+                ),
+                borderRadius: BorderRadius.circular(10),
+                dropdownColor: Colors.white,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: const Color(0xFF353A3F),
+                  fontWeight: FontWeight.w600,
+                ),
+                items: options
+                    .map(
+                      (type) => DropdownMenuItem<ExportReportType>(
+                        value: type,
+                        child: Text(
+                          type == ExportReportType.buoyData
+                              ? 'Buoy Data Report'
+                              : 'Buoy Distance Report',
+                        ),
+                      ),
+                    )
+                    .toList(growable: false),
+                onChanged: onChanged == null
+                    ? null
+                    : (value) {
+                        if (value != null) {
+                          onChanged!(value);
+                        }
+                      },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

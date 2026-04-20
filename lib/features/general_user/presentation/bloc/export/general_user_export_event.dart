@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 enum ExportDateRange { last24Hours, yesterday,  custom }
 
 enum ExportFormat { csv, pdf }
+enum ExportReportType { buoyData, buoyDistance }
 
 abstract class GeneralUserExportEvent extends Equatable {
   const GeneralUserExportEvent();
@@ -49,6 +50,15 @@ class ChangeGeneralUserExportFormat extends GeneralUserExportEvent {
 
   @override
   List<Object?> get props => [format];
+}
+
+class ChangeGeneralUserExportReportType extends GeneralUserExportEvent {
+  const ChangeGeneralUserExportReportType(this.reportType);
+
+  final ExportReportType reportType;
+
+  @override
+  List<Object?> get props => [reportType];
 }
 
 class ExportMultiBuoyDataSaveToDevice extends GeneralUserExportEvent {
