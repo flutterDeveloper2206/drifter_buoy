@@ -208,6 +208,8 @@ class _GeneralUserProfilePageState extends State<GeneralUserProfilePage> {
                                           child: const Text('Edit Profile'),
                                         ),
                                       ),
+                                      SizedBox(height: 20,),
+                                      Text('V 1.0.2'),
                                       const Spacer(),
                                       SizedBox(
                                         width: double.infinity,
