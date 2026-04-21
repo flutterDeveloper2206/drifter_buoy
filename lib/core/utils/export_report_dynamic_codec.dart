@@ -82,20 +82,20 @@ Future<Uint8List> buildDynamicPdf({
             bottom: pw.BorderSide(color: PdfColors.grey400, width: 0.8),
           ),
         ),
-        child: pw.Row(
+        child: pw.Column(
+          mainAxisSize: pw.MainAxisSize.min,
           crossAxisAlignment: pw.CrossAxisAlignment.center,
           children: [
             pw.Image(logoImage, width: 36, height: 36),
-            pw.SizedBox(width: 10),
-            pw.Expanded(
-              child: pw.Text(
-                "Drifter Buoy's",
-                maxLines: 1,
-                style: pw.TextStyle(
-                  fontSize: 15,
-                  fontWeight: pw.FontWeight.bold,
-                  color: PdfColor.fromInt(0xFF1A2F4A),
-                ),
+            pw.SizedBox(height: 4),
+            pw.Text(
+              "Drifter Buoy's",
+              textAlign: pw.TextAlign.center,
+              maxLines: 1,
+              style: pw.TextStyle(
+                fontSize: 15,
+                fontWeight: pw.FontWeight.bold,
+                color: PdfColor.fromInt(0xFF1A2F4A),
               ),
             ),
           ],

@@ -1,4 +1,5 @@
 import 'package:drifter_buoy/core/utils/app_logger.dart';
+import 'package:drifter_buoy/core/utils/report_export_date_format.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_buoy_trajectory_view.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_view/general_user_trajectory_view_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_view/general_user_trajectory_view_mapper.dart';
@@ -11,7 +12,7 @@ class GeneralUserTrajectoryViewBloc
   GeneralUserTrajectoryViewBloc({
     required GeneralUserGetBuoyTrajectoryView getBuoyTrajectoryView,
   }) : _getBuoyTrajectoryView = getBuoyTrajectoryView,
-       super(const GeneralUserTrajectoryViewState.initial()) {
+       super(GeneralUserTrajectoryViewState.initial()) {
     on<LoadGeneralUserTrajectoryView>(_onLoadGeneralUserTrajectoryView);
     on<SyncGeneralUserTrajectoryMapZoom>(_onSyncGeneralUserTrajectoryMapZoom);
   }
@@ -31,11 +32,16 @@ class GeneralUserTrajectoryViewBloc
       ),
     );
 
-    final (fromDate, toDate) = defaultTrajectoryApiDateRange();
+    final from = event.fromDate ?? state.fromDate;
+    final to = event.toDate ?? state.toDate;
+    final interval = event.intervalMinutes ?? state.intervalMinutes;
+    final fromDate = formatReportApiDate(from);
+    final toDate = formatReportApiDate(to);
     final result = await _getBuoyTrajectoryView(
       buoyId: event.buoyId,
       fromDate: fromDate,
       toDate: toDate,
+      intervalMinutes: interval,
     );
 
     result.fold(
@@ -55,6 +61,9 @@ class GeneralUserTrajectoryViewBloc
           state.copyWith(
             status: GeneralUserTrajectoryViewStatus.loaded,
             trajectoryPoints: points,
+            fromDate: from,
+            toDate: to,
+            intervalMinutes: interval,
             message: '',
           ),
         );

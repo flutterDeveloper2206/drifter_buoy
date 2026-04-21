@@ -59,6 +59,37 @@ class _GeneralUserTrajectoryViewPageState
     );
   }
 
+  Future<void> _openTrajectoryQueryFilterDialog(
+    GeneralUserTrajectoryViewState state,
+  ) async {
+    final result = await showDialog<_TrajectoryQueryFiltersResult>(
+      context: context,
+      builder: (_) => _TrajectoryQueryFiltersDialog(
+        initialRange: DateTimeRange(start: state.fromDate, end: state.toDate),
+        initialIntervalMinutes: state.intervalMinutes,
+      ),
+    );
+    if (!mounted || result == null) {
+      return;
+    }
+    context.read<GeneralUserTrajectoryViewBloc>().add(
+          LoadGeneralUserTrajectoryView(
+            buoyId: state.buoyId,
+            fromDate: result.range.start,
+            toDate: result.range.end,
+            intervalMinutes: result.intervalMinutes,
+          ),
+        );
+    context.read<GeneralUserTrajectoryFiltersBloc>().add(
+          LoadGeneralUserTrajectoryFilters(
+            buoyId: state.buoyId,
+            fromDate: result.range.start,
+            toDate: result.range.end,
+            intervalMinutes: result.intervalMinutes,
+          ),
+        );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -94,7 +125,7 @@ class _GeneralUserTrajectoryViewPageState
                 ),
               ),
               Positioned(
-                top: MediaQuery.paddingOf(context).top + 95,
+                top: MediaQuery.paddingOf(context).top + 110,
                 right: 16,
                 child: _MapZoomControl(
                   onZoomIn: state.canZoomIn
@@ -103,6 +134,32 @@ class _GeneralUserTrajectoryViewPageState
                   onZoomOut: state.canZoomOut
                       ? () => _applyMapZoomDelta(-_zoomStep)
                       : null,
+                ),
+              ),
+              Positioned(
+                top: MediaQuery.paddingOf(context).top + 50,
+                right: 16,
+                child: Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(26),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x26000000),
+                        blurRadius: 8,
+                        offset: Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: IconButton(
+                    onPressed: () => _openTrajectoryQueryFilterDialog(state),
+                    icon: const Icon(
+                      Icons.filter_alt_rounded,
+                      color: Color(0xFF2A2F34),
+                    ),
+                  ),
                 ),
               ),
               const Positioned(
@@ -169,7 +226,7 @@ class _GeneralUserTrajectoryViewPageState
             showGpsCoordinates:
                 filters.status == GeneralUserTrajectoryFiltersStatus.loaded
                 ? filters.gpsCoordinatesEnabled
-                : true,
+                : false,
             showTimestamps:
                 filters.status == GeneralUserTrajectoryFiltersStatus.loaded
                 ? filters.timestampsEnabled
@@ -197,6 +254,118 @@ class _GeneralUserTrajectoryViewPageState
               child: Center(child: AppLoader()),
             ),
           ),
+      ],
+    );
+  }
+}
+
+class _TrajectoryQueryFiltersResult {
+  const _TrajectoryQueryFiltersResult({
+    required this.range,
+    required this.intervalMinutes,
+  });
+
+  final DateTimeRange range;
+  final int intervalMinutes;
+}
+
+class _TrajectoryQueryFiltersDialog extends StatefulWidget {
+  const _TrajectoryQueryFiltersDialog({
+    required this.initialRange,
+    required this.initialIntervalMinutes,
+  });
+
+  final DateTimeRange initialRange;
+  final int initialIntervalMinutes;
+
+  @override
+  State<_TrajectoryQueryFiltersDialog> createState() =>
+      _TrajectoryQueryFiltersDialogState();
+}
+
+class _TrajectoryQueryFiltersDialogState
+    extends State<_TrajectoryQueryFiltersDialog> {
+  static const _intervals = [5, 10, 15, 60];
+  late DateTimeRange _range;
+  late int _intervalMinutes;
+
+  @override
+  void initState() {
+    super.initState();
+    _range = widget.initialRange;
+    _intervalMinutes = _intervals.contains(widget.initialIntervalMinutes)
+        ? widget.initialIntervalMinutes
+        : 10;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Trajectory Filters'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Date range'),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: () async {
+              final picked = await showDateRangePicker(
+                context: context,
+                firstDate: DateTime(2020, 1, 1),
+                lastDate: DateTime.now().add(const Duration(days: 365)),
+                initialDateRange: _range,
+              );
+              if (picked == null || !mounted) {
+                return;
+              }
+              setState(() {
+                _range = picked;
+              });
+            },
+            icon: const Icon(Icons.date_range_rounded),
+            label: Text(
+              '${_range.start.day.toString().padLeft(2, '0')}-${_range.start.month.toString().padLeft(2, '0')}-${_range.start.year} to ${_range.end.day.toString().padLeft(2, '0')}-${_range.end.month.toString().padLeft(2, '0')}-${_range.end.year}',
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Text('Interval (minutes)'),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<int>(
+            initialValue: _intervalMinutes,
+            items: _intervals
+                .map(
+                  (v) => DropdownMenuItem<int>(
+                    value: v,
+                    child: Text('$v Minutes'),
+                  ),
+                )
+                .toList(growable: false),
+            onChanged: (value) {
+              if (value == null) return;
+              setState(() {
+                _intervalMinutes = value;
+              });
+            },
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () {
+            Navigator.of(context).pop(
+              _TrajectoryQueryFiltersResult(
+                range: _range,
+                intervalMinutes: _intervalMinutes,
+              ),
+            );
+          },
+          child: const Text('Apply'),
+        ),
       ],
     );
   }
@@ -256,7 +425,7 @@ class _MapLegendCard extends StatelessWidget {
         color: Colors.white.withValues(alpha: 0.94),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: const Row(
+      child:  Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           AppMapLegendItem(

@@ -10,11 +10,19 @@ abstract class GeneralUserTrajectoryFiltersEvent extends Equatable {
 class LoadGeneralUserTrajectoryFilters
     extends GeneralUserTrajectoryFiltersEvent {
   final String buoyId;
+  final DateTime? fromDate;
+  final DateTime? toDate;
+  final int? intervalMinutes;
 
-  const LoadGeneralUserTrajectoryFilters({this.buoyId = 'DB-01'});
+  const LoadGeneralUserTrajectoryFilters({
+    this.buoyId = 'DB-01',
+    this.fromDate,
+    this.toDate,
+    this.intervalMinutes,
+  });
 
   @override
-  List<Object> get props => [buoyId];
+  List<Object?> get props => [buoyId, fromDate, toDate, intervalMinutes];
 }
 
 class ToggleGpsCoordinatesFilter extends GeneralUserTrajectoryFiltersEvent {

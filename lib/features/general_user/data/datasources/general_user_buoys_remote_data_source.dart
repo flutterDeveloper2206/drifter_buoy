@@ -135,12 +135,14 @@ class GeneralUserBuoysRemoteDataSource {
     required String buoyId,
     required String fromDate,
     required String toDate,
+    required int intervalMinutes,
   }) {
     final id = buoyIdForTrajectoryApi(buoyId);
     final form = FormData.fromMap(<String, dynamic>{
       'buoyId': id,
       'fromDate': fromDate.trim(),
       'toDate': toDate.trim(),
+      'Interval': intervalMinutes,
     });
 
     return _apiService.post<UserViewBuoyDashboardGetBuoyTrajectoryViewResponse>(

@@ -9,11 +9,19 @@ abstract class GeneralUserTrajectoryViewEvent extends Equatable {
 
 class LoadGeneralUserTrajectoryView extends GeneralUserTrajectoryViewEvent {
   final String buoyId;
+  final DateTime? fromDate;
+  final DateTime? toDate;
+  final int? intervalMinutes;
 
-  const LoadGeneralUserTrajectoryView({this.buoyId = 'DB-01'});
+  const LoadGeneralUserTrajectoryView({
+    this.buoyId = 'DB-01',
+    this.fromDate,
+    this.toDate,
+    this.intervalMinutes,
+  });
 
   @override
-  List<Object> get props => [buoyId];
+  List<Object?> get props => [buoyId, fromDate, toDate, intervalMinutes];
 }
 
 /// Keeps [GeneralUserTrajectoryViewState.zoom] aligned with the Google Map

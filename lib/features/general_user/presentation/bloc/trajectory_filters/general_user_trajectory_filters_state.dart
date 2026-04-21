@@ -29,7 +29,7 @@ class GeneralUserTrajectoryFiltersState extends Equatable {
     : status = GeneralUserTrajectoryFiltersStatus.initial,
       buoyId = 'DB-01',
       trajectoryPoints = const [],
-      gpsCoordinatesEnabled = true,
+      gpsCoordinatesEnabled = false,
       timestampsEnabled = false,
       batteryLogsEnabled = false,
       zoom = 10.3,

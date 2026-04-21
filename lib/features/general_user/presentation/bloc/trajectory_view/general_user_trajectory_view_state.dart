@@ -8,6 +8,9 @@ class GeneralUserTrajectoryViewState extends Equatable {
   final String buoyId;
   final List<TrajectoryBuoyPoint> trajectoryPoints;
   final double zoom;
+  final DateTime fromDate;
+  final DateTime toDate;
+  final int intervalMinutes;
   final String message;
 
   const GeneralUserTrajectoryViewState({
@@ -15,14 +18,20 @@ class GeneralUserTrajectoryViewState extends Equatable {
     required this.buoyId,
     required this.trajectoryPoints,
     required this.zoom,
+    required this.fromDate,
+    required this.toDate,
+    required this.intervalMinutes,
     required this.message,
   });
 
-  const GeneralUserTrajectoryViewState.initial()
+  GeneralUserTrajectoryViewState.initial()
     : status = GeneralUserTrajectoryViewStatus.initial,
       buoyId = 'DB-01',
       trajectoryPoints = const [],
       zoom = 10.3,
+      fromDate = _today,
+      toDate = _today,
+      intervalMinutes = 10,
       message = '';
 
   bool get canZoomIn => zoom < 21;
@@ -34,6 +43,9 @@ class GeneralUserTrajectoryViewState extends Equatable {
     String? buoyId,
     List<TrajectoryBuoyPoint>? trajectoryPoints,
     double? zoom,
+    DateTime? fromDate,
+    DateTime? toDate,
+    int? intervalMinutes,
     String? message,
   }) {
     return GeneralUserTrajectoryViewState(
@@ -41,10 +53,28 @@ class GeneralUserTrajectoryViewState extends Equatable {
       buoyId: buoyId ?? this.buoyId,
       trajectoryPoints: trajectoryPoints ?? this.trajectoryPoints,
       zoom: zoom ?? this.zoom,
+      fromDate: fromDate ?? this.fromDate,
+      toDate: toDate ?? this.toDate,
+      intervalMinutes: intervalMinutes ?? this.intervalMinutes,
       message: message ?? this.message,
     );
   }
 
   @override
-  List<Object> get props => [status, buoyId, trajectoryPoints, zoom, message];
+  List<Object> get props => [
+    status,
+    buoyId,
+    trajectoryPoints,
+    zoom,
+    fromDate,
+    toDate,
+    intervalMinutes,
+    message,
+  ];
 }
+
+final DateTime _today = DateTime(
+  DateTime.now().year,
+  DateTime.now().month,
+  DateTime.now().day,
+);

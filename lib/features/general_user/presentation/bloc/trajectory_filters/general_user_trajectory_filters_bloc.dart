@@ -1,4 +1,5 @@
 import 'package:drifter_buoy/core/utils/app_logger.dart';
+import 'package:drifter_buoy/core/utils/report_export_date_format.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_buoy_trajectory_view.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_filters/general_user_trajectory_filters_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_filters/general_user_trajectory_filters_state.dart';
@@ -42,11 +43,18 @@ class GeneralUserTrajectoryFiltersBloc
       ),
     );
 
-    final (fromDate, toDate) = defaultTrajectoryApiDateRange();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final from = event.fromDate ?? today;
+    final to = event.toDate ?? today;
+    final interval = event.intervalMinutes ?? 10;
+    final fromDate = formatReportApiDate(from);
+    final toDate = formatReportApiDate(to);
     final result = await _getBuoyTrajectoryView(
       buoyId: event.buoyId,
       fromDate: fromDate,
       toDate: toDate,
+      intervalMinutes: interval,
     );
 
     result.fold(

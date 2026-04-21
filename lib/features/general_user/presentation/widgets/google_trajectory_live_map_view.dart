@@ -227,27 +227,34 @@ class _GoogleTrajectoryLiveMapViewState
 
   Set<Marker> _buildMarkers() {
     final markers = <Marker>{};
+    final lastIndex = widget.points.length - 1;
     for (var i = 0; i < widget.points.length; i++) {
       final p = widget.points[i];
       final pos = LatLng(p.position.latitude, p.position.longitude);
       final key = _cacheKey(p);
       final icon = _markerIconCache[key];
       final isStart = i == 0;
+      final isCurrent = i == lastIndex;
       markers.add(
         Marker(
           markerId: MarkerId('trajectory_$i'),
           position: pos,
-          zIndexInt: i == widget.points.length - 1 ? 2 : 1,
-          icon: isStart
+          zIndexInt: isCurrent ? 3 : (isStart ? 2 : 1),
+          icon: isCurrent
               ? BitmapDescriptor.defaultMarkerWithHue(
-                  BitmapDescriptor.hueAzure,
+                  BitmapDescriptor.hueViolet,
                 )
+              : isStart
+              ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue)
               : (icon ??
                     BitmapDescriptor.defaultMarkerWithHue(
                       _hueForStatus(p.status),
                     )),
           infoWindow: InfoWindow(
-            title: isStart ? 'Start' : p.gpsLabel,
+            title: isCurrent
+                ? 'Current Position'
+                : (isStart ? 'Starting Position' : 'Movement'),
+            snippet: _markerLinesForPoint(p).join(' | '),
           ),
         ),
       );
