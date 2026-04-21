@@ -14,7 +14,7 @@ class GoogleTrajectoryLiveMapView extends StatefulWidget {
     super.key,
     required this.points,
     required this.initialZoom,
-    this.showGpsCoordinates = true,
+    this.showGpsCoordinates = false,
     this.showTimestamps = false,
     this.showBatteryLogs = false,
     this.interactive = true,
