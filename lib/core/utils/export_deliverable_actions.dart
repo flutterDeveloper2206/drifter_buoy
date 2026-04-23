@@ -4,6 +4,7 @@ import 'package:drifter_buoy/core/utils/app_logger.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_file_dialog/flutter_file_dialog.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -82,8 +83,8 @@ class ExportDeliverableActions {
     }
   }
 
-  /// `true` if a path was returned (saved). `false` if the user cancelled.
-  static Future<bool> saveToDevice({
+  /// Returns saved path when successful, `null` when user cancels.
+  static Future<String?> saveToDevice({
     required Uint8List bytes,
     required String fileName,
   }) async {
@@ -116,7 +117,10 @@ class ExportDeliverableActions {
         );
       }
 
-      return path != null && path.isNotEmpty;
+      if (path == null || path.isEmpty) {
+        return null;
+      }
+      return path;
     } catch (e, st) {
       AppLogger.e('Export save failed', error: e, stackTrace: st);
       rethrow;
@@ -126,6 +130,34 @@ class ExportDeliverableActions {
           await temp.delete();
         } catch (_) {}
       }
+    }
+  }
+
+  /// Tries opening a saved export file in the platform app.
+  /// Returns `true` if opened, `false` when unavailable/fails gracefully.
+  static Future<bool> openSavedFile(String savedPath) async {
+    try {
+      final result = await OpenFilex.open(savedPath);
+      if (result.type == ResultType.done) {
+        return true;
+      }
+      AppLogger.w(
+        'Open saved file failed: ${result.type.name} ${result.message}',
+      );
+      return false;
+    } on MissingPluginException catch (e, st) {
+      AppLogger.w(
+        'open_filex plugin not available at runtime',
+        error: e,
+        stackTrace: st,
+      );
+      return false;
+    } on PlatformException catch (e, st) {
+      AppLogger.w('open_filex platform exception', error: e, stackTrace: st);
+      return false;
+    } catch (e, st) {
+      AppLogger.w('open_filex unexpected error', error: e, stackTrace: st);
+      return false;
     }
   }
 

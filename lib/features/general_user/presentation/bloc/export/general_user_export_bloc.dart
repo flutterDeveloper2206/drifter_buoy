@@ -52,11 +52,6 @@ class GeneralUserExportBloc
 
     try {
       final parsed = _parseRouteExtra(event.routeExtra);
-      final buoyReady = parsed.mode == GeneralUserExportMode.buoyDistance &&
-          parsed.buoyId != null &&
-          parsed.buoyId!.isNotEmpty;
-      final multiReady = parsed.mode == GeneralUserExportMode.multiSelection &&
-          parsed.selectedBuoyIds.isNotEmpty;
 
       emit(
         GeneralUserExportState(
@@ -66,30 +61,20 @@ class GeneralUserExportBloc
           selectedBuoyCount: parsed.selectedBuoyCount,
           selectedBuoyIds: parsed.selectedBuoyIds,
           buoyId: parsed.buoyId,
-          dateRange: (buoyReady || multiReady)
-              ? ExportDateRange.yesterday
-              : ExportDateRange.last24Hours,
+          dateRange: null,
           customStart: null,
           customEnd: null,
-          reportType: parsed.mode == GeneralUserExportMode.buoyDistance
-              ? ExportReportType.buoyDistance
-              : ExportReportType.buoyData,
-          format: ExportFormat.csv,
+          reportType: null,
+          format: null,
           message: '',
           isSuccessMessage: false,
           reportColumns: const [],
           reportRows: const [],
-          isReportLoading: buoyReady || multiReady,
+          isReportLoading: false,
           deliverable: null,
           buoyScreenNotice: '',
         ),
       );
-
-      if (buoyReady) {
-        await _fetchBuoyReport(emit);
-      } else if (multiReady) {
-        await _fetchMultiBuoyDataReport(emit);
-      }
 
       AppLogger.i('LoadGeneralUserExport success');
     } catch (error, stackTrace) {
@@ -115,6 +100,9 @@ class GeneralUserExportBloc
     emit(
       state.copyWith(
         reportType: event.reportType,
+        assignReportType: true,
+        format: null,
+        assignFormat: true,
         message: '',
         isSuccessMessage: false,
         clearDeliverable: true,
@@ -162,6 +150,7 @@ class GeneralUserExportBloc
     emit(
       state.copyWith(
         dateRange: event.dateRange,
+        assignDateRange: true,
         message: '',
         isSuccessMessage: false,
         clearDeliverable: true,
@@ -185,6 +174,7 @@ class GeneralUserExportBloc
     emit(
       state.copyWith(
         dateRange: ExportDateRange.custom,
+        assignDateRange: true,
         customStart: a,
         customEnd: b,
         message: '',
@@ -201,12 +191,16 @@ class GeneralUserExportBloc
     Emitter<GeneralUserExportState> emit,
   ) async {
     if (state.mode == GeneralUserExportMode.buoyDistance &&
+        state.dateRange != null &&
+        state.reportType != null &&
         state.buoyId != null &&
         state.buoyId!.isNotEmpty) {
       await _fetchBuoyReport(emit);
       return;
     }
     if (state.mode == GeneralUserExportMode.multiSelection &&
+        state.dateRange != null &&
+        state.reportType != null &&
         state.selectedBuoyIds.isNotEmpty) {
       await _fetchMultiBuoyDataReport(emit);
     }
@@ -219,6 +213,7 @@ class GeneralUserExportBloc
     emit(
       state.copyWith(
         format: event.format,
+        assignFormat: true,
         message: '',
         isSuccessMessage: false,
         clearDeliverable: true,
@@ -256,6 +251,26 @@ class GeneralUserExportBloc
       );
       return;
     }
+    final reportType = state.reportType;
+    if (reportType == null) {
+      emit(
+        state.copyWith(
+          message: 'Please select report type.',
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
+    final format = state.format;
+    if (format == null) {
+      emit(
+        state.copyWith(
+          message: 'Please select export format.',
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
     final dates = _apiDateStrings(state);
     if (dates == null) {
       emit(
@@ -276,7 +291,7 @@ class GeneralUserExportBloc
       ),
     );
 
-    if (state.reportType == ExportReportType.buoyDistance &&
+    if (reportType == ExportReportType.buoyDistance &&
         state.selectedBuoyIds.length != 1) {
       emit(
         state.copyWith(
@@ -289,7 +304,7 @@ class GeneralUserExportBloc
     }
 
     final idsCsv = state.selectedBuoyIds.join(',');
-    final outcome = state.reportType == ExportReportType.buoyDistance
+    final outcome = reportType == ExportReportType.buoyDistance
         ? await _getBuoyDistanceReport(
             buoyId: state.selectedBuoyIds.first,
             fromDate: dates.$1,
@@ -315,7 +330,7 @@ class GeneralUserExportBloc
         try {
           final cols = deriveReportColumnOrder(response.rows);
           final Uint8List bytes;
-          if (state.format == ExportFormat.csv) {
+          if (format == ExportFormat.csv) {
             final csv = buildDynamicCsv(
               columnOrder: cols,
               rows: response.rows,
@@ -331,7 +346,7 @@ class GeneralUserExportBloc
               ? state.selectedBuoyIds.first
               : 'MultipleBuoys';
           final reportTypeLabel =
-              state.reportType == ExportReportType.buoyDistance
+              reportType == ExportReportType.buoyDistance
               ? 'Distance Report'
               : 'Data Report';
           final name = exportMultiBuoyDataReportFileName(
@@ -339,7 +354,7 @@ class GeneralUserExportBloc
             reportType: reportTypeLabel,
             fromDate: dates.$1,
             toDate: dates.$2,
-            csv: state.format == ExportFormat.csv,
+            csv: format == ExportFormat.csv,
           );
           emit(
             state.copyWith(
@@ -402,6 +417,26 @@ class GeneralUserExportBloc
       );
       return;
     }
+    final reportType = state.reportType;
+    if (reportType == null) {
+      emit(
+        state.copyWith(
+          message: 'Please select report type.',
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
+    final format = state.format;
+    if (format == null) {
+      emit(
+        state.copyWith(
+          message: 'Please select export format.',
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
     final dates = _apiDateStrings(state);
     if (dates == null) {
       emit(
@@ -422,7 +457,7 @@ class GeneralUserExportBloc
       ),
     );
 
-    final outcome = state.reportType == ExportReportType.buoyData
+    final outcome = reportType == ExportReportType.buoyData
         ? await _getBuoyDataReport(
             buoyIdsCsv: bid,
             fromDate: dates.$1,
@@ -448,7 +483,7 @@ class GeneralUserExportBloc
         try {
           final cols = deriveReportColumnOrder(response.rows);
           final Uint8List bytes;
-          if (state.format == ExportFormat.csv) {
+          if (format == ExportFormat.csv) {
             final csv = buildDynamicCsv(
               columnOrder: cols,
               rows: response.rows,
@@ -462,12 +497,12 @@ class GeneralUserExportBloc
           }
           final name = exportReportFileName(
             buoyId: bid,
-            reportType: state.reportType == ExportReportType.buoyDistance
+            reportType: reportType == ExportReportType.buoyDistance
                 ? 'Distance Report'
                 : 'Data Report',
             fromDate: dates.$1,
             toDate: dates.$2,
-            csv: state.format == ExportFormat.csv,
+            csv: format == ExportFormat.csv,
           );
           emit(
             state.copyWith(
@@ -502,6 +537,8 @@ class GeneralUserExportBloc
   Future<void> _fetchBuoyReport(Emitter<GeneralUserExportState> emit) async {
     final bid = state.buoyId;
     if (state.mode != GeneralUserExportMode.buoyDistance ||
+        state.dateRange == null ||
+        state.reportType == null ||
         bid == null ||
         bid.isEmpty) {
       return;
@@ -572,6 +609,8 @@ class GeneralUserExportBloc
 
   Future<void> _fetchMultiBuoyDataReport(Emitter<GeneralUserExportState> emit) async {
     if (state.mode != GeneralUserExportMode.multiSelection ||
+        state.dateRange == null ||
+        state.reportType == null ||
         state.selectedBuoyIds.isEmpty) {
       return;
     }
@@ -657,6 +696,8 @@ class GeneralUserExportBloc
   (String, String)? _apiDateStrings(GeneralUserExportState s) {
     final today = todayLocal();
     switch (s.dateRange) {
+      case null:
+        return null;
       case ExportDateRange.last24Hours:
         return (formatReportApiDate(today), formatReportApiDate(today));
       case ExportDateRange.yesterday:

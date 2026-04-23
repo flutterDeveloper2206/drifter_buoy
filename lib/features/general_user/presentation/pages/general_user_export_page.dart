@@ -2,6 +2,7 @@ import 'package:drifter_buoy/core/constants/app_routes.dart';
 import 'package:drifter_buoy/core/utils/app_logger.dart';
 import 'package:drifter_buoy/core/utils/export_deliverable_actions.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
+import 'package:drifter_buoy/core/utils/widgets/app_common_dropdown.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_export_format_card.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_flushbar.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_elevated_button.dart';
@@ -263,8 +264,58 @@ Future<DateTimeRange?> showExportThemedDateRangePicker({
   );
 }
 
-class GeneralUserExportPage extends StatelessWidget {
+class GeneralUserExportPage extends StatefulWidget {
   const GeneralUserExportPage({super.key});
+
+  @override
+  State<GeneralUserExportPage> createState() => _GeneralUserExportPageState();
+}
+
+class _GeneralUserExportPageState extends State<GeneralUserExportPage> {
+  bool _dateRangeSelected = false;
+  bool _reportTypeSelected = false;
+  bool _formatSelected = false;
+
+  void _resetExportSteps() {
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _dateRangeSelected = false;
+      _reportTypeSelected = false;
+      _formatSelected = false;
+    });
+  }
+
+  void _markDateRangeSelected() {
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _dateRangeSelected = true;
+      _reportTypeSelected = false;
+      _formatSelected = false;
+    });
+  }
+
+  void _markReportTypeSelected() {
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _reportTypeSelected = true;
+      _formatSelected = false;
+    });
+  }
+
+  void _markFormatSelected() {
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _formatSelected = true;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -292,6 +343,15 @@ class GeneralUserExportPage extends StatelessWidget {
             ),
             BlocListener<GeneralUserExportBloc, GeneralUserExportState>(
               listenWhen: (previous, current) =>
+                  previous.mode != current.mode ||
+                  previous.selectedBuoyIds != current.selectedBuoyIds ||
+                  previous.buoyId != current.buoyId,
+              listener: (context, state) {
+                _resetExportSteps();
+              },
+            ),
+            BlocListener<GeneralUserExportBloc, GeneralUserExportState>(
+              listenWhen: (previous, current) =>
                   current.deliverable != null &&
                   current.deliverable != previous.deliverable,
               listener: (context, state) async {
@@ -314,12 +374,23 @@ class GeneralUserExportPage extends StatelessWidget {
                       );
                     }
                   } else {
-                    final saved = await ExportDeliverableActions.saveToDevice(
-                      bytes: d.bytes,
-                      fileName: d.fileName,
-                    );
-                    if (context.mounted && saved) {
-                      AppFlushbar.success('File saved.', context: context);
+                    final savedPath =
+                        await ExportDeliverableActions.saveToDevice(
+                          bytes: d.bytes,
+                          fileName: d.fileName,
+                        );
+                    if (context.mounted && savedPath != null) {
+                      final opened = await ExportDeliverableActions.openSavedFile(
+                        savedPath,
+                      );
+                      if (context.mounted) {
+                        AppFlushbar.success(
+                          opened
+                              ? 'File saved and opened.'
+                              : 'File saved.',
+                          context: context,
+                        );
+                      }
                     }
                   }
                 } on Object catch (e, st) {
@@ -458,6 +529,7 @@ class GeneralUserExportPage extends StatelessWidget {
                                                     end: picked.end,
                                                   ),
                                                 );
+                                            _markDateRangeSelected();
                                             return;
                                           }
                                           if (!context.mounted) {
@@ -470,23 +542,27 @@ class GeneralUserExportPage extends StatelessWidget {
                                                   range,
                                                 ),
                                               );
+                                          _markDateRangeSelected();
                                         },
                                 ),
-                                const SizedBox(height: 10),
-                                _ReportTypeCard(
-                                  selected: state.reportType,
-                                  onChanged: isExporting
-                                      ? null
-                                      : (type) {
-                                          context
-                                              .read<GeneralUserExportBloc>()
-                                              .add(
-                                                ChangeGeneralUserExportReportType(
-                                                  type,
-                                                ),
-                                              );
-                                        },
-                                ),
+                                if (_dateRangeSelected) ...[
+                                  const SizedBox(height: 10),
+                                  _ReportTypeCard(
+                                    selected: state.reportType,
+                                    onChanged: isExporting
+                                        ? null
+                                        : (type) {
+                                            context
+                                                .read<GeneralUserExportBloc>()
+                                                .add(
+                                                  ChangeGeneralUserExportReportType(
+                                                    type,
+                                                  ),
+                                                );
+                                            _markReportTypeSelected();
+                                          },
+                                  ),
+                                ],
                                 if ((state.mode ==
                                             GeneralUserExportMode
                                                 .buoyDistance ||
@@ -531,7 +607,9 @@ class GeneralUserExportPage extends StatelessWidget {
                                         ),
                                   ),
                                 ],
-                                if (!hideExportControls) ...[
+                                if (!hideExportControls &&
+                                    _dateRangeSelected &&
+                                    _reportTypeSelected) ...[
                                   const SizedBox(height: 18),
                                   _ExportFormatCardSection(
                                     selectedFormat: state.format,
@@ -542,6 +620,7 @@ class GeneralUserExportPage extends StatelessWidget {
                                       context.read<GeneralUserExportBloc>().add(
                                         ChangeGeneralUserExportFormat(format),
                                       );
+                                      _markFormatSelected();
                                     },
                                   ),
                                 ],
@@ -549,7 +628,10 @@ class GeneralUserExportPage extends StatelessWidget {
                             ),
                           ),
                         ),
-                        if (!hideExportControls)
+                        if (!hideExportControls &&
+                            _dateRangeSelected &&
+                            _reportTypeSelected &&
+                            _formatSelected)
                           Padding(
                             padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
                             child: SizedBox(
@@ -561,7 +643,17 @@ class GeneralUserExportPage extends StatelessWidget {
                                     isExporting || _exportButtonDisabled(state)
                                     ? null
                                     : () {
-                                        _showExportConfirmDialog(context);
+                                        if (state.mode ==
+                                            GeneralUserExportMode
+                                                .buoyDistance) {
+                                          context.read<GeneralUserExportBloc>().add(
+                                            const ExportBuoyDistanceSaveToDevice(),
+                                          );
+                                        } else {
+                                          context.read<GeneralUserExportBloc>().add(
+                                            const ExportMultiBuoyDataSaveToDevice(),
+                                          );
+                                        }
                                       },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFF206BBE),
@@ -611,60 +703,16 @@ class GeneralUserExportPage extends StatelessWidget {
         (state.customStart == null || state.customEnd == null)) {
       return true;
     }
+    if (state.dateRange == null || state.reportType == null || state.format == null) {
+      return true;
+    }
     return false;
-  }
-
-  Future<void> _showExportConfirmDialog(BuildContext context) async {
-    final mode = context.read<GeneralUserExportBloc>().state.mode;
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Export report'),
-          content: const Text(
-            'Are you sure you want to export this report? Choose how to send the file.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                if (mode == GeneralUserExportMode.buoyDistance) {
-                  context.read<GeneralUserExportBloc>().add(
-                    const ExportBuoyDistanceShare(),
-                  );
-                } else {
-                  context.read<GeneralUserExportBloc>().add(
-                    const ExportMultiBuoyDataShare(),
-                  );
-                }
-              },
-              child: const Text('Share'),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                if (mode == GeneralUserExportMode.buoyDistance) {
-                  context.read<GeneralUserExportBloc>().add(
-                    const ExportBuoyDistanceSaveToDevice(),
-                  );
-                } else {
-                  context.read<GeneralUserExportBloc>().add(
-                    const ExportMultiBuoyDataSaveToDevice(),
-                  );
-                }
-              },
-              child: const Text('Download'),
-            ),
-          ],
-        );
-      },
-    );
   }
 }
 
 class _DateRangeCard extends StatelessWidget {
   final GeneralUserExportMode mode;
-  final ExportDateRange selected;
+  final ExportDateRange? selected;
   final DateTime? customStart;
   final DateTime? customEnd;
   final Future<void> Function(ExportDateRange?)? onChanged;
@@ -703,44 +751,16 @@ class _DateRangeCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          Container(
-            height: 50,
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF2F2F2),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFF2A86CE), width: 1.4),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<ExportDateRange>(
-                value: items.contains(selected) ? selected : items.first,
-                isExpanded: true,
-                icon: const Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  color: Color(0xFF272C31),
-                  size: 30,
-                ),
-                borderRadius: BorderRadius.circular(10),
-                dropdownColor: Colors.white,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: const Color(0xFF353A3F),
-                  fontWeight: FontWeight.w600,
-                ),
-                items: items
-                    .map(
-                      (range) => DropdownMenuItem<ExportDateRange>(
-                        value: range,
-                        child: Text(_dateRangeLabel(range)),
-                      ),
-                    )
-                    .toList(growable: false),
-                onChanged: onChanged == null
-                    ? null
-                    : (value) {
-                        onChanged!(value);
-                      },
-              ),
-            ),
+          AppCommonDropdown<ExportDateRange>(
+            value: items.contains(selected) ? selected : null,
+            items: items,
+            itemLabelBuilder: _dateRangeLabel,
+            placeholder: 'Select Date Range',
+            onChanged: onChanged == null
+                ? null
+                : (value) {
+                    onChanged!(value);
+                  },
           ),
           if (selected == ExportDateRange.custom &&
               customStart != null &&
@@ -796,7 +816,7 @@ class _DateRangeCard extends StatelessWidget {
 }
 
 class _ExportFormatCardSection extends StatelessWidget {
-  final ExportFormat selectedFormat;
+  final ExportFormat? selectedFormat;
   final List<String> reportColumns;
   final List<Map<String, String>> reportRows;
   final bool enabled;
@@ -904,12 +924,9 @@ class _ExportFormatCardSection extends StatelessWidget {
 }
 
 class _ReportTypeCard extends StatelessWidget {
-  const _ReportTypeCard({
-    required this.selected,
-    required this.onChanged,
-  });
+  const _ReportTypeCard({required this.selected, required this.onChanged});
 
-  final ExportReportType selected;
+  final ExportReportType? selected;
   final ValueChanged<ExportReportType>? onChanged;
 
   @override
@@ -937,50 +954,20 @@ class _ReportTypeCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          Container(
-            height: 50,
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF2F2F2),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFF2A86CE), width: 1.4),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<ExportReportType>(
-                value: selected,
-                isExpanded: true,
-                icon: const Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  color: Color(0xFF272C31),
-                  size: 30,
-                ),
-                borderRadius: BorderRadius.circular(10),
-                dropdownColor: Colors.white,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: const Color(0xFF353A3F),
-                  fontWeight: FontWeight.w600,
-                ),
-                items: options
-                    .map(
-                      (type) => DropdownMenuItem<ExportReportType>(
-                        value: type,
-                        child: Text(
-                          type == ExportReportType.buoyData
-                              ? 'Buoy Data Report'
-                              : 'Buoy Distance Report',
-                        ),
-                      ),
-                    )
-                    .toList(growable: false),
-                onChanged: onChanged == null
-                    ? null
-                    : (value) {
-                        if (value != null) {
-                          onChanged!(value);
-                        }
-                      },
-              ),
-            ),
+          AppCommonDropdown<ExportReportType>(
+            value: selected,
+            items: options,
+            itemLabelBuilder: (type) => type == ExportReportType.buoyData
+                ? 'Buoy Data Report'
+                : 'Buoy Distance Report',
+            placeholder: 'Select Report Type',
+            onChanged: onChanged == null
+                ? null
+                : (value) {
+                    if (value != null) {
+                      onChanged!(value);
+                    }
+                  },
           ),
         ],
       ),

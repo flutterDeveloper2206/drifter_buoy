@@ -7,7 +7,7 @@ import 'package:pdf/widgets.dart' as pw;
 
 /// Brand assets for PDF export (declared in [pubspec.yaml] under `flutter.assets`).
 const String _kPdfHeaderLogoAsset = 'assets/icons/ic_logo.png';
-const String _kPdfFooterAzistaAsset = 'assets/icons/ic_azista.png';
+const String _kPdfHeaderAzistaAsset = 'assets/icons/ic_azista.png';
 
 /// Stable column order: preserve API response key order.
 ///
@@ -55,11 +55,21 @@ Future<Uint8List> buildDynamicPdf({
   required List<Map<String, String>> rows,
   String? title,
 }) async {
+  final generatedAt = DateTime.now();
+  final generatedStamp =
+      '${generatedAt.day.toString().padLeft(2, '0')}-'
+      '${generatedAt.month.toString().padLeft(2, '0')}-'
+      '${generatedAt.year} '
+      '${generatedAt.hour.toString().padLeft(2, '0')}:'
+      '${generatedAt.minute.toString().padLeft(2, '0')}';
+  final reportTitle = (title == null || title.trim().isEmpty)
+      ? "Drifter Buoy's Report"
+      : title.trim();
   final logoBytes = (await rootBundle.load(
     _kPdfHeaderLogoAsset,
   )).buffer.asUint8List();
   final azistaBytes = (await rootBundle.load(
-    _kPdfFooterAzistaAsset,
+    _kPdfHeaderAzistaAsset,
   )).buffer.asUint8List();
   final logoImage = pw.MemoryImage(logoBytes);
   final azistaImage = pw.MemoryImage(azistaBytes);
@@ -82,21 +92,41 @@ Future<Uint8List> buildDynamicPdf({
             bottom: pw.BorderSide(color: PdfColors.grey400, width: 0.8),
           ),
         ),
-        child: pw.Column(
-          mainAxisSize: pw.MainAxisSize.min,
+        child: pw.Row(
+          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
           crossAxisAlignment: pw.CrossAxisAlignment.center,
           children: [
-            pw.Image(logoImage, width: 36, height: 36),
-            pw.SizedBox(height: 4),
-            pw.Text(
-              "Drifter Buoy's",
-              textAlign: pw.TextAlign.center,
-              maxLines: 1,
-              style: pw.TextStyle(
-                fontSize: 15,
-                fontWeight: pw.FontWeight.bold,
-                color: PdfColor.fromInt(0xFF1A2F4A),
+            pw.Image(logoImage, width: 32, height: 32),
+            pw.Expanded(
+              child: pw.Padding(
+                padding: const pw.EdgeInsets.symmetric(horizontal: 10),
+                child: pw.Text(
+                  reportTitle,
+                  textAlign: pw.TextAlign.center,
+                  maxLines: 1,
+                  style: pw.TextStyle(
+                    fontSize: 14,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColor.fromInt(0xFF1A2F4A),
+                  ),
+                ),
               ),
+            ),
+            pw.Column(
+              mainAxisSize: pw.MainAxisSize.min,
+              children: [
+                pw.Image(azistaImage, width: 22, height: 22),
+                pw.SizedBox(height: 2),
+                pw.Text(
+                  'AZISTA',
+                  style: pw.TextStyle(
+                    fontSize: 8,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColor.fromInt(0xFFE30613),
+                    letterSpacing: 0.4,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -109,30 +139,11 @@ Future<Uint8List> buildDynamicPdf({
             top: pw.BorderSide(color: PdfColors.grey400, width: 0.8),
           ),
         ),
-        child: pw.Column(
-          mainAxisSize: pw.MainAxisSize.min,
-          crossAxisAlignment: pw.CrossAxisAlignment.center,
+        child: pw.Row(
+          mainAxisAlignment: pw.MainAxisAlignment.center,
           children: [
-            pw.Image(azistaImage, width: 26, height: 26),
-            pw.SizedBox(height: 4),
             pw.Text(
-              'AZISTA',
-              style: pw.TextStyle(
-                fontSize: 12,
-                fontWeight: pw.FontWeight.bold,
-                color: PdfColor.fromInt(0xFFE30613),
-                letterSpacing: 0.6,
-              ),
-            ),
-            pw.SizedBox(height: 4),
-            pw.Text(
-              'Website : https://www.azistaaerospace.com/',
-              textAlign: pw.TextAlign.center,
-              style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.black),
-            ),
-            pw.SizedBox(height: 2),
-            pw.Text(
-              'Email Id: sales@azistaaerospace.com',
+              'Generated $generatedStamp © 2026 Azista Industries Pvt Ltd',
               textAlign: pw.TextAlign.center,
               style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.black),
             ),
@@ -140,13 +151,6 @@ Future<Uint8List> buildDynamicPdf({
         ),
       ),
       build: (context) => [
-        if (title != null && title.trim().isNotEmpty) ...[
-          pw.Text(
-            title,
-            style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
-          ),
-          pw.SizedBox(height: 12),
-        ],
         pw.TableHelper.fromTextArray(
           headers: columnOrder,
           data: tableData,

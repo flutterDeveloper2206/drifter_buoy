@@ -73,109 +73,112 @@ class _GeneralUserTrajectoryViewPageState
       return;
     }
     context.read<GeneralUserTrajectoryViewBloc>().add(
-          LoadGeneralUserTrajectoryView(
-            buoyId: state.buoyId,
-            fromDate: result.range.start,
-            toDate: result.range.end,
-            intervalMinutes: result.intervalMinutes,
-          ),
-        );
+      LoadGeneralUserTrajectoryView(
+        buoyId: state.buoyId,
+        fromDate: result.range.start,
+        toDate: result.range.end,
+        intervalMinutes: result.intervalMinutes,
+      ),
+    );
     context.read<GeneralUserTrajectoryFiltersBloc>().add(
-          LoadGeneralUserTrajectoryFilters(
-            buoyId: state.buoyId,
-            fromDate: result.range.start,
-            toDate: result.range.end,
-            intervalMinutes: result.intervalMinutes,
-          ),
-        );
+      LoadGeneralUserTrajectoryFilters(
+        buoyId: state.buoyId,
+        fromDate: result.range.start,
+        toDate: result.range.end,
+        intervalMinutes: result.intervalMinutes,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: BlocBuilder<
-        GeneralUserTrajectoryViewBloc,
-        GeneralUserTrajectoryViewState
-      >(
-        builder: (context, state) {
-          final filters =
-              context.watch<GeneralUserTrajectoryFiltersBloc>().state;
-          return Stack(
-            children: [
-              Positioned.fill(
-                child: _buildMapLayer(context, state, filters),
-              ),
-              SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-                  child: Row(
-                    children: [
-                      AppIconCircleButton(
-                        onTap: () {
-                          if (GoRouter.of(context).canPop()) {
-                            context.pop();
-                          } else {
-                            context.go(AppRoutes.dashboardPath);
-                          }
-                        },
-                        icon: Icons.arrow_back,
-                      ),
-                    ],
+      body:
+          BlocBuilder<
+            GeneralUserTrajectoryViewBloc,
+            GeneralUserTrajectoryViewState
+          >(
+            builder: (context, state) {
+              final filters = context
+                  .watch<GeneralUserTrajectoryFiltersBloc>()
+                  .state;
+              return Stack(
+                children: [
+                  Positioned.fill(
+                    child: _buildMapLayer(context, state, filters),
                   ),
-                ),
-              ),
-              Positioned(
-                top: MediaQuery.paddingOf(context).top + 110,
-                right: 16,
-                child: _MapZoomControl(
-                  onZoomIn: state.canZoomIn
-                      ? () => _applyMapZoomDelta(_zoomStep)
-                      : null,
-                  onZoomOut: state.canZoomOut
-                      ? () => _applyMapZoomDelta(-_zoomStep)
-                      : null,
-                ),
-              ),
-              Positioned(
-                top: MediaQuery.paddingOf(context).top + 50,
-                right: 16,
-                child: Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(26),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x26000000),
-                        blurRadius: 8,
-                        offset: Offset(0, 3),
+                  SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                      child: Row(
+                        children: [
+                          AppIconCircleButton(
+                            onTap: () {
+                              if (GoRouter.of(context).canPop()) {
+                                context.pop();
+                              } else {
+                                context.go(AppRoutes.dashboardPath);
+                              }
+                            },
+                            icon: Icons.arrow_back,
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: IconButton(
-                    onPressed: () => _openTrajectoryQueryFilterDialog(state),
-                    icon: const Icon(
-                      Icons.filter_alt_rounded,
-                      color: Color(0xFF2A2F34),
                     ),
                   ),
-                ),
-              ),
-              const Positioned(
-                left: 40,
-                right: 40,
-                bottom: 124,
-                child: _MapLegendCard(),
-              ),
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: _BottomTogglePanel(onTap: _openFiltersSheet),
-              ),
-            ],
-          );
-        },
-      ),
+                  Positioned(
+                    top: MediaQuery.paddingOf(context).top + 110,
+                    right: 16,
+                    child: _MapZoomControl(
+                      onZoomIn: state.canZoomIn
+                          ? () => _applyMapZoomDelta(_zoomStep)
+                          : null,
+                      onZoomOut: state.canZoomOut
+                          ? () => _applyMapZoomDelta(-_zoomStep)
+                          : null,
+                    ),
+                  ),
+                  Positioned(
+                    top: MediaQuery.paddingOf(context).top + 50,
+                    right: 16,
+                    child: Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(26),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x26000000),
+                            blurRadius: 8,
+                            offset: Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: IconButton(
+                        onPressed: () =>
+                            _openTrajectoryQueryFilterDialog(state),
+                        icon: const Icon(
+                          Icons.filter_alt_rounded,
+                          color: Color(0xFF2A2F34),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const Positioned(
+                    left: 40,
+                    right: 40,
+                    bottom: 124,
+                    child: _MapLegendCard(),
+                  ),
+                  Align(
+                    alignment: Alignment.bottomCenter,
+                    child: _BottomTogglePanel(onTap: _openFiltersSheet),
+                  ),
+                ],
+              );
+            },
+          ),
     );
   }
 
@@ -242,8 +245,8 @@ class _GeneralUserTrajectoryViewPageState
                 return;
               }
               context.read<GeneralUserTrajectoryViewBloc>().add(
-                    SyncGeneralUserTrajectoryMapZoom(zoom),
-                  );
+                SyncGeneralUserTrajectoryMapZoom(zoom),
+              );
             },
           ),
         ),
@@ -425,7 +428,7 @@ class _MapLegendCard extends StatelessWidget {
         color: Colors.white.withValues(alpha: 0.94),
         borderRadius: BorderRadius.circular(12),
       ),
-      child:  Row(
+      child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           AppMapLegendItem(
@@ -486,10 +489,11 @@ class _BottomTogglePanel extends StatelessWidget {
                     Center(
                       child: Text(
                         'Toggles and Filters',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: const Color(0xFF2D3238),
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              color: const Color(0xFF2D3238),
+                              fontWeight: FontWeight.w700,
+                            ),
                       ),
                     ),
                   ],
@@ -564,10 +568,11 @@ class _TrajectoryFiltersSheet extends StatelessWidget {
                         Center(
                           child: Text(
                             'Toggles and Filters',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: const Color(0xFF2D2D2D),
-                              fontWeight: FontWeight.w700,
-                            ),
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(
+                                  color: const Color(0xFF2D2D2D),
+                                  fontWeight: FontWeight.w700,
+                                ),
                           ),
                         ),
                       ],
@@ -577,6 +582,23 @@ class _TrajectoryFiltersSheet extends StatelessWidget {
                 const SizedBox(height: 10),
                 const Divider(color: Color(0xFFD2D2D2), thickness: 1),
                 const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEAF3FF),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFC7DCF8)),
+                  ),
+                  child: Text(
+                    'Note: Blue marker = Start point, Purple marker = Current/Latest point.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: const Color(0xFF2D4D74),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
                 AppSwitchSettingTile(
                   label: 'GPS coordinates',
                   value: state.gpsCoordinatesEnabled,

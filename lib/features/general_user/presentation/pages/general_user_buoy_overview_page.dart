@@ -372,6 +372,7 @@ class _MetricsCard extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: _MetricColumn(
@@ -390,7 +391,7 @@ class _MetricsCard extends StatelessWidget {
                   Expanded(
                     child: _MetricColumn(
                       icon: Icons.settings_input_antenna_rounded,
-                      title: 'signal Strength',
+                      title: 'Signal Strength',
                       value: data.signalStrength,
                     ),
                   ),
@@ -418,23 +419,27 @@ class _MetricColumn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Icon(icon, size: 18, color: const Color(0xFF505050)),
         const SizedBox(height: 4),
         Text(
           title,
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: const Color(0xFF5C5C5C),
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w600,
           ),
         ),
         const SizedBox(height: 4),
         Text(
           value,
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+          textAlign: TextAlign.center,
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: const Color(0xFF2D2D2D),
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w600,
             height: 1.2,
           ),
         ),

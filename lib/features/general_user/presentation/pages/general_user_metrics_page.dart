@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
+import 'package:drifter_buoy/core/utils/widgets/app_common_dropdown.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_icon_circle_button.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/metrics/general_user_metrics_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/metrics/general_user_metrics_event.dart';
@@ -160,69 +161,46 @@ class _MetricsLoadedBodyState extends State<_MetricsLoadedBody> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFF6BA3E8)),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<GeneralUserMetricsDateRange>(
-                      value: state.dateRange,
-                      isExpanded: true,
-                      icon: const Icon(Icons.keyboard_arrow_down_rounded),
-                      style: textTheme.titleSmall?.copyWith(
-                        color: const Color(0xFF2E3238),
-                        fontWeight: FontWeight.w600,
-                      ),
-                      items: GeneralUserMetricsDateRange.values
-                          .map(
-                            (r) => DropdownMenuItem(
-                              value: r,
-                              child: Text(_dateRangeLabel(r)),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (range) async {
-                        if (range == null) return;
-                        if (range == GeneralUserMetricsDateRange.custom) {
-                          final picked = await showExportThemedDateRangePicker(
-                            context: context,
-                            description:
-                                'Choose start and end dates for metrics.',
-                            initialDateRange:
-                                state.customStart != null &&
-                                        state.customEnd != null
-                                    ? DateTimeRange(
-                                        start: state.customStart!,
-                                        end: state.customEnd!,
-                                      )
-                                    : DateTimeRange(
-                                        start: DateTime.now().subtract(
-                                          const Duration(days: 7),
-                                        ),
-                                        end: DateTime.now(),
-                                      ),
-                          );
-                          if (!context.mounted || picked == null) {
-                            return;
-                          }
-                          context.read<GeneralUserMetricsBloc>().add(
-                            ApplyGeneralUserMetricsCustomRange(
-                              start: picked.start,
-                              end: picked.end,
-                            ),
-                          );
-                          return;
-                        }
-                        if (!context.mounted) return;
-                        context.read<GeneralUserMetricsBloc>().add(
-                          ChangeGeneralUserMetricsDateRange(range),
-                        );
-                      },
-                    ),
-                  ),
+                AppCommonDropdown<GeneralUserMetricsDateRange>(
+                  value: state.dateRange,
+                  items: GeneralUserMetricsDateRange.values,
+                  itemLabelBuilder: _dateRangeLabel,
+                  placeholder: 'Select Date Range',
+                  onChanged: (range) async {
+                    if (range == null) return;
+                    if (range == GeneralUserMetricsDateRange.custom) {
+                      final picked = await showExportThemedDateRangePicker(
+                        context: context,
+                        description: 'Choose start and end dates for metrics.',
+                        initialDateRange:
+                            state.customStart != null && state.customEnd != null
+                            ? DateTimeRange(
+                                start: state.customStart!,
+                                end: state.customEnd!,
+                              )
+                            : DateTimeRange(
+                                start: DateTime.now().subtract(
+                                  const Duration(days: 7),
+                                ),
+                                end: DateTime.now(),
+                              ),
+                      );
+                      if (!context.mounted || picked == null) {
+                        return;
+                      }
+                      context.read<GeneralUserMetricsBloc>().add(
+                        ApplyGeneralUserMetricsCustomRange(
+                          start: picked.start,
+                          end: picked.end,
+                        ),
+                      );
+                      return;
+                    }
+                    if (!context.mounted) return;
+                    context.read<GeneralUserMetricsBloc>().add(
+                      ChangeGeneralUserMetricsDateRange(range),
+                    );
+                  },
                 ),
                 if (state.dateRange == GeneralUserMetricsDateRange.custom &&
                     state.customStart != null &&

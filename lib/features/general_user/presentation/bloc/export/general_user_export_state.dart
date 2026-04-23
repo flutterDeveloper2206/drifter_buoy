@@ -48,11 +48,11 @@ class GeneralUserExportState extends Equatable {
   final int selectedBuoyCount;
   final List<String> selectedBuoyIds;
   final String? buoyId;
-  final ExportDateRange dateRange;
+  final ExportDateRange? dateRange;
   final DateTime? customStart;
   final DateTime? customEnd;
-  final ExportReportType reportType;
-  final ExportFormat format;
+  final ExportReportType? reportType;
+  final ExportFormat? format;
   final String message;
   final bool isSuccessMessage;
   final List<String> reportColumns;
@@ -70,11 +70,11 @@ class GeneralUserExportState extends Equatable {
       selectedBuoyCount = 0,
       selectedBuoyIds = const [],
       buoyId = null,
-      dateRange = ExportDateRange.last24Hours,
+      dateRange = null,
       customStart = null,
       customEnd = null,
-      reportType = ExportReportType.buoyData,
-      format = ExportFormat.csv,
+      reportType = null,
+      format = null,
       message = '',
       isSuccessMessage = false,
       reportColumns = const [],
@@ -93,11 +93,14 @@ class GeneralUserExportState extends Equatable {
     String? buoyId,
     bool clearBuoyId = false,
     ExportDateRange? dateRange,
+    bool assignDateRange = false,
     DateTime? customStart,
     DateTime? customEnd,
     bool clearCustomRange = false,
     ExportReportType? reportType,
+    bool assignReportType = false,
     ExportFormat? format,
+    bool assignFormat = false,
     String? message,
     bool? isSuccessMessage,
     List<String>? reportColumns,
@@ -117,11 +120,11 @@ class GeneralUserExportState extends Equatable {
       selectedBuoyCount: selectedBuoyCount ?? this.selectedBuoyCount,
       selectedBuoyIds: selectedBuoyIds ?? this.selectedBuoyIds,
       buoyId: clearBuoyId ? null : (buoyId ?? this.buoyId),
-      dateRange: dateRange ?? this.dateRange,
+      dateRange: assignDateRange ? dateRange : this.dateRange,
       customStart: clearCustomRange ? null : (customStart ?? this.customStart),
       customEnd: clearCustomRange ? null : (customEnd ?? this.customEnd),
-      reportType: reportType ?? this.reportType,
-      format: format ?? this.format,
+      reportType: assignReportType ? reportType : this.reportType,
+      format: assignFormat ? format : this.format,
       message: message ?? this.message,
       isSuccessMessage: isSuccessMessage ?? this.isSuccessMessage,
       reportColumns: reportColumns ?? this.reportColumns,
