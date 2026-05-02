@@ -199,8 +199,6 @@ class _AlertCard extends StatelessWidget {
                       ),
                 ),
               ),
-              if (alert.isUnread)
-                const Icon(Icons.circle, size: 10, color: Color(0xFFE74C3C)),
             ],
           ),
           const SizedBox(height: 6),
