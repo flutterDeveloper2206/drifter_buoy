@@ -1,5 +1,9 @@
+import 'dart:async';
+
+import 'package:drifter_buoy/core/bluetooth/ble_connection_service.dart';
 import 'package:drifter_buoy/core/constants/app_routes.dart';
 import 'package:drifter_buoy/core/theme/app_typography.dart';
+import 'package:drifter_buoy/core/utils/injection_container.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_icon_circle_button.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_loader.dart';
@@ -11,22 +15,51 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-class GeneralUserSetupDetailPage extends StatelessWidget {
+class GeneralUserSetupDetailPage extends StatefulWidget {
   const GeneralUserSetupDetailPage({super.key});
 
+  @override
+  State<GeneralUserSetupDetailPage> createState() =>
+      _GeneralUserSetupDetailPageState();
+}
+
+class _GeneralUserSetupDetailPageState extends State<GeneralUserSetupDetailPage> {
   static const _blue = Color(0xFF206BBE);
+  late final BleConnectionService _ble;
+  StreamSubscription<String>? _disconnectSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _ble = sl<BleConnectionService>();
+    _disconnectSub = _ble.disconnectedRemoteIds.listen((_) {
+      if (!mounted) {
+        return;
+      }
+      context.read<GeneralUserSetupDetailBloc>().add(
+            const SyncBluetoothDisconnected(),
+          );
+    });
+  }
+
+  @override
+  void dispose() {
+    _disconnectSub?.cancel();
+    super.dispose();
+  }
 
   Future<void> _openBluetoothPicker(BuildContext context) async {
     final bloc = context.read<GeneralUserSetupDetailBloc>();
-    final picked = await showSetupBluetoothDeviceSheet(context);
-    if (!context.mounted || picked == null) {
-      return;
-    }
-    bloc.add(
-      SelectBluetoothDevice(
-        displayName: picked.$1,
-        bluetoothId: picked.$2,
-      ),
+    await showSetupBluetoothDeviceSheet(
+      context,
+      onConnected: (displayName, bluetoothId) {
+        bloc.add(
+          SelectBluetoothDevice(
+            displayName: displayName,
+            bluetoothId: bluetoothId,
+          ),
+        );
+      },
     );
   }
 
@@ -39,200 +72,246 @@ class GeneralUserSetupDetailPage extends StatelessWidget {
     await _openBluetoothPicker(context);
   }
 
+  Future<void> _disconnectIfConnected() async {
+    if (_ble.connectedRemoteId == null) {
+      return;
+    }
+    await _ble.disconnect(showFeedback: true);
+    if (mounted) {
+      context.read<GeneralUserSetupDetailBloc>().add(
+            const SyncBluetoothDisconnected(),
+          );
+    }
+  }
+
+  Future<void> _handleBackTap(BuildContext context) async {
+    await _disconnectIfConnected();
+    if (!context.mounted) {
+      return;
+    }
+    if (GoRouter.of(context).canPop()) {
+      context.pop();
+    } else {
+      context.go(AppRoutes.setupPath);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFDDE1E4),
-      body: SafeArea(
-        child: Column(
-          children: [
-            BlocBuilder<GeneralUserSetupDetailBloc,
-                GeneralUserSetupDetailState>(
+    return PopScope<void>(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          return;
+        }
+        unawaited(_disconnectIfConnected());
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFDDE1E4),
+        body: SafeArea(
+          child: Column(
+            children: [
+            BlocBuilder<
+              GeneralUserSetupDetailBloc,
+              GeneralUserSetupDetailState
+            >(
               buildWhen: (p, c) =>
-                  p.contextBuoyId != c.contextBuoyId ||
-                  p.status != c.status,
+                  p.contextBuoyId != c.contextBuoyId || p.status != c.status,
               builder: (context, state) {
-                final title = state.contextBuoyId == null ||
+                final title =
+                    state.contextBuoyId == null ||
                         state.contextBuoyId!.trim().isEmpty
                     ? 'Add New'
                     : state.contextBuoyId!.trim();
-                return _Header(title: title);
+                return _Header(
+                  title: title,
+                  onBackTap: () => _handleBackTap(context),
+                );
               },
             ),
             Expanded(
-              child: BlocBuilder<GeneralUserSetupDetailBloc,
-                  GeneralUserSetupDetailState>(
-                builder: (context, state) {
-                  if (state.status == GeneralUserSetupDetailStatus.loading ||
-                      state.status == GeneralUserSetupDetailStatus.initial) {
-                    return const AppLoader();
-                  }
-                  if (state.status == GeneralUserSetupDetailStatus.error) {
-                    return AppErrorView(
-                      message: state.message,
-                      onRetry: () {
-                        context.read<GeneralUserSetupDetailBloc>().add(
+              child:
+                  BlocBuilder<
+                    GeneralUserSetupDetailBloc,
+                    GeneralUserSetupDetailState
+                  >(
+                    builder: (context, state) {
+                      if (state.status ==
+                              GeneralUserSetupDetailStatus.loading ||
+                          state.status ==
+                              GeneralUserSetupDetailStatus.initial) {
+                        return const AppLoader();
+                      }
+                      if (state.status == GeneralUserSetupDetailStatus.error) {
+                        return AppErrorView(
+                          message: state.message,
+                          onRetry: () {
+                            context.read<GeneralUserSetupDetailBloc>().add(
                               LoadGeneralUserSetupDetail(
                                 buoyId: state.contextBuoyId,
                               ),
                             );
-                      },
-                    );
-                  }
+                          },
+                        );
+                      }
 
-                  final bluetoothOn = state.bluetoothDevice != '--';
+                      final bluetoothOn = state.bluetoothRemoteId != null;
 
-                  return SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _WhiteCard(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        'Bluetooth Setup',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .compactSectionTitle(
-                                              const Color(0xFF1D2329),
-                                            ),
+                      return SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _WhiteCard(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          'Bluetooth Setup',
+                                          style: Theme.of(context).textTheme
+                                              .compactSectionTitle(
+                                                const Color(0xFF1D2329),
+                                              ),
+                                        ),
                                       ),
-                                    ),
-                                    Switch(
-                                      value: bluetoothOn,
-                                      onChanged: (v) =>
-                                          _onBluetoothSwitch(context, v),
-                                      activeTrackColor: const Color(0xFF1682C9),
-                                      activeThumbColor: Colors.white,
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                _BluetoothGrid(
-                                  state: state,
-                                  onCellTap: () => _openBluetoothPicker(context),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          _WhiteCard(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        'Enable Configuration',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .compactSectionTitle(
-                                              const Color(0xFF1D2329),
-                                            ),
+                                      Switch(
+                                        value: bluetoothOn,
+                                        onChanged: (v) =>
+                                            _onBluetoothSwitch(context, v),
+                                        activeTrackColor: const Color(
+                                          0xFF1682C9,
+                                        ),
+                                        activeThumbColor: Colors.white,
                                       ),
-                                    ),
-                                    Switch(
-                                      value: state.enableConfiguration,
-                                      onChanged: (_) {
-                                        context
-                                            .read<GeneralUserSetupDetailBloc>()
-                                            .add(
-                                              const ToggleGeneralUserEnableConfiguration(),
-                                            );
-                                      },
-                                      activeTrackColor: const Color(0xFF1682C9),
-                                      activeThumbColor: Colors.white,
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Enable Configuration to Set Up Buoy',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .compactSupportingText(
-                                        const Color(0xFF6A7178),
-                                      ),
-                                ),
-                                if (state.enableConfiguration && bluetoothOn) ...[
-                                  const SizedBox(height: 14),
-                                  InkWell(
-                                    onTap: () => context.push(
-                                      AppRoutes.buoySetupPath,
-                                      extra: state.contextBuoyId,
-                                    ),
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 6,
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          const Icon(
-                                            Icons.arrow_circle_right_outlined,
-                                            color: _blue,
-                                            size: 22,
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            'Continue to Buoy Setup',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .compactActionText(_blue),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  _BluetoothGrid(
+                                    state: state,
+                                    onCellTap: () =>
+                                        _openBluetoothPicker(context),
                                   ),
                                 ],
-                              ],
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 12),
-                          _WhiteCard(
-                            child: InkWell(
-                              onTap: () =>
-                                  context.push(AppRoutes.selfTestDebugPath),
-                              borderRadius: BorderRadius.circular(12),
-                              child: Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 4),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        'Self-Test and Debug',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .compactSectionTitle(
-                                              const Color(0xFF1D2329),
+                            const SizedBox(height: 12),
+                            _WhiteCard(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          'Enable Configuration',
+                                          style: Theme.of(context).textTheme
+                                              .compactSectionTitle(
+                                                const Color(0xFF1D2329),
+                                              ),
+                                        ),
+                                      ),
+                                      Switch(
+                                        value: state.enableConfiguration,
+                                        onChanged: (_) {
+                                          context
+                                              .read<
+                                                GeneralUserSetupDetailBloc
+                                              >()
+                                              .add(
+                                                const ToggleGeneralUserEnableConfiguration(),
+                                              );
+                                        },
+                                        activeTrackColor: const Color(
+                                          0xFF1682C9,
+                                        ),
+                                        activeThumbColor: Colors.white,
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Enable Configuration to Set Up Buoy',
+                                    style: Theme.of(context).textTheme
+                                        .compactSupportingText(
+                                          const Color(0xFF6A7178),
+                                        ),
+                                  ),
+                                  if (state.enableConfiguration &&
+                                      bluetoothOn) ...[
+                                    const SizedBox(height: 14),
+                                    InkWell(
+                                      onTap: () => context.push(
+                                        AppRoutes.buoySetupPath,
+                                        extra: state.contextBuoyId,
+                                      ),
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 6,
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            const Icon(
+                                              Icons.arrow_circle_right_outlined,
+                                              color: _blue,
+                                              size: 22,
                                             ),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              'Continue to Buoy Setup',
+                                              style: Theme.of(context).textTheme
+                                                  .compactActionText(_blue),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
-                                    const Icon(
-                                      Icons.chevron_right_rounded,
-                                      color: Color(0xFF8A9095),
-                                      size: 28,
-                                    ),
                                   ],
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            _WhiteCard(
+                              child: InkWell(
+                                onTap: () =>
+                                    context.push(AppRoutes.selfTestDebugPath),
+                                borderRadius: BorderRadius.circular(12),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 4,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          'Self-Test and Debug',
+                                          style: Theme.of(context).textTheme
+                                              .compactSectionTitle(
+                                                const Color(0xFF1D2329),
+                                              ),
+                                        ),
+                                      ),
+                                      const Icon(
+                                        Icons.chevron_right_rounded,
+                                        color: Color(0xFF8A9095),
+                                        size: 28,
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-
-                      ],
-                    ),
-                  );
-                },
-              ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
             ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -240,10 +319,7 @@ class GeneralUserSetupDetailPage extends StatelessWidget {
 }
 
 class _BluetoothGrid extends StatelessWidget {
-  const _BluetoothGrid({
-    required this.state,
-    required this.onCellTap,
-  });
+  const _BluetoothGrid({required this.state, required this.onCellTap});
 
   final GeneralUserSetupDetailState state;
   final VoidCallback onCellTap;
@@ -277,10 +353,7 @@ class _BluetoothGrid extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 4),
-              Text(
-                value,
-                style: t.compactValueText(const Color(0xFF1D2329)),
-              ),
+              Text(value, style: t.compactValueText(const Color(0xFF1D2329))),
             ],
           ),
         ),
@@ -340,9 +413,10 @@ class _BluetoothGrid extends StatelessWidget {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.title});
+  const _Header({required this.title, required this.onBackTap});
 
   final String title;
+  final VoidCallback onBackTap;
 
   @override
   Widget build(BuildContext context) {
@@ -351,13 +425,7 @@ class _Header extends StatelessWidget {
       child: Row(
         children: [
           AppIconCircleButton(
-            onTap: () {
-              if (GoRouter.of(context).canPop()) {
-                context.pop();
-              } else {
-                context.go(AppRoutes.setupPath);
-              }
-            },
+            onTap: onBackTap,
             icon: Icons.arrow_back,
           ),
           Expanded(

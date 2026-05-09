@@ -1,3 +1,4 @@
+import 'package:drifter_buoy/core/bluetooth/ble_connection_service.dart';
 import 'package:drifter_buoy/core/utils/app_logger.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_detail/general_user_setup_detail_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_detail/general_user_setup_detail_state.dart';
@@ -5,15 +6,19 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 class GeneralUserSetupDetailBloc
     extends Bloc<GeneralUserSetupDetailEvent, GeneralUserSetupDetailState> {
-  GeneralUserSetupDetailBloc()
-    : super(const GeneralUserSetupDetailState.initial()) {
+  GeneralUserSetupDetailBloc({required BleConnectionService ble})
+    : _ble = ble,
+      super(const GeneralUserSetupDetailState.initial()) {
     on<LoadGeneralUserSetupDetail>(_onLoadGeneralUserSetupDetail);
     on<ToggleGeneralUserEnableConfiguration>(
       _onToggleGeneralUserEnableConfiguration,
     );
     on<ClearBluetoothSetup>(_onClearBluetoothSetup);
+    on<SyncBluetoothDisconnected>(_onSyncBluetoothDisconnected);
     on<SelectBluetoothDevice>(_onSelectBluetoothDevice);
   }
+
+  final BleConnectionService _ble;
 
   Future<void> _onLoadGeneralUserSetupDetail(
     LoadGeneralUserSetupDetail event,
@@ -30,6 +35,7 @@ class GeneralUserSetupDetailBloc
         enableConfiguration: false,
         signalStrength: '--',
         bluetoothDevice: '--',
+        bluetoothRemoteId: null,
         lastSync: '--',
         connectionStatus: 'Disconnected',
         memoryStatus: '0 Records',
@@ -59,13 +65,19 @@ class GeneralUserSetupDetailBloc
     );
   }
 
-  void _onClearBluetoothSetup(
+  Future<void> _onClearBluetoothSetup(
     ClearBluetoothSetup event,
     Emitter<GeneralUserSetupDetailState> emit,
-  ) {
+  ) async {
+    try {
+      await _ble.disconnect();
+    } catch (e, st) {
+      AppLogger.e('BLE disconnect failed', error: e, stackTrace: st);
+    }
     emit(
       state.copyWith(
         bluetoothDevice: '--',
+        clearBluetoothRemoteId: true,
         connectionStatus: 'Disconnected',
         signalStrength: '--',
         lastSync: '--',
@@ -77,12 +89,31 @@ class GeneralUserSetupDetailBloc
     SelectBluetoothDevice event,
     Emitter<GeneralUserSetupDetailState> emit,
   ) {
+    final name = event.displayName.trim().isEmpty
+        ? 'Unknown device'
+        : event.displayName.trim();
     emit(
       state.copyWith(
-        bluetoothDevice: event.bluetoothId,
+        bluetoothDevice: name,
+        bluetoothRemoteId: event.bluetoothId,
         connectionStatus: 'Connected',
         signalStrength: '82%',
         lastSync: '10:45 AM',
+      ),
+    );
+  }
+
+  void _onSyncBluetoothDisconnected(
+    SyncBluetoothDisconnected event,
+    Emitter<GeneralUserSetupDetailState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        bluetoothDevice: '--',
+        clearBluetoothRemoteId: true,
+        connectionStatus: 'Disconnected',
+        signalStrength: '--',
+        lastSync: '--',
       ),
     );
   }
