@@ -86,44 +86,73 @@ Future<Uint8List> buildDynamicPdf({
     pw.MultiPage(
       pageFormat: PdfPageFormat.a4.landscape,
       margin: const pw.EdgeInsets.fromLTRB(28, 52, 28, 56),
-      header: (context) => pw.Container(
+      header: (pw.Context context) => pw.Container(
         width: double.infinity,
-        padding: const pw.EdgeInsets.only(bottom: 10),
-        decoration: const pw.BoxDecoration(
-          border: pw.Border(
-            bottom: pw.BorderSide(color: PdfColors.grey400, width: 0.8),
+        decoration: pw.BoxDecoration(
+          color: PdfColors.grey50,
+          borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
+          border: pw.Border.all(
+            color: PdfColor.fromInt(0xFFCBD5E1),
+            width: 1,
           ),
         ),
-        child: pw.Row(
-          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: pw.CrossAxisAlignment.center,
+        child: pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+          mainAxisSize: pw.MainAxisSize.min,
           children: [
-            pw.Image(
-              leadingLogoImage,
-              width: 44,
-              height: 44,
-              fit: pw.BoxFit.contain,
-            ),
-            pw.Expanded(
-              child: pw.Padding(
-                padding: const pw.EdgeInsets.symmetric(horizontal: 10),
-                child: pw.Text(
-                  reportTitle,
-                  textAlign: pw.TextAlign.center,
-                  maxLines: 1,
-                  style: pw.TextStyle(
-                    fontSize: 14,
-                    fontWeight: pw.FontWeight.bold,
-                    color: PdfColor.fromInt(0xFF1A2F4A),
-                  ),
+            pw.Container(
+              height: 5,
+              decoration: pw.BoxDecoration(
+                color: PdfColor.fromInt(0xFF1A2F4A),
+                borderRadius: const pw.BorderRadius.only(
+                  topLeft: pw.Radius.circular(3),
+                  topRight: pw.Radius.circular(3),
                 ),
               ),
             ),
-            pw.Image(
-              trailingLogoImage,
-              width: 88,
-              height: 40,
-              fit: pw.BoxFit.contain,
+            pw.Container(
+              padding: const pw.EdgeInsets.fromLTRB(14, 10, 14, 10),
+              decoration: pw.BoxDecoration(
+                border: pw.Border(
+                  top: pw.BorderSide(
+                    color: PdfColor.fromInt(0xFFE2E8F0),
+                    width: 1,
+                  ),
+                ),
+              ),
+              child: pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: pw.CrossAxisAlignment.center,
+                children: [
+                  pw.Image(
+                    leadingLogoImage,
+                    width: 44,
+                    height: 44,
+                    fit: pw.BoxFit.contain,
+                  ),
+                  pw.Expanded(
+                    child: pw.Padding(
+                      padding: const pw.EdgeInsets.symmetric(horizontal: 10),
+                      child: pw.Text(
+                        reportTitle,
+                        textAlign: pw.TextAlign.center,
+                        maxLines: 1,
+                        style: pw.TextStyle(
+                          fontSize: 14,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColor.fromInt(0xFF1A2F4A),
+                        ),
+                      ),
+                    ),
+                  ),
+                  pw.Image(
+                    trailingLogoImage,
+                    width: 88,
+                    height: 40,
+                    fit: pw.BoxFit.contain,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
