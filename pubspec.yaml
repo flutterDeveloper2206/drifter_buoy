@@ -62,6 +62,7 @@ dependencies:
   open_filex: ^4.7.0
   flutter_blue_plus: ^2.2.1
   permission_handler: ^11.3.1
+  printing: ^5.14.3
 
 dev_dependencies:
   flutter_test:

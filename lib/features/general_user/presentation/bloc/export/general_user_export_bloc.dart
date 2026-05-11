@@ -34,6 +34,12 @@ class GeneralUserExportBloc
   final GeneralUserGetBuoyDistanceReportForExport _getBuoyDistanceReport;
   final GeneralUserGetBuoyDataReportForExport _getBuoyDataReport;
 
+  static String _pdfReportTitleFor(ExportReportType reportType) {
+    return reportType == ExportReportType.buoyDistance
+        ? 'Buoy Distance Report'
+        : 'Buoy Data Report';
+  }
+
   Future<void> _onLoadGeneralUserExport(
     LoadGeneralUserExport event,
     Emitter<GeneralUserExportState> emit,
@@ -340,6 +346,7 @@ class GeneralUserExportBloc
             bytes = await buildDynamicPdf(
               columnOrder: cols,
               rows: response.rows,
+              title: GeneralUserExportBloc._pdfReportTitleFor(reportType),
             );
           }
           final fileBuoyId = state.selectedBuoyIds.length == 1
@@ -493,6 +500,7 @@ class GeneralUserExportBloc
             bytes = await buildDynamicPdf(
               columnOrder: cols,
               rows: response.rows,
+              title: GeneralUserExportBloc._pdfReportTitleFor(reportType),
             );
           }
           final name = exportReportFileName(

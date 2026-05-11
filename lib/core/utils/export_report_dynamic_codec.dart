@@ -5,9 +5,11 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
-/// Brand assets for PDF export (declared in [pubspec.yaml] under `flutter.assets`).
-const String _kPdfHeaderLogoAsset = 'assets/icons/ic_logo.png';
-const String _kPdfHeaderAzistaAsset = 'assets/icons/ic_azista.png';
+import 'package:drifter_buoy/core/constants/app_constants.dart';
+
+/// Leading / trailing brand graphics for PDF header (declared under `flutter.assets`).
+const String _kPdfLeadingLogoAsset = 'assets/icons/ic_logo.png';
+const String _kPdfTrailingLogoAsset = 'assets/icons/azista_logo.png';
 
 /// Stable column order: preserve API response key order.
 ///
@@ -63,16 +65,16 @@ Future<Uint8List> buildDynamicPdf({
       '${generatedAt.hour.toString().padLeft(2, '0')}:'
       '${generatedAt.minute.toString().padLeft(2, '0')}';
   final reportTitle = (title == null || title.trim().isEmpty)
-      ? "Drifter Buoy's Report"
+      ? '${AppConstants.appName} Report'
       : title.trim();
-  final logoBytes = (await rootBundle.load(
-    _kPdfHeaderLogoAsset,
+  final leadingLogoBytes = (await rootBundle.load(
+    _kPdfLeadingLogoAsset,
   )).buffer.asUint8List();
-  final azistaBytes = (await rootBundle.load(
-    _kPdfHeaderAzistaAsset,
+  final trailingLogoBytes = (await rootBundle.load(
+    _kPdfTrailingLogoAsset,
   )).buffer.asUint8List();
-  final logoImage = pw.MemoryImage(logoBytes);
-  final azistaImage = pw.MemoryImage(azistaBytes);
+  final leadingLogoImage = pw.MemoryImage(leadingLogoBytes);
+  final trailingLogoImage = pw.MemoryImage(trailingLogoBytes);
 
   final tableData = <List<String>>[
     for (final row in rows)
@@ -84,54 +86,78 @@ Future<Uint8List> buildDynamicPdf({
     pw.MultiPage(
       pageFormat: PdfPageFormat.a4.landscape,
       margin: const pw.EdgeInsets.fromLTRB(28, 52, 28, 56),
-      header: (context) => pw.Container(
+      header: (pw.Context context) => pw.Container(
         width: double.infinity,
-        padding: const pw.EdgeInsets.only(bottom: 10),
-        decoration: const pw.BoxDecoration(
-          border: pw.Border(
-            bottom: pw.BorderSide(color: PdfColors.grey400, width: 0.8),
+        decoration: pw.BoxDecoration(
+          color: PdfColors.grey50,
+          borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
+          border: pw.Border.all(
+            color: PdfColor.fromInt(0xFFCBD5E1),
+            width: 1,
           ),
         ),
-        child: pw.Row(
-          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: pw.CrossAxisAlignment.center,
+        child: pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+          mainAxisSize: pw.MainAxisSize.min,
           children: [
-            pw.Image(logoImage, width: 32, height: 32),
-            pw.Expanded(
-              child: pw.Padding(
-                padding: const pw.EdgeInsets.symmetric(horizontal: 10),
-                child: pw.Text(
-                  reportTitle,
-                  textAlign: pw.TextAlign.center,
-                  maxLines: 1,
-                  style: pw.TextStyle(
-                    fontSize: 14,
-                    fontWeight: pw.FontWeight.bold,
-                    color: PdfColor.fromInt(0xFF1A2F4A),
-                  ),
+            pw.Container(
+              height: 5,
+              decoration: pw.BoxDecoration(
+                color: PdfColor.fromInt(0xFF1A2F4A),
+                borderRadius: const pw.BorderRadius.only(
+                  topLeft: pw.Radius.circular(3),
+                  topRight: pw.Radius.circular(3),
                 ),
               ),
             ),
-            pw.Column(
-              mainAxisSize: pw.MainAxisSize.min,
-              children: [
-                pw.Image(azistaImage, width: 22, height: 22),
-                pw.SizedBox(height: 2),
-                pw.Text(
-                  'AZISTA',
-                  style: pw.TextStyle(
-                    fontSize: 8,
-                    fontWeight: pw.FontWeight.bold,
-                    color: PdfColor.fromInt(0xFFE30613),
-                    letterSpacing: 0.4,
+            pw.Container(
+              padding: const pw.EdgeInsets.fromLTRB(14, 10, 14, 10),
+              decoration: pw.BoxDecoration(
+                border: pw.Border(
+                  top: pw.BorderSide(
+                    color: PdfColor.fromInt(0xFFE2E8F0),
+                    width: 1,
                   ),
                 ),
-              ],
+              ),
+              child: pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: pw.CrossAxisAlignment.center,
+                children: [
+                  pw.Image(
+                    leadingLogoImage,
+                    width: 44,
+                    height: 44,
+                    fit: pw.BoxFit.contain,
+                  ),
+                  pw.Expanded(
+                    child: pw.Padding(
+                      padding: const pw.EdgeInsets.symmetric(horizontal: 10),
+                      child: pw.Text(
+                        reportTitle,
+                        textAlign: pw.TextAlign.center,
+                        maxLines: 1,
+                        style: pw.TextStyle(
+                          fontSize: 14,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColor.fromInt(0xFF1A2F4A),
+                        ),
+                      ),
+                    ),
+                  ),
+                  pw.Image(
+                    trailingLogoImage,
+                    width: 88,
+                    height: 40,
+                    fit: pw.BoxFit.contain,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
       ),
-      footer: (context) => pw.Container(
+      footer: (pw.Context context) => pw.Container(
         width: double.infinity,
         padding: const pw.EdgeInsets.only(top: 8),
         decoration: const pw.BoxDecoration(
@@ -140,13 +166,19 @@ Future<Uint8List> buildDynamicPdf({
           ),
         ),
         child: pw.Row(
-          mainAxisAlignment: pw.MainAxisAlignment.center,
+          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
           children: [
             pw.Text(
-              'Generated $generatedStamp © 2026 Azista Industries Pvt Ltd',
+              'Generated by Azista $generatedStamp',
               textAlign: pw.TextAlign.center,
               style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.black),
             ),
+            pw.Text(
+              'Page ${context.pageNumber} of ${context.pagesCount}',
+              textAlign: pw.TextAlign.center,
+              style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.black),
+            ),
+
           ],
         ),
       ),
