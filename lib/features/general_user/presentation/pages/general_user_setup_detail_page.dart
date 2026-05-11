@@ -4,7 +4,9 @@ import 'package:drifter_buoy/core/bluetooth/ble_connection_service.dart';
 import 'package:drifter_buoy/core/constants/app_routes.dart';
 import 'package:drifter_buoy/core/theme/app_typography.dart';
 import 'package:drifter_buoy/core/utils/injection_container.dart';
+import 'package:drifter_buoy/core/utils/navigation_service.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
+import 'package:drifter_buoy/core/utils/widgets/app_flushbar.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_icon_circle_button.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_loader.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_detail/general_user_setup_detail_bloc.dart';
@@ -72,11 +74,11 @@ class _GeneralUserSetupDetailPageState extends State<GeneralUserSetupDetailPage>
     await _openBluetoothPicker(context);
   }
 
-  Future<void> _disconnectIfConnected() async {
+  Future<void> _disconnectIfConnected({bool showFeedback = true}) async {
     if (_ble.connectedRemoteId == null) {
       return;
     }
-    await _ble.disconnect(showFeedback: true);
+    await _ble.disconnect(showFeedback: showFeedback);
     if (mounted) {
       context.read<GeneralUserSetupDetailBloc>().add(
             const SyncBluetoothDisconnected(),
@@ -84,8 +86,27 @@ class _GeneralUserSetupDetailPageState extends State<GeneralUserSetupDetailPage>
     }
   }
 
+  /// Shows disconnect feedback on the root navigator after the current route
+  /// has settled — avoids Flushbar + `pop` navigator assertion conflicts.
+  void _enqueueDisconnectFlushbar() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final root = NavigationService.currentContext;
+      if (root == null || !root.mounted) {
+        return;
+      }
+      unawaited(
+        AppFlushbar.info(
+          'Bluetooth was disconnected from this app.',
+          title: 'Disconnected',
+          context: root,
+        ),
+      );
+    });
+  }
+
   Future<void> _handleBackTap(BuildContext context) async {
-    await _disconnectIfConnected();
+    final hadConnection = _ble.connectedRemoteId != null;
+    await _disconnectIfConnected(showFeedback: false);
     if (!context.mounted) {
       return;
     }
@@ -93,6 +114,9 @@ class _GeneralUserSetupDetailPageState extends State<GeneralUserSetupDetailPage>
       context.pop();
     } else {
       context.go(AppRoutes.setupPath);
+    }
+    if (hadConnection) {
+      _enqueueDisconnectFlushbar();
     }
   }
 
@@ -104,7 +128,13 @@ class _GeneralUserSetupDetailPageState extends State<GeneralUserSetupDetailPage>
         if (!didPop) {
           return;
         }
-        unawaited(_disconnectIfConnected());
+        final hadConnection = _ble.connectedRemoteId != null;
+        unawaited(() async {
+          await _disconnectIfConnected(showFeedback: false);
+          if (hadConnection) {
+            _enqueueDisconnectFlushbar();
+          }
+        }());
       },
       child: Scaffold(
         backgroundColor: const Color(0xFFDDE1E4),

@@ -142,14 +142,6 @@ class _GeneralUserSelfTestDebugPageState
                         final picked = await showTimePicker(
                           context: ctx,
                           initialTime: selected,
-                          builder: (context, child) {
-                            return MediaQuery(
-                              data: MediaQuery.of(
-                                context,
-                              ).copyWith(alwaysUse24HourFormat: true),
-                              child: child!,
-                            );
-                          },
                         );
                         if (picked == null) {
                           return;
@@ -293,11 +285,11 @@ class _GeneralUserSelfTestDebugPageState
                     onPressed: () {
                       FocusScope.of(ctx).unfocus();
                       context.read<GeneralUserSelfTestDebugBloc>().add(
-                            SubmitGeneralUserTransmitterFrequency(
-                              transmitterType: draftType,
-                              frequencyValue: draftFfff,
-                            ),
-                          );
+                        SubmitGeneralUserTransmitterFrequency(
+                          transmitterType: draftType,
+                          frequencyValue: draftFfff,
+                        ),
+                      );
                       Navigator.of(ctx).pop();
                     },
                     child: const Text('Update'),
@@ -310,8 +302,8 @@ class _GeneralUserSelfTestDebugPageState
       );
       if (context.mounted) {
         context.read<GeneralUserSelfTestDebugBloc>().add(
-              const ClearGeneralUserTransmitterFrequencyPrompt(),
-            );
+          const ClearGeneralUserTransmitterFrequencyPrompt(),
+        );
       }
     } finally {
       _isTransmitterFrequencyDialogOpen = false;
@@ -391,11 +383,11 @@ class _GeneralUserSelfTestDebugPageState
                     onPressed: () {
                       FocusScope.of(ctx).unfocus();
                       context.read<GeneralUserSelfTestDebugBloc>().add(
-                            SubmitGeneralUserSetAttenuation(
-                              transmitterType: draftType,
-                              attenuationValue: draftXx,
-                            ),
-                          );
+                        SubmitGeneralUserSetAttenuation(
+                          transmitterType: draftType,
+                          attenuationValue: draftXx,
+                        ),
+                      );
                       Navigator.of(ctx).pop();
                     },
                     child: const Text('Update'),
@@ -408,8 +400,8 @@ class _GeneralUserSelfTestDebugPageState
       );
       if (context.mounted) {
         context.read<GeneralUserSelfTestDebugBloc>().add(
-              const ClearGeneralUserSetAttenuationPrompt(),
-            );
+          const ClearGeneralUserSetAttenuationPrompt(),
+        );
       }
     } finally {
       _isSetAttenuationDialogOpen = false;
@@ -441,8 +433,8 @@ class _GeneralUserSelfTestDebugPageState
                   Text(
                     'Enter 5-character transmitter station id',
                     style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                          color: const Color(0xFF6A7178),
-                        ),
+                      color: const Color(0xFF6A7178),
+                    ),
                   ),
                   const SizedBox(height: 10),
                   TextFormField(
@@ -471,8 +463,8 @@ class _GeneralUserSelfTestDebugPageState
                 onPressed: () {
                   FocusScope.of(ctx).unfocus();
                   context.read<GeneralUserSelfTestDebugBloc>().add(
-                        SubmitGeneralUserRadioSondeTransmitterId(draftId),
-                      );
+                    SubmitGeneralUserRadioSondeTransmitterId(draftId),
+                  );
                   Navigator.of(ctx).pop();
                 },
                 child: const Text('Update'),
@@ -483,8 +475,8 @@ class _GeneralUserSelfTestDebugPageState
       );
       if (context.mounted) {
         context.read<GeneralUserSelfTestDebugBloc>().add(
-              const ClearGeneralUserRadioSondeTransmitterIdPrompt(),
-            );
+          const ClearGeneralUserRadioSondeTransmitterIdPrompt(),
+        );
       }
     } finally {
       _isRadioSondeTransmitterIdDialogOpen = false;
@@ -499,9 +491,13 @@ class _GeneralUserSelfTestDebugPageState
       return;
     }
     _isTransmitterTestDialogOpen = true;
-    var plainOn = prompt.plainCarrierOn;
-    var modulationOn = prompt.modulationOn;
-    var prbsOn = prompt.prbsOn;
+    var selectedN = prompt.plainCarrierOn
+        ? 0
+        : prompt.modulationOn
+        ? 1
+        : prompt.prbsOn
+        ? 2
+        : 0;
 
     try {
       await showDialog<void>(
@@ -518,32 +514,43 @@ class _GeneralUserSelfTestDebugPageState
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Configure each mode using switches and tap Update.',
+                        'Choose one test mode (N). Only one can be active. '
+                        'Update turns the selected mode ON and the others OFF.',
                         style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                              color: const Color(0xFF6A7178),
-                            ),
+                          color: const Color(0xFF6A7178),
+                        ),
                       ),
                       const SizedBox(height: 8),
-                      SwitchListTile(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        title: const Text('Plain carrier (N=0)'),
-                        value: plainOn,
-                        onChanged: (v) => setLocalState(() => plainOn = v),
-                      ),
-                      SwitchListTile(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        title: const Text('Modulation (N=1)'),
-                        value: modulationOn,
-                        onChanged: (v) => setLocalState(() => modulationOn = v),
-                      ),
-                      SwitchListTile(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        title: const Text('PRBS (N=2)'),
-                        value: prbsOn,
-                        onChanged: (v) => setLocalState(() => prbsOn = v),
+                      RadioGroup<int>(
+                        groupValue: selectedN,
+                        onChanged: (v) {
+                          if (v != null) {
+                            setLocalState(() => selectedN = v);
+                          }
+                        },
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            RadioListTile<int>(
+                              dense: true,
+                              contentPadding: EdgeInsets.zero,
+                              value: 0,
+                              title: const Text('Plain carrier (N = 0)'),
+                            ),
+                            RadioListTile<int>(
+                              dense: true,
+                              contentPadding: EdgeInsets.zero,
+                              value: 1,
+                              title: const Text('Modulation (N = 1)'),
+                            ),
+                            RadioListTile<int>(
+                              dense: true,
+                              contentPadding: EdgeInsets.zero,
+                              value: 2,
+                              title: const Text('PRBS (N = 2)'),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -560,12 +567,12 @@ class _GeneralUserSelfTestDebugPageState
                     onPressed: () {
                       FocusScope.of(ctx).unfocus();
                       context.read<GeneralUserSelfTestDebugBloc>().add(
-                            SubmitGeneralUserTransmitterTest(
-                              plainCarrierOn: plainOn,
-                              modulationOn: modulationOn,
-                              prbsOn: prbsOn,
-                            ),
-                          );
+                        SubmitGeneralUserTransmitterTest(
+                          plainCarrierOn: selectedN == 0,
+                          modulationOn: selectedN == 1,
+                          prbsOn: selectedN == 2,
+                        ),
+                      );
                       Navigator.of(ctx).pop();
                     },
                     child: const Text('Update'),
@@ -578,8 +585,8 @@ class _GeneralUserSelfTestDebugPageState
       );
       if (context.mounted) {
         context.read<GeneralUserSelfTestDebugBloc>().add(
-              const ClearGeneralUserTransmitterTestPrompt(),
-            );
+          const ClearGeneralUserTransmitterTestPrompt(),
+        );
       }
     } finally {
       _isTransmitterTestDialogOpen = false;
@@ -604,31 +611,37 @@ class _GeneralUserSelfTestDebugPageState
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _kv('Peripheral', prompt.peripheralStatus),
-                _kv('GPRS Primary', prompt.gprsPrimary),
-                _kv('GPRS Secondary', prompt.gprsSecondary),
-                _kv('GPRS Third', prompt.gprsThird),
-                _kv('GPRS Factory', prompt.gprsFactory),
-                _kv('Memory1 Fail', prompt.memory1Fail),
-                _kv('Memory1 Test', prompt.memory1Test),
-                _kv('Memory2 Fail', prompt.memory2Fail),
-                _kv('Memory2 Test', prompt.memory2Test),
-                _kv('Charging', prompt.chargeStatus),
-                _kv('Firmware', prompt.firmwareVersion),
+                _checkStatusSectionTitle(ctx, 'Peripheral status (PP)'),
+                _checkStatusValueLine(ctx, prompt.peripheralStatus),
                 const SizedBox(height: 10),
-                Text(
-                  'Raw Response',
-                  style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFF1D2329),
-                        fontWeight: FontWeight.w700,
-                      ),
+                _checkStatusSectionTitle(ctx, 'GPRS server status (GG × 4)'),
+                _checkStatusValueLine(ctx, 'Primary: ${prompt.gprsPrimary}'),
+                _checkStatusValueLine(
+                  ctx,
+                  'Secondary: ${prompt.gprsSecondary}',
                 ),
-                const SizedBox(height: 4),
-                SelectableText(
-                  prompt.rawResponse,
-                  style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFF5C6368),
-                      ),
+                _checkStatusValueLine(ctx, 'Third: ${prompt.gprsThird}'),
+                _checkStatusValueLine(ctx, 'Factory: ${prompt.gprsFactory}'),
+                const SizedBox(height: 10),
+                _checkStatusSectionTitle(ctx, 'Memory 1 fail (F1)'),
+                _checkStatusOkNotOk(ctx, prompt.memory1Fail),
+                _checkStatusSectionTitle(ctx, 'Memory 1 test (MT1)'),
+                _checkStatusOkNotOk(ctx, prompt.memory1Test),
+                const SizedBox(height: 6),
+                _checkStatusSectionTitle(ctx, 'Memory 2 fail (F2)'),
+                _checkStatusOkNotOk(ctx, prompt.memory2Fail),
+                _checkStatusSectionTitle(ctx, 'Memory 2 test (MT2)'),
+                _checkStatusOkNotOk(ctx, prompt.memory2Test),
+                const SizedBox(height: 6),
+                _checkStatusSectionTitle(ctx, 'Battery charging (CH)'),
+                _checkStatusCharging(ctx, prompt.chargeStatus),
+                const SizedBox(height: 10),
+                _checkStatusSectionTitle(ctx, 'Data logger firmware (DL)'),
+                _checkStatusValueLine(
+                  ctx,
+                  prompt.firmwareVersion.trim().isEmpty
+                      ? '—'
+                      : prompt.firmwareVersion.trim(),
                 ),
               ],
             ),
@@ -643,28 +656,105 @@ class _GeneralUserSelfTestDebugPageState
       );
       if (context.mounted) {
         context.read<GeneralUserSelfTestDebugBloc>().add(
-              const ClearGeneralUserCheckStatusPrompt(),
-            );
+          const ClearGeneralUserCheckStatusPrompt(),
+        );
       }
     } finally {
       _isCheckStatusDialogOpen = false;
     }
   }
 
-  Widget _kv(String key, String value) {
+  static const Color _checkOkGreen = Color(0xFF1B5E20);
+  static const Color _checkBadRed = Color(0xFFB3261E);
+  static const Color _checkWarnAmber = Color(0xFFBF360C);
+
+  Widget _checkStatusSectionTitle(BuildContext ctx, String title) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: RichText(
-        text: TextSpan(
-          style: const TextStyle(color: Color(0xFF2A2F34), fontSize: 13),
-          children: [
-            TextSpan(
-              text: '$key: ',
-              style: const TextStyle(fontWeight: FontWeight.w700),
-            ),
-            TextSpan(text: value.isEmpty ? '-' : value),
-          ],
+      padding: const EdgeInsets.only(bottom: 4, top: 2),
+      child: Text(
+        title,
+        style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+          color: const Color(0xFF1D2329),
+          fontWeight: FontWeight.w700,
+          fontSize: 13,
         ),
+      ),
+    );
+  }
+
+  Widget _checkStatusValueLine(BuildContext ctx, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
+      child: Text(
+        text.isEmpty ? '—' : text,
+        style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+          color: const Color(0xFF2A2F34),
+          fontSize: 13,
+        ),
+      ),
+    );
+  }
+
+  Widget _checkStatusOkNotOk(BuildContext ctx, String raw) {
+    final v = int.tryParse(raw.trim());
+    late final String line;
+    late final Color color;
+    if (v == 0) {
+      line = '0 — OK';
+      color = _checkOkGreen;
+    } else if (v == 1) {
+      line = '1 — Not OK';
+      color = _checkBadRed;
+    } else {
+      line = raw.isEmpty ? '—' : raw;
+      color = const Color(0xFF5C6368);
+    }
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
+      child: Text(
+        line,
+        style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+          color: color,
+          fontWeight: FontWeight.w600,
+          fontSize: 13,
+        ),
+      ),
+    );
+  }
+
+  Widget _checkStatusCharging(BuildContext ctx, String raw) {
+    final t = raw.trim();
+    if (t.isEmpty) {
+      return Text(
+        'Not reported (CH omitted before firmware in this response).',
+        style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+          color: const Color(0xFF5C6368),
+          fontSize: 13,
+        ),
+      );
+    }
+    final v = int.tryParse(t);
+    late final String line;
+    late final Color color;
+    if (v == 0) {
+      line = '0 — Charging ON';
+      color = _checkOkGreen;
+    } else if (v == 1) {
+      line = '1 — Charging OFF';
+      color = _checkWarnAmber;
+    } else if (v == 2) {
+      line = '2 — Fault';
+      color = _checkBadRed;
+    } else {
+      line = t;
+      color = const Color(0xFF5C6368);
+    }
+    return Text(
+      line,
+      style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+        color: color,
+        fontWeight: FontWeight.w600,
+        fontSize: 13,
       ),
     );
   }
@@ -757,7 +847,8 @@ class _GeneralUserSelfTestDebugPageState
             >(
               listenWhen: (p, c) =>
                   c.radioSondeTransmitterIdPrompt != null &&
-                  c.radioSondeTransmitterIdPrompt != p.radioSondeTransmitterIdPrompt,
+                  c.radioSondeTransmitterIdPrompt !=
+                      p.radioSondeTransmitterIdPrompt,
               listener: (context, state) {
                 final prompt = state.radioSondeTransmitterIdPrompt;
                 if (prompt == null || _isRadioSondeTransmitterIdDialogOpen) {
@@ -830,50 +921,68 @@ class _GeneralUserSelfTestDebugPageState
                 }
                 showDialog<void>(
                   context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: Text(snap.testName),
-                    content: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Response',
-                            style: Theme.of(ctx).textTheme.compactSectionTitle(
-                              const Color(0xFF1D2329),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          SelectableText(
-                            snap.responseLine,
-                            style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                              color: const Color(0xFF2A2F34),
-                            ),
-                          ),
-                          if (snap.helpText.isNotEmpty) ...[
-                            const SizedBox(height: 16),
-                            Text(
-                              'Description',
-                              style: Theme.of(ctx).textTheme
-                                  .compactSectionTitle(const Color(0xFF1D2329)),
-                            ),
-                            const SizedBox(height: 8),
-                            SelectableText(
-                              snap.helpText,
-                              style: Theme.of(ctx).textTheme.bodySmall
-                                  ?.copyWith(color: const Color(0xFF5C6368)),
-                            ),
+                  builder: (ctx) {
+                    final descriptionColor = snap.descriptionSuccess == null
+                        ? const Color(0xFF5C6368)
+                        : snap.descriptionSuccess!
+                        ? const Color(0xFF1B5E20)
+                        : const Color(0xFFB3261E);
+                    return AlertDialog(
+                      title: Text(snap.testName),
+                      content: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (!snap.hideResponseLine) ...[
+                              Text(
+                                'Response',
+                                style: Theme.of(ctx).textTheme
+                                    .compactSectionTitle(
+                                      const Color(0xFF1D2329),
+                                    ),
+                              ),
+                              const SizedBox(height: 8),
+                              SelectableText(
+                                snap.responseLine,
+                                style: Theme.of(ctx).textTheme.bodySmall
+                                    ?.copyWith(color: const Color(0xFF2A2F34)),
+                              ),
+                            ],
+                            if (snap.helpText.isNotEmpty) ...[
+                              if (!snap.hideResponseLine)
+                                const SizedBox(height: 16),
+                              Text(
+                                'Description',
+                                style: Theme.of(ctx).textTheme
+                                    .compactSectionTitle(
+                                      const Color(0xFF1D2329),
+                                    ),
+                              ),
+                              const SizedBox(height: 8),
+                              SelectableText(
+                                snap.helpText,
+                                style: Theme.of(ctx).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: descriptionColor,
+                                      fontWeight:
+                                          snap.descriptionSuccess == null
+                                          ? FontWeight.normal
+                                          : FontWeight.w600,
+                                    ),
+                              ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(ctx).pop(),
-                        child: const Text('Close'),
-                      ),
-                    ],
-                  ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(ctx).pop(),
+                          child: const Text('Close'),
+                        ),
+                      ],
+                    );
+                  },
                 );
               },
             ),

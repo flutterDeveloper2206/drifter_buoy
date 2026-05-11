@@ -8,21 +8,23 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/self_test_d
 import 'package:drifter_buoy/features/general_user/presentation/bloc/self_test_debug/general_user_self_test_debug_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-class GeneralUserSelfTestDebugBloc extends Bloc<
-    GeneralUserSelfTestDebugEvent, GeneralUserSelfTestDebugState> {
+class GeneralUserSelfTestDebugBloc
+    extends Bloc<GeneralUserSelfTestDebugEvent, GeneralUserSelfTestDebugState> {
   GeneralUserSelfTestDebugBloc({
     required GeneralUserSelfTestRemoteDataSource remoteDataSource,
     required BleConnectionService ble,
-  })  : _remote = remoteDataSource,
-        _ble = ble,
-        super(const GeneralUserSelfTestDebugState.initial()) {
+  }) : _remote = remoteDataSource,
+       _ble = ble,
+       super(const GeneralUserSelfTestDebugState.initial()) {
     on<LoadGeneralUserSelfTestDebug>(_onLoadGeneralUserSelfTestDebug);
     on<RunGeneralUserSelfTestDebugAction>(_onRunGeneralUserSelfTestDebugAction);
     on<ClearGeneralUserSelfTestDebugMessage>(
       _onClearGeneralUserSelfTestDebugMessage,
     );
     on<SubmitGeneralUserSetStationId>(_onSubmitGeneralUserSetStationId);
-    on<ClearGeneralUserSetStationIdPrompt>(_onClearGeneralUserSetStationIdPrompt);
+    on<ClearGeneralUserSetStationIdPrompt>(
+      _onClearGeneralUserSetStationIdPrompt,
+    );
     on<SubmitGeneralUserMeasurementStartTime>(
       _onSubmitGeneralUserMeasurementStartTime,
     );
@@ -50,19 +52,53 @@ class GeneralUserSelfTestDebugBloc extends Bloc<
       _onClearGeneralUserTransmitterTestPrompt,
     );
     on<ClearGeneralUserCheckStatusPrompt>(_onClearGeneralUserCheckStatusPrompt);
+    on<NotifyBlePeripheralDisconnected>(_onNotifyBlePeripheralDisconnected);
+    _disconnectSub = _ble.disconnectedRemoteIds.listen((_) {
+      add(const NotifyBlePeripheralDisconnected());
+    });
   }
 
   final GeneralUserSelfTestRemoteDataSource _remote;
   final BleConnectionService _ble;
+  StreamSubscription<String>? _disconnectSub;
 
   static const String _setStationIdCommandId = '69f04328523c7ca665297e81';
   static const String _transmitterTestCommandId = '69f04328523c7ca665297e78';
   static const String _checkStatusCommandId = '69f04328523c7ca665297e7e';
-  static const String _measurementStartTimeCommandId = '69f04328523c7ca665297e7d';
-  static const String _transmitterFrequencyCommandId = '69f04328523c7ca665297eb8';
+  static const String _measurementStartTimeCommandId =
+      '69f04328523c7ca665297e7d';
+  static const String _transmitterFrequencyCommandId =
+      '69f04328523c7ca665297eb8';
   static const String _setAttenuationCommandId = '69f04328523c7ca665297eb9';
-  static const String _radioSondeTransmitterIdCommandId = '69f04328523c7ca665297eba';
+  static const String _radioSondeTransmitterIdCommandId =
+      '69f04328523c7ca665297eba';
   static const String _fetchStationIdCommand = '?04,,#';
+
+  /// BLE request for `?65,N,S,FFFF,#`. When **S = 0** (get), FFFF must be empty:
+  /// `?65,N,0,,#`. When **S = 1** (set), send four digit MHz fragment, e.g.
+  /// `?65,0,1,4025,#`.
+  static String _transmitterFrequencyRequestCommand({
+    required int n,
+    required int s,
+    String? ffffFourDigits,
+  }) {
+    if (s == 0) {
+      return '?65,$n,0,,#';
+    }
+    return '?65,$n,1,${ffffFourDigits ?? ''},#';
+  }
+
+  /// BLE request for `?67,S,xxxxx,#`. When **S = 0** (get), omit xxxxx:
+  /// `?67,0,,#`. When **S = 1** (set), send the 5-character id: `?67,1,ABCDE,#`.
+  static String _radioSondeTransmitterIdRequestCommand({
+    required int s,
+    String? fiveCharId,
+  }) {
+    if (s == 0) {
+      return '?67,0,,#';
+    }
+    return '?67,1,${fiveCharId ?? ''},#';
+  }
 
   static const List<DrifterBuoyCommandModel> _staticCommands = [
     DrifterBuoyCommandModel(
@@ -91,16 +127,19 @@ class GeneralUserSelfTestDebugBloc extends Bloc<
       testName: 'Check Status',
       requestCommand: '?02,,#',
       waitingPeriodSecondsRaw: 'NA',
-      requestCommandDescription: 'Returns Status of GPRS and Peripheral Devices',
+      requestCommandDescription:
+          'Returns Status of GPRS and Peripheral Devices',
       response: r'$02,C4,00,00,00,00,0,0,0,0,1,VERSION  1.0.2  ,#',
-      responseDescription: r'$02,PP,GG,GG,GG,GG, F1, MT1, F2, MT2, CH, D. L Firmware Version#',
+      responseDescription:
+          r'$02,PP,GG,GG,GG,GG, F1, MT1, F2, MT2, CH, D. L Firmware Version#',
     ),
     DrifterBuoyCommandModel(
       id: '69f04328523c7ca665297e81',
       testName: 'Set Station Id',
       requestCommand: '?04,,#',
       waitingPeriodSecondsRaw: 'NA',
-      requestCommandDescription: 'Fetch current station id and update (8 chars).',
+      requestCommandDescription:
+          'Fetch current station id and update (8 chars).',
       response: r'IIIIIIII,...',
       responseDescription: 'Opens popup for station id update.',
     ),
@@ -137,7 +176,6 @@ class GeneralUserSelfTestDebugBloc extends Bloc<
     ),
   ];
 
-
   Future<void> _onLoadGeneralUserSelfTestDebug(
     LoadGeneralUserSelfTestDebug event,
     Emitter<GeneralUserSelfTestDebugState> emit,
@@ -173,9 +211,7 @@ class GeneralUserSelfTestDebugBloc extends Bloc<
 
         final cmds = allowedIds.isEmpty
             ? _staticCommands
-            : _staticCommands
-                .where((c) => allowedIds.contains(c.id))
-                .toList();
+            : _staticCommands.where((c) => allowedIds.contains(c.id)).toList();
 
         emit(
           state.copyWith(
@@ -201,10 +237,7 @@ class GeneralUserSelfTestDebugBloc extends Bloc<
     final index = event.commandIndex;
     if (index < 0 || index >= state.commands.length) {
       emit(
-        state.copyWith(
-          message: 'Invalid command.',
-          isSuccessMessage: false,
-        ),
+        state.copyWith(message: 'Invalid command.', isSuccessMessage: false),
       );
       return;
     }
@@ -271,10 +304,7 @@ class GeneralUserSelfTestDebugBloc extends Bloc<
 
     try {
       final wait = cmd.responseWaitTimeout;
-      final line = await _ble.sendDrifterAsciiCommand(
-        cmd.requestCommand,
-        wait,
-      );
+      final line = await _ble.sendDrifterAsciiCommand(cmd.requestCommand, wait);
 
       emit(
         state.copyWith(
@@ -388,7 +418,8 @@ class GeneralUserSelfTestDebugBloc extends Bloc<
     if (_ble.connectedRemoteId == null) {
       emit(
         state.copyWith(
-          message: 'No buoy connected. Pair from Setup and connect over Bluetooth first.',
+          message:
+              'No buoy connected. Pair from Setup and connect over Bluetooth first.',
           isSuccessMessage: false,
         ),
       );
@@ -445,7 +476,8 @@ class GeneralUserSelfTestDebugBloc extends Bloc<
           state.copyWith(
             status: GeneralUserSelfTestDebugStatus.loaded,
             clearRunningCommandIndex: true,
-            message: 'Update failed. Device returned station id: $updatedStationId',
+            message:
+                'Update failed. Device returned station id: $updatedStationId',
             isSuccessMessage: false,
           ),
         );
@@ -510,7 +542,8 @@ class GeneralUserSelfTestDebugBloc extends Bloc<
           state.copyWith(
             status: GeneralUserSelfTestDebugStatus.loaded,
             clearRunningCommandIndex: true,
-            message: 'Could not parse measurement start time from device response.',
+            message:
+                'Could not parse measurement start time from device response.',
             isSuccessMessage: false,
           ),
         );
@@ -540,7 +573,11 @@ class GeneralUserSelfTestDebugBloc extends Bloc<
         ),
       );
     } catch (e, st) {
-      AppLogger.e('Fetch measurement start time error', error: e, stackTrace: st);
+      AppLogger.e(
+        'Fetch measurement start time error',
+        error: e,
+        stackTrace: st,
+      );
       emit(
         state.copyWith(
           status: GeneralUserSelfTestDebugStatus.loaded,
@@ -595,10 +632,7 @@ class GeneralUserSelfTestDebugBloc extends Bloc<
     );
 
     try {
-      final line = await _ble.sendDrifterAsciiCommand(
-        '?61,$nextTime,#',
-        wait,
-      );
+      final line = await _ble.sendDrifterAsciiCommand('?61,$nextTime,#', wait);
       final updatedTime = _extractMeasurementStartTime(line);
       if (updatedTime == null) {
         emit(
@@ -674,7 +708,7 @@ class GeneralUserSelfTestDebugBloc extends Bloc<
 
     try {
       final line = await _ble.sendDrifterAsciiCommand(
-        '?65,0,0,#',
+        _transmitterFrequencyRequestCommand(n: 0, s: 0),
         cmd.responseWaitTimeout,
       );
       final parsed = _extractTransmitterFrequency(line);
@@ -713,7 +747,11 @@ class GeneralUserSelfTestDebugBloc extends Bloc<
         ),
       );
     } catch (e, st) {
-      AppLogger.e('Fetch transmitter frequency error', error: e, stackTrace: st);
+      AppLogger.e(
+        'Fetch transmitter frequency error',
+        error: e,
+        stackTrace: st,
+      );
       emit(
         state.copyWith(
           status: GeneralUserSelfTestDebugStatus.loaded,
@@ -770,7 +808,7 @@ class GeneralUserSelfTestDebugBloc extends Bloc<
 
     try {
       final line = await _ble.sendDrifterAsciiCommand(
-        '?65,$n,1,$ffff,#',
+        _transmitterFrequencyRequestCommand(n: n, s: 1, ffffFourDigits: ffff),
         wait,
       );
       final parsed = _extractTransmitterFrequency(line);
@@ -957,10 +995,7 @@ class GeneralUserSelfTestDebugBloc extends Bloc<
     );
 
     try {
-      final line = await _ble.sendDrifterAsciiCommand(
-        '?66,$n,1,$xx,#',
-        wait,
-      );
+      final line = await _ble.sendDrifterAsciiCommand('?66,$n,1,$xx,#', wait);
       final parsed = _extractSetAttenuation(line);
       if (parsed == null) {
         emit(
@@ -1050,7 +1085,7 @@ class GeneralUserSelfTestDebugBloc extends Bloc<
 
     try {
       final line = await _ble.sendDrifterAsciiCommand(
-        '?67,0,#',
+        _radioSondeTransmitterIdRequestCommand(s: 0),
         cmd.responseWaitTimeout,
       );
       final id = _extractRadioSondeTransmitterId(line);
@@ -1090,7 +1125,11 @@ class GeneralUserSelfTestDebugBloc extends Bloc<
         ),
       );
     } catch (e, st) {
-      AppLogger.e('Fetch radio sonde transmitter id error', error: e, stackTrace: st);
+      AppLogger.e(
+        'Fetch radio sonde transmitter id error',
+        error: e,
+        stackTrace: st,
+      );
       emit(
         state.copyWith(
           status: GeneralUserSelfTestDebugStatus.loaded,
@@ -1146,7 +1185,7 @@ class GeneralUserSelfTestDebugBloc extends Bloc<
 
     try {
       final line = await _ble.sendDrifterAsciiCommand(
-        '?67,1,$nextId,#',
+        _radioSondeTransmitterIdRequestCommand(s: 1, fiveCharId: nextId),
         wait,
       );
       final updatedId = _extractRadioSondeTransmitterId(line);
@@ -1195,7 +1234,11 @@ class GeneralUserSelfTestDebugBloc extends Bloc<
         ),
       );
     } catch (e, st) {
-      AppLogger.e('Set radio sonde transmitter id error', error: e, stackTrace: st);
+      AppLogger.e(
+        'Set radio sonde transmitter id error',
+        error: e,
+        stackTrace: st,
+      );
       emit(
         state.copyWith(
           status: GeneralUserSelfTestDebugStatus.loaded,
@@ -1287,10 +1330,7 @@ class GeneralUserSelfTestDebugBloc extends Bloc<
         final n = item.$1;
         final on = item.$2;
         final s = on ? 0 : 1;
-        final line = await _ble.sendDrifterAsciiCommand(
-          '?64,$n,$s,#',
-          wait,
-        );
+        final line = await _ble.sendDrifterAsciiCommand('?64,$n,$s,#', wait);
         resultLines.add(line);
         final status = _extractTransmitterTestStatus(line);
         final isOk = status == 0;
@@ -1310,8 +1350,9 @@ class GeneralUserSelfTestDebugBloc extends Bloc<
             lastSnapshot: SelfTestBleResponseSnapshot(
               testName: 'Transmitter Test',
               responseLine: resultLines.join('\n'),
-              helpText:
-                  'One or more responses returned S=1 (Transmitter test Not OK).',
+              helpText: 'Transmitter test Not OK.',
+              hideResponseLine: true,
+              descriptionSuccess: false,
             ),
           ),
         );
@@ -1328,7 +1369,9 @@ class GeneralUserSelfTestDebugBloc extends Bloc<
           lastSnapshot: SelfTestBleResponseSnapshot(
             testName: 'Transmitter Test',
             responseLine: resultLines.join('\n'),
-            helpText: 'S = 0 means Transmitter test OK. S = 1 means Not OK.',
+            helpText: 'Transmitter test OK.',
+            hideResponseLine: true,
+            descriptionSuccess: true,
           ),
         ),
       );
@@ -1447,8 +1490,8 @@ class GeneralUserSelfTestDebugBloc extends Bloc<
     // Typical payload: `$04,KISHAN12,...#`
     // If first token is command marker (`$04`/`?04`), station id is the second token.
     final first = parts.first.trim();
-    final candidate = ((first.startsWith(r'$') || first.startsWith('?')) &&
-            parts.length > 1)
+    final candidate =
+        ((first.startsWith(r'$') || first.startsWith('?')) && parts.length > 1)
         ? parts[1].trim()
         : first;
     if (candidate.isEmpty) {
@@ -1582,32 +1625,74 @@ class GeneralUserSelfTestDebugBloc extends Bloc<
     return 'Unknown status=$status';
   }
 
+  /// Parses `$02,PP,GG,GG,GG,GG,F1,MT1,F2,MT2,CH,DL firmware…#` (extra commas in
+  /// the firmware segment are re-joined). If CH is omitted, the last field is
+  /// treated as firmware and [chargeStatus] is left empty for the UI.
   SelfTestCheckStatusPrompt? _parseCheckStatus(String responseLine) {
-    final cleaned = responseLine.trim();
+    final cleaned = responseLine.trim().replaceAll('#', '').trim();
     if (cleaned.isEmpty) {
       return null;
     }
-    final parts = cleaned.split(',').map((e) => e.trim()).toList();
-    if (parts.length < 12) {
+    final parts = cleaned
+        .split(',')
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+    if (parts.length < 10) {
       return null;
     }
-    final fw = parts.length > 12
-        ? parts.sublist(12).join(',').replaceAll('#', '').trim()
-        : '';
+    final code = parts[0].toUpperCase();
+    if (!code.startsWith(r'$02') && code != '02') {
+      return null;
+    }
+
+    final pp = parts[1];
+    final g1 = parts[2];
+    final g2 = parts[3];
+    final g3 = parts[4];
+    final g4 = parts[5];
+    final f1 = parts[6];
+    final mt1 = parts[7];
+    final f2 = parts[8];
+    final mt2 = parts[9];
+
+    String ch;
+    String fw;
+    if (parts.length >= 12) {
+      ch = parts[10];
+      fw = parts.sublist(11).join(', ');
+    } else if (parts.length == 11) {
+      final last = parts[10];
+      if (last.length == 1) {
+        final cv = int.tryParse(last);
+        if (cv != null && cv >= 0 && cv <= 2) {
+          ch = last;
+          fw = '';
+        } else {
+          ch = '';
+          fw = last;
+        }
+      } else {
+        ch = '';
+        fw = last;
+      }
+    } else {
+      ch = '';
+      fw = '';
+    }
 
     return SelfTestCheckStatusPrompt(
-      peripheralStatus: parts[2],
-      gprsPrimary: parts[3],
-      gprsSecondary: parts[4],
-      gprsThird: parts[5],
-      gprsFactory: parts[6],
-      memory1Fail: parts[7],
-      memory1Test: parts[8],
-      memory2Fail: parts[9],
-      memory2Test: parts[10],
-      chargeStatus: parts[11],
+      peripheralStatus: pp,
+      gprsPrimary: g1,
+      gprsSecondary: g2,
+      gprsThird: g3,
+      gprsFactory: g4,
+      memory1Fail: f1,
+      memory1Test: mt1,
+      memory2Fail: f2,
+      memory2Test: mt2,
+      chargeStatus: ch,
       firmwareVersion: fw,
-      rawResponse: cleaned,
     );
   }
 
@@ -1616,5 +1701,33 @@ class GeneralUserSelfTestDebugBloc extends Bloc<
     Emitter<GeneralUserSelfTestDebugState> emit,
   ) {
     emit(state.copyWith(message: '', isSuccessMessage: false));
+  }
+
+  void _onNotifyBlePeripheralDisconnected(
+    NotifyBlePeripheralDisconnected event,
+    Emitter<GeneralUserSelfTestDebugState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        status: GeneralUserSelfTestDebugStatus.loaded,
+        clearRunningCommandIndex: true,
+        clearLastSnapshot: true,
+        clearStationIdPrompt: true,
+        clearMeasurementTimePrompt: true,
+        clearTransmitterFrequencyPrompt: true,
+        clearSetAttenuationPrompt: true,
+        clearRadioSondeTransmitterIdPrompt: true,
+        clearTransmitterTestPrompt: true,
+        clearCheckStatusPrompt: true,
+        message: '',
+        isSuccessMessage: false,
+      ),
+    );
+  }
+
+  @override
+  Future<void> close() async {
+    await _disconnectSub?.cancel();
+    return super.close();
   }
 }

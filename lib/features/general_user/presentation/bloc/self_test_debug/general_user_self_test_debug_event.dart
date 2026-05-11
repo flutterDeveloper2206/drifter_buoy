@@ -125,3 +125,9 @@ class ClearGeneralUserTransmitterTestPrompt
 class ClearGeneralUserCheckStatusPrompt extends GeneralUserSelfTestDebugEvent {
   const ClearGeneralUserCheckStatusPrompt();
 }
+
+/// Fired when the BLE central observes a peripheral disconnect (power off,
+/// range, link loss, etc.). Keeps self-test UI consistent with connection state.
+class NotifyBlePeripheralDisconnected extends GeneralUserSelfTestDebugEvent {
+  const NotifyBlePeripheralDisconnected();
+}

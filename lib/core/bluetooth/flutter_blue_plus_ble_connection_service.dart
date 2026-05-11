@@ -142,7 +142,7 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
     if (showFeedback) {
       unawaited(
         AppFlushbar.info(
-          'Bluetooth device disconnected.',
+          'Bluetooth was disconnected from this app.',
           title: 'Disconnected',
         ),
       );
@@ -169,8 +169,9 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
     _disconnectedRemoteIdsController.add(remoteId);
     unawaited(
       AppFlushbar.info(
-        'Bluetooth device disconnected.',
-        title: 'Disconnected',
+        'Connection lost. The buoy may be powered off, out of range, or the '
+        'link was interrupted.',
+        title: 'Connection lost',
       ),
     );
   }

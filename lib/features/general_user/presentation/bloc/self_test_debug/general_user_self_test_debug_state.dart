@@ -9,14 +9,23 @@ class SelfTestBleResponseSnapshot extends Equatable {
     required this.testName,
     required this.responseLine,
     required this.helpText,
+    this.hideResponseLine = false,
+    this.descriptionSuccess,
   });
 
   final String testName;
   final String responseLine;
   final String helpText;
 
+  /// When true, the dialog omits the raw BLE response block.
+  final bool hideResponseLine;
+
+  /// When non-null, [helpText] is styled as success (true) or error (false).
+  final bool? descriptionSuccess;
+
   @override
-  List<Object?> get props => [testName, responseLine, helpText];
+  List<Object?> get props =>
+      [testName, responseLine, helpText, hideResponseLine, descriptionSuccess];
 }
 
 class SelfTestStationIdPrompt extends Equatable {
@@ -106,7 +115,6 @@ class SelfTestCheckStatusPrompt extends Equatable {
     required this.memory2Test,
     required this.chargeStatus,
     required this.firmwareVersion,
-    required this.rawResponse,
   });
 
   final String peripheralStatus;
@@ -120,7 +128,6 @@ class SelfTestCheckStatusPrompt extends Equatable {
   final String memory2Test;
   final String chargeStatus;
   final String firmwareVersion;
-  final String rawResponse;
 
   @override
   List<Object?> get props => [
@@ -135,7 +142,6 @@ class SelfTestCheckStatusPrompt extends Equatable {
         memory2Test,
         chargeStatus,
         firmwareVersion,
-        rawResponse,
       ];
 }
 
