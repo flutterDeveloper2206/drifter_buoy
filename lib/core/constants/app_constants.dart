@@ -1,7 +1,7 @@
 class AppConstants {
   const AppConstants._();
 
-  static const String appName = 'Drifter Buoy';
+  static const String appName = 'Drifter Buoys';
   static const String baseUrl = 'https://jsonplaceholder.typicode.com';
   static const String itemsEndpoint = '/posts';
 
