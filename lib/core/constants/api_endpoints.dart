@@ -51,4 +51,7 @@ class ApiEndpoints {
 
   static const String getAllNotificationsUrl =
       'http://4.213.34.231:5025/api/admin/Notification/GetAllNotifications';
+
+  static const String getAllDrifterBuoyCommandsUrl =
+      'http://4.213.34.231:5025/api/Admin/Command/GetAllDrifterBuoyCommands';
 }

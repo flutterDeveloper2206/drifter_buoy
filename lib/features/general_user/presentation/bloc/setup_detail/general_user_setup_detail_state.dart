@@ -7,6 +7,7 @@ class GeneralUserSetupDetailState extends Equatable {
   final bool enableConfiguration;
   final String signalStrength;
   final String bluetoothDevice;
+  final String? bluetoothRemoteId;
   final String lastSync;
   final String connectionStatus;
   final String memoryStatus;
@@ -18,6 +19,7 @@ class GeneralUserSetupDetailState extends Equatable {
     required this.enableConfiguration,
     required this.signalStrength,
     required this.bluetoothDevice,
+    this.bluetoothRemoteId,
     required this.lastSync,
     required this.connectionStatus,
     required this.memoryStatus,
@@ -30,6 +32,7 @@ class GeneralUserSetupDetailState extends Equatable {
       enableConfiguration = false,
       signalStrength = '--',
       bluetoothDevice = '--',
+      bluetoothRemoteId = null,
       lastSync = '--',
       connectionStatus = 'Disconnected',
       memoryStatus = '0 Records',
@@ -41,6 +44,8 @@ class GeneralUserSetupDetailState extends Equatable {
     bool? enableConfiguration,
     String? signalStrength,
     String? bluetoothDevice,
+    String? bluetoothRemoteId,
+    bool clearBluetoothRemoteId = false,
     String? lastSync,
     String? connectionStatus,
     String? memoryStatus,
@@ -52,6 +57,9 @@ class GeneralUserSetupDetailState extends Equatable {
       enableConfiguration: enableConfiguration ?? this.enableConfiguration,
       signalStrength: signalStrength ?? this.signalStrength,
       bluetoothDevice: bluetoothDevice ?? this.bluetoothDevice,
+      bluetoothRemoteId: clearBluetoothRemoteId
+          ? null
+          : (bluetoothRemoteId ?? this.bluetoothRemoteId),
       lastSync: lastSync ?? this.lastSync,
       connectionStatus: connectionStatus ?? this.connectionStatus,
       memoryStatus: memoryStatus ?? this.memoryStatus,
@@ -66,6 +74,7 @@ class GeneralUserSetupDetailState extends Equatable {
     enableConfiguration,
     signalStrength,
     bluetoothDevice,
+    bluetoothRemoteId,
     lastSync,
     connectionStatus,
     memoryStatus,

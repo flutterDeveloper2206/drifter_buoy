@@ -25,6 +25,10 @@ class ClearBluetoothSetup extends GeneralUserSetupDetailEvent {
   const ClearBluetoothSetup();
 }
 
+class SyncBluetoothDisconnected extends GeneralUserSetupDetailEvent {
+  const SyncBluetoothDisconnected();
+}
+
 class SelectBluetoothDevice extends GeneralUserSetupDetailEvent {
   const SelectBluetoothDevice({
     required this.displayName,

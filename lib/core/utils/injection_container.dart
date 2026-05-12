@@ -1,3 +1,5 @@
+import 'package:drifter_buoy/core/bluetooth/ble_connection_service.dart';
+import 'package:drifter_buoy/core/bluetooth/flutter_blue_plus_ble_connection_service.dart';
 import 'package:drifter_buoy/core/constants/app_constants.dart';
 import 'package:drifter_buoy/core/device/login_device_info_service.dart';
 import 'package:drifter_buoy/core/storage/auth_session_store.dart';
@@ -31,6 +33,7 @@ import 'package:drifter_buoy/features/general_user/data/datasources/general_user
 import 'package:drifter_buoy/features/general_user/data/datasources/general_user_report_remote_data_source.dart';
 import 'package:drifter_buoy/features/general_user/data/repositories/general_user_report_repository_impl.dart';
 import 'package:drifter_buoy/features/general_user/data/datasources/general_user_buoys_remote_data_source.dart';
+import 'package:drifter_buoy/features/general_user/data/datasources/general_user_self_test_remote_data_source.dart';
 import 'package:drifter_buoy/features/general_user/data/repositories/general_user_auth_repository_impl.dart';
 import 'package:drifter_buoy/features/general_user/data/repositories/general_user_device_token_repository_impl.dart';
 import 'package:drifter_buoy/features/general_user/data/repositories/general_user_profile_repository_impl.dart';
@@ -90,6 +93,12 @@ Future<void> initDependencies() async {
         baseUrl: AppConstants.baseUrl,
         authSessionStore: sl<AuthSessionStore>(),
       ),
+    );
+  }
+
+  if (!sl.isRegistered<BleConnectionService>()) {
+    sl.registerLazySingleton<BleConnectionService>(
+      () => FlutterBluePlusBleConnectionService(),
     );
   }
 
@@ -419,6 +428,12 @@ Future<void> initDependencies() async {
     );
   }
 
+  if (!sl.isRegistered<GeneralUserSelfTestRemoteDataSource>()) {
+    sl.registerLazySingleton<GeneralUserSelfTestRemoteDataSource>(
+      () => GeneralUserSelfTestRemoteDataSource(apiService: sl()),
+    );
+  }
+
   if (!sl.isRegistered<GeneralUserBuoysRepository>()) {
     sl.registerLazySingleton<GeneralUserBuoysRepository>(
       () => GeneralUserBuoysRepositoryImpl(remoteDataSource: sl()),
@@ -487,7 +502,7 @@ Future<void> initDependencies() async {
 
   if (!sl.isRegistered<GeneralUserSetupDetailBloc>()) {
     sl.registerFactory<GeneralUserSetupDetailBloc>(
-      () => GeneralUserSetupDetailBloc(),
+      () => GeneralUserSetupDetailBloc(ble: sl<BleConnectionService>()),
     );
   }
 
@@ -497,7 +512,10 @@ Future<void> initDependencies() async {
 
   if (!sl.isRegistered<GeneralUserSelfTestDebugBloc>()) {
     sl.registerFactory<GeneralUserSelfTestDebugBloc>(
-      () => GeneralUserSelfTestDebugBloc(),
+      () => GeneralUserSelfTestDebugBloc(
+        remoteDataSource: sl(),
+        ble: sl(),
+      ),
     );
   }
 }
