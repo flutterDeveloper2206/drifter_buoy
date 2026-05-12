@@ -20,7 +20,8 @@ class RunGeneralUserSelfTestDebugAction extends GeneralUserSelfTestDebugEvent {
   List<Object> get props => [commandIndex];
 }
 
-class ClearGeneralUserSelfTestDebugMessage extends GeneralUserSelfTestDebugEvent {
+class ClearGeneralUserSelfTestDebugMessage
+    extends GeneralUserSelfTestDebugEvent {
   const ClearGeneralUserSelfTestDebugMessage();
 }
 
@@ -37,7 +38,8 @@ class ClearGeneralUserSetStationIdPrompt extends GeneralUserSelfTestDebugEvent {
   const ClearGeneralUserSetStationIdPrompt();
 }
 
-class SubmitGeneralUserMeasurementStartTime extends GeneralUserSelfTestDebugEvent {
+class SubmitGeneralUserMeasurementStartTime
+    extends GeneralUserSelfTestDebugEvent {
   const SubmitGeneralUserMeasurementStartTime(this.timeValue);
 
   final String timeValue;
@@ -83,7 +85,8 @@ class SubmitGeneralUserSetAttenuation extends GeneralUserSelfTestDebugEvent {
   List<Object> get props => [transmitterType, attenuationValue];
 }
 
-class ClearGeneralUserSetAttenuationPrompt extends GeneralUserSelfTestDebugEvent {
+class ClearGeneralUserSetAttenuationPrompt
+    extends GeneralUserSelfTestDebugEvent {
   const ClearGeneralUserSetAttenuationPrompt();
 }
 
@@ -130,4 +133,24 @@ class ClearGeneralUserCheckStatusPrompt extends GeneralUserSelfTestDebugEvent {
 /// range, link loss, etc.). Keeps self-test UI consistent with connection state.
 class NotifyBlePeripheralDisconnected extends GeneralUserSelfTestDebugEvent {
   const NotifyBlePeripheralDisconnected();
+}
+
+/// Primary/secondary FTP, SMS cell, TX redundancy — payload from dialog.
+class SubmitGeneralUserParameterizedCommand
+    extends GeneralUserSelfTestDebugEvent {
+  const SubmitGeneralUserParameterizedCommand({
+    required this.commandId,
+    required this.value,
+  });
+
+  final String commandId;
+  final String value;
+
+  @override
+  List<Object> get props => [commandId, value];
+}
+
+class ClearGeneralUserParameterizedCommandPrompt
+    extends GeneralUserSelfTestDebugEvent {
+  const ClearGeneralUserParameterizedCommandPrompt();
 }

@@ -52,7 +52,7 @@ class DrifterBuoyCommandModel extends Equatable {
           .toString(),
       response: (json['response'] ?? '').toString(),
       responseDescription: (json['responseDescription'] ?? '').toString(),
-      isActive: _parseIsActive(json['isActive']),
+      isActive: _parseIsActive(json['isActive'] ?? json['isactive']),
     );
   }
 
@@ -124,7 +124,8 @@ class GetAllDrifterBuoyCommandsResponse extends Equatable {
           : int.tryParse((json['statusCode'] ?? '0').toString()) ?? 0,
       message: (json['message'] ?? '').toString(),
       result: list,
-      isSuccess: (json['isSuccess'] ?? false) as bool? ?? false,
+      isSuccess: json['isSuccess'] == true ||
+          (json['isSuccess']?.toString().toLowerCase() == 'true'),
     );
   }
   @override

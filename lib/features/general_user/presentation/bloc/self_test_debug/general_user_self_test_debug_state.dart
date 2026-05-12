@@ -24,14 +24,17 @@ class SelfTestBleResponseSnapshot extends Equatable {
   final bool? descriptionSuccess;
 
   @override
-  List<Object?> get props =>
-      [testName, responseLine, helpText, hideResponseLine, descriptionSuccess];
+  List<Object?> get props => [
+    testName,
+    responseLine,
+    helpText,
+    hideResponseLine,
+    descriptionSuccess,
+  ];
 }
 
 class SelfTestStationIdPrompt extends Equatable {
-  const SelfTestStationIdPrompt({
-    required this.currentStationId,
-  });
+  const SelfTestStationIdPrompt({required this.currentStationId});
 
   final String currentStationId;
 
@@ -40,9 +43,7 @@ class SelfTestStationIdPrompt extends Equatable {
 }
 
 class SelfTestMeasurementTimePrompt extends Equatable {
-  const SelfTestMeasurementTimePrompt({
-    required this.currentTime,
-  });
+  const SelfTestMeasurementTimePrompt({required this.currentTime});
 
   final String currentTime;
 
@@ -102,6 +103,46 @@ class SelfTestTransmitterTestPrompt extends Equatable {
   List<Object?> get props => [plainCarrierOn, modulationOn, prbsOn];
 }
 
+/// Field shape for primary/secondary server BLE commands from the command catalog.
+enum SelfTestParameterizedCommandFieldKind {
+  /// Max 20 chars, padded with trailing spaces for shorter values (FTP address, path, user, password).
+  ftpField20,
+
+  /// Port 0–65535 as 5 digits (leading zeros).
+  portFiveDigits,
+
+  /// `+91` + 10 digits (secondary SMS cell).
+  smsCellPlus91,
+
+  /// `0` = GSM and GPRS, `1` = GSM if GPRS fail.
+  txRedundancy01,
+}
+
+/// Prompt for server/FTP/SMS commands that embed user input in `?NN,payload,#`.
+class SelfTestParameterizedCommandPrompt extends Equatable {
+  const SelfTestParameterizedCommandPrompt({
+    required this.commandId,
+    required this.testName,
+    required this.fieldKind,
+    this.requestHelpText = '',
+  });
+
+  final String commandId;
+  final String testName;
+  final SelfTestParameterizedCommandFieldKind fieldKind;
+
+  /// Full request / field rules from the command catalog.
+  final String requestHelpText;
+
+  @override
+  List<Object?> get props => [
+    commandId,
+    testName,
+    fieldKind,
+    requestHelpText,
+  ];
+}
+
 class SelfTestCheckStatusPrompt extends Equatable {
   const SelfTestCheckStatusPrompt({
     required this.peripheralStatus,
@@ -131,18 +172,18 @@ class SelfTestCheckStatusPrompt extends Equatable {
 
   @override
   List<Object?> get props => [
-        peripheralStatus,
-        gprsPrimary,
-        gprsSecondary,
-        gprsThird,
-        gprsFactory,
-        memory1Fail,
-        memory1Test,
-        memory2Fail,
-        memory2Test,
-        chargeStatus,
-        firmwareVersion,
-      ];
+    peripheralStatus,
+    gprsPrimary,
+    gprsSecondary,
+    gprsThird,
+    gprsFactory,
+    memory1Fail,
+    memory1Test,
+    memory2Fail,
+    memory2Test,
+    chargeStatus,
+    firmwareVersion,
+  ];
 }
 
 class GeneralUserSelfTestDebugState extends Equatable {
@@ -159,6 +200,7 @@ class GeneralUserSelfTestDebugState extends Equatable {
   final SelfTestRadioSondeTransmitterIdPrompt? radioSondeTransmitterIdPrompt;
   final SelfTestTransmitterTestPrompt? transmitterTestPrompt;
   final SelfTestCheckStatusPrompt? checkStatusPrompt;
+  final SelfTestParameterizedCommandPrompt? parameterizedCommandPrompt;
 
   const GeneralUserSelfTestDebugState({
     required this.status,
@@ -174,6 +216,7 @@ class GeneralUserSelfTestDebugState extends Equatable {
     required this.radioSondeTransmitterIdPrompt,
     required this.transmitterTestPrompt,
     required this.checkStatusPrompt,
+    required this.parameterizedCommandPrompt,
   });
 
   const GeneralUserSelfTestDebugState.initial()
@@ -189,7 +232,8 @@ class GeneralUserSelfTestDebugState extends Equatable {
       setAttenuationPrompt = null,
       radioSondeTransmitterIdPrompt = null,
       transmitterTestPrompt = null,
-      checkStatusPrompt = null;
+      checkStatusPrompt = null,
+      parameterizedCommandPrompt = null;
 
   GeneralUserSelfTestDebugState copyWith({
     GeneralUserSelfTestDebugStatus? status,
@@ -214,6 +258,8 @@ class GeneralUserSelfTestDebugState extends Equatable {
     bool clearTransmitterTestPrompt = false,
     SelfTestCheckStatusPrompt? checkStatusPrompt,
     bool clearCheckStatusPrompt = false,
+    SelfTestParameterizedCommandPrompt? parameterizedCommandPrompt,
+    bool clearParameterizedCommandPrompt = false,
   }) {
     return GeneralUserSelfTestDebugState(
       status: status ?? this.status,
@@ -240,30 +286,35 @@ class GeneralUserSelfTestDebugState extends Equatable {
           : (setAttenuationPrompt ?? this.setAttenuationPrompt),
       radioSondeTransmitterIdPrompt: clearRadioSondeTransmitterIdPrompt
           ? null
-          : (radioSondeTransmitterIdPrompt ?? this.radioSondeTransmitterIdPrompt),
+          : (radioSondeTransmitterIdPrompt ??
+                this.radioSondeTransmitterIdPrompt),
       transmitterTestPrompt: clearTransmitterTestPrompt
           ? null
           : (transmitterTestPrompt ?? this.transmitterTestPrompt),
       checkStatusPrompt: clearCheckStatusPrompt
           ? null
           : (checkStatusPrompt ?? this.checkStatusPrompt),
+      parameterizedCommandPrompt: clearParameterizedCommandPrompt
+          ? null
+          : (parameterizedCommandPrompt ?? this.parameterizedCommandPrompt),
     );
   }
 
   @override
   List<Object?> get props => [
-        status,
-        commands,
-        runningCommandIndex,
-        message,
-        isSuccessMessage,
-        lastSnapshot,
-        stationIdPrompt,
-        measurementTimePrompt,
-        transmitterFrequencyPrompt,
-        setAttenuationPrompt,
-        radioSondeTransmitterIdPrompt,
-        transmitterTestPrompt,
-        checkStatusPrompt,
-      ];
+    status,
+    commands,
+    runningCommandIndex,
+    message,
+    isSuccessMessage,
+    lastSnapshot,
+    stationIdPrompt,
+    measurementTimePrompt,
+    transmitterFrequencyPrompt,
+    setAttenuationPrompt,
+    radioSondeTransmitterIdPrompt,
+    transmitterTestPrompt,
+    checkStatusPrompt,
+    parameterizedCommandPrompt,
+  ];
 }

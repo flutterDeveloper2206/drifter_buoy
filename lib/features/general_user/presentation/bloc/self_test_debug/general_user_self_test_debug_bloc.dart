@@ -53,6 +53,12 @@ class GeneralUserSelfTestDebugBloc
     );
     on<ClearGeneralUserCheckStatusPrompt>(_onClearGeneralUserCheckStatusPrompt);
     on<NotifyBlePeripheralDisconnected>(_onNotifyBlePeripheralDisconnected);
+    on<SubmitGeneralUserParameterizedCommand>(
+      _onSubmitGeneralUserParameterizedCommand,
+    );
+    on<ClearGeneralUserParameterizedCommandPrompt>(
+      _onClearGeneralUserParameterizedCommandPrompt,
+    );
     _disconnectSub = _ble.disconnectedRemoteIds.listen((_) {
       add(const NotifyBlePeripheralDisconnected());
     });
@@ -62,16 +68,72 @@ class GeneralUserSelfTestDebugBloc
   final BleConnectionService _ble;
   StreamSubscription<String>? _disconnectSub;
 
-  static const String _setStationIdCommandId = '69f04328523c7ca665297e81';
+  /// Command document ids (Admin/Command/GetAllDrifterBuoyCommands); order
+  /// matches [_staticCommands].
   static const String _transmitterTestCommandId = '69f04328523c7ca665297e78';
-  static const String _checkStatusCommandId = '69f04328523c7ca665297e7e';
   static const String _measurementStartTimeCommandId =
       '69f04328523c7ca665297e7d';
+  static const String _checkStatusCommandId = '69f04328523c7ca665297e7e';
+  static const String _setStationIdCommandId = '69f04328523c7ca665297e81';
+  static const String _primaryServerFtpAddressCommandId =
+      '69f04328523c7ca665297e88';
+  static const String _primaryServerFtpPortCommandId =
+      '69f04328523c7ca665297e89';
+  static const String _primaryServerFtpPathCommandId =
+      '69f04328523c7ca665297e8a';
+  static const String _primaryServerFtpUsernameCommandId =
+      '69f04328523c7ca665297e8b';
+  static const String _primaryServerFtpPasswordCommandId =
+      '69f04328523c7ca665297e8c';
+  static const String _secondaryServerFtpAddressCommandId =
+      '69f04328523c7ca665297e90';
+  static const String _secondaryServerFtpPortCommandId =
+      '69f04328523c7ca665297e91';
+  static const String _secondaryServerFtpPathCommandId =
+      '69f04328523c7ca665297e92';
+  static const String _secondaryServerFtpUsernameCommandId =
+      '69f04328523c7ca665297e93';
+  static const String _secondaryServerFtpPasswordCommandId =
+      '69f04328523c7ca665297e94';
+  static const String _secondaryServerSmsCellNoCommandId =
+      '69f04328523c7ca665297e95';
+  static const String _secondaryServerTxMediaRedundancyCommandId =
+      '69f04328523c7ca665297e96';
   static const String _transmitterFrequencyCommandId =
       '69f04328523c7ca665297eb8';
   static const String _setAttenuationCommandId = '69f04328523c7ca665297eb9';
   static const String _radioSondeTransmitterIdCommandId =
       '69f04328523c7ca665297eba';
+
+  /// Catalog ids (see Command reposne BLE Sheet1.csv) → how to embed user input.
+  static const Map<String, SelfTestParameterizedCommandFieldKind>
+      _parameterizedServerFieldKindByCommandId = {
+    _primaryServerFtpAddressCommandId:
+        SelfTestParameterizedCommandFieldKind.ftpField20,
+    _primaryServerFtpPortCommandId:
+        SelfTestParameterizedCommandFieldKind.portFiveDigits,
+    _primaryServerFtpPathCommandId:
+        SelfTestParameterizedCommandFieldKind.ftpField20,
+    _primaryServerFtpUsernameCommandId:
+        SelfTestParameterizedCommandFieldKind.ftpField20,
+    _primaryServerFtpPasswordCommandId:
+        SelfTestParameterizedCommandFieldKind.ftpField20,
+    _secondaryServerFtpAddressCommandId:
+        SelfTestParameterizedCommandFieldKind.ftpField20,
+    _secondaryServerFtpPortCommandId:
+        SelfTestParameterizedCommandFieldKind.portFiveDigits,
+    _secondaryServerFtpPathCommandId:
+        SelfTestParameterizedCommandFieldKind.ftpField20,
+    _secondaryServerFtpUsernameCommandId:
+        SelfTestParameterizedCommandFieldKind.ftpField20,
+    _secondaryServerFtpPasswordCommandId:
+        SelfTestParameterizedCommandFieldKind.ftpField20,
+    _secondaryServerSmsCellNoCommandId:
+        SelfTestParameterizedCommandFieldKind.smsCellPlus91,
+    _secondaryServerTxMediaRedundancyCommandId:
+        SelfTestParameterizedCommandFieldKind.txRedundancy01,
+  };
+
   static const String _fetchStationIdCommand = '?04,,#';
 
   /// BLE request for `?65,N,S,FFFF,#`. When **S = 0** (get), FFFF must be empty:
@@ -100,30 +162,36 @@ class GeneralUserSelfTestDebugBloc
     return '?67,1,${fiveCharId ?? ''},#';
   }
 
+  /// Full catalog aligned with Admin/Command/GetAllDrifterBuoyCommands. Only
+  /// commands marked active by the API are shown when the request succeeds.
   static const List<DrifterBuoyCommandModel> _staticCommands = [
     DrifterBuoyCommandModel(
-      id: '69f04328523c7ca665297e78',
+      id: _transmitterTestCommandId,
       testName: 'Transmitter Test',
       requestCommand: '?64,N,S,#',
       waitingPeriodSecondsRaw: 'NA',
       requestCommandDescription:
-          'where, N = 0 - Enable plain carrier,N = 1 - Modulation, N= 2 - PRBS where S = 0 -ON,S = 1- OFF',
+          'where, N = 0 – Enable plain carrier,N = 1 – Modulation, N= 2 - PRBS   where   S = 0 -ON,S = 1- OFF',
       response: r'$64,station id,S,#',
       responseDescription:
-          'Where,S = 0 - Transmitter test OK,S = 1 - Transmitter test Not OK',
+          'Where,S = 0 – Transmitter test OK,S = 1 – Transmitter test Not OK ',
+      isActive: true,
     ),
     DrifterBuoyCommandModel(
-      id: '69f04328523c7ca665297e7d',
+      id: _measurementStartTimeCommandId,
       testName: 'Measurement Start Time',
       requestCommand: '?61,HH:MM:SS,#',
       waitingPeriodSecondsRaw: 'NA',
       requestCommandDescription: '',
       response: r'$61,list of general parameters#',
       responseDescription:
-          'IIIIIIII, NNNNNNNNNNNNNNNN,HH:MM:SS,hh:mm:ss,AAAAAAAAAAAAAAAA,HHH...,S, +91nnnnnnnnnn, +91nnnnnnnnnn,YY,HH:MM:SS',
+          '''IIIIIIII, NNNNNNNNNNNNNNNN,HH:MM:SS,hh:mm:ss,AAAAAAAAAAAAAAAA,HHH…,S, +91nnnnnnnnnn, +91nnnnnnnnnn,YY,HH:MM:SS
+ (Station id, station name, Tx interval, measurement interval, APN , APN, Fast SMS check, admin cell no.1, admin cell no. 2s, sensor power on time, measurement start time)
+Max length = 8+1+16+1+8+1+8+1+31+1+31+1+1+1+13+1+13+1+2+1+8= 149 characters''',
+      isActive: true,
     ),
     DrifterBuoyCommandModel(
-      id: '69f04328523c7ca665297e7e',
+      id: _checkStatusCommandId,
       testName: 'Check Status',
       requestCommand: '?02,,#',
       waitingPeriodSecondsRaw: 'NA',
@@ -131,50 +199,220 @@ class GeneralUserSelfTestDebugBloc
           'Returns Status of GPRS and Peripheral Devices',
       response: r'$02,C4,00,00,00,00,0,0,0,0,1,VERSION  1.0.2  ,#',
       responseDescription:
-          r'$02,PP,GG,GG,GG,GG, F1, MT1, F2, MT2, CH, D. L Firmware Version#',
+          r'''$02,PP,GG,GG,GG,GG, F1, MT1, F2, MT2, CH, D. L Firmware Version# 
+(Peripheral status, GPRS status of primary server, GPRS status of secondary server, GPRS status of third server, GPRS status of factory server)
+F1 – Memory 1 Fail Status (0 = OK, 1 = Not OK)
+MT1– Memory 1 Test Result (0 = OK, 1 = Not OK)
+F2 – Memory 2 Fail Status (0 = OK, 1 = Not OK)
+MT2– Memory 2 Test Result (0 = OK, 1 = Not OK)
+CH – Battery Charging Status (0 = Charging ON, 1 = Charging OFF, 2 = Fault)
+DL Firmware Version – Indicates the latest Data Logger firmware version. ''',
+      isActive: true,
     ),
     DrifterBuoyCommandModel(
-      id: '69f04328523c7ca665297e81',
+      id: _setStationIdCommandId,
       testName: 'Set Station Id',
-      requestCommand: '?04,,#',
+      requestCommand: '?06,XXXXXXXX,#',
       waitingPeriodSecondsRaw: 'NA',
-      requestCommandDescription:
-          'Fetch current station id and update (8 chars).',
-      response: r'IIIIIIII,...',
-      responseDescription: 'Opens popup for station id update.',
+      requestCommandDescription: 'Sets 8 char station id',
+      response: r'$06,list of general parameters#',
+      responseDescription:
+          '''IIIIIIII, NNNNNNNNNNNNNNNN,HH:MM:SS,hh:mm:ss,AAAAAAAAAAAAAAAA,HHH…,S, +91nnnnnnnnnn, +91nnnnnnnnnn,YY,HH:MM:SS
+ (Station id, station name, Tx interval, measurement interval, APN , APN, Fast SMS check, admin cell no.1, admin cell no. 2s, sensor power on time, measurement start time)
+Max length = 8+1+16+1+8+1+8+1+31+1+31+1+1+1+13+1+13+1+2+1+8= 149 characters''',
+      isActive: true,
     ),
     DrifterBuoyCommandModel(
-      id: '69f04328523c7ca665297eb8',
+      id: _primaryServerFtpAddressCommandId,
+      testName: 'Primary server FTP address',
+      requestCommand: '?15,xxxx..,#',
+      waitingPeriodSecondsRaw: '60',
+      requestCommandDescription:
+          '(max 20 char) .Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 20 char. Space char will not be part of address',
+      response: r'$15,all primary server settings#',
+      responseDescription:
+          '''IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters''',
+      isActive: true,
+    ),
+    DrifterBuoyCommandModel(
+      id: _primaryServerFtpPortCommandId,
+      testName: 'Primary server FTP port no.',
+      requestCommand: '?16,PPPPP,#',
+      waitingPeriodSecondsRaw: '60',
+      requestCommandDescription:
+          'PPPPP(Port no. – 5 digit long, Range = 0 to 65535)',
+      response: r'$16,all primary server settings#',
+      responseDescription:
+          '''IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters''',
+      isActive: true,
+    ),
+    DrifterBuoyCommandModel(
+      id: _primaryServerFtpPathCommandId,
+      testName: 'Primary server FTP path',
+      requestCommand: '?17,xxxx..,#',
+      waitingPeriodSecondsRaw: '60',
+      requestCommandDescription:
+          '(Max 20 characters)\n'
+          'Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 20 char. Space char will not be part of address',
+      response: r'$17,all primary server settings#',
+      responseDescription:
+          '''IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters''',
+      isActive: true,
+    ),
+    DrifterBuoyCommandModel(
+      id: _primaryServerFtpUsernameCommandId,
+      testName: 'Primary server FTP username',
+      requestCommand: '?18,xxxx..,#',
+      waitingPeriodSecondsRaw: '60',
+      requestCommandDescription:
+          '(Max 20 characters)\n'
+          'Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 20 char. Space char will not be part of address',
+      response: r'$18,all primary server settings#',
+      responseDescription:
+          '''IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters''',
+      isActive: true,
+    ),
+    DrifterBuoyCommandModel(
+      id: _primaryServerFtpPasswordCommandId,
+      testName: 'Primary server FTP password',
+      requestCommand: '?19,xxxx..,#',
+      waitingPeriodSecondsRaw: '60',
+      requestCommandDescription:
+          '(Max 20 characters)\n'
+          'Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 20 char. Space char will not be part of address',
+      response: r'$19,all primary server settings#',
+      responseDescription:
+          '''IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters''',
+      isActive: true,
+    ),
+    DrifterBuoyCommandModel(
+      id: _secondaryServerFtpAddressCommandId,
+      testName: 'Secondary server FTP address',
+      requestCommand: '?23,xxxx..,#',
+      waitingPeriodSecondsRaw: '60',
+      requestCommandDescription:
+          '(max 20 char) Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 20 char. Space char will not be part of address',
+      response: r'$23,all secondary server settings#',
+      responseDescription:
+          '''IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters''',
+      isActive: true,
+    ),
+    DrifterBuoyCommandModel(
+      id: _secondaryServerFtpPortCommandId,
+      testName: 'Secondary server FTP port no.',
+      requestCommand: '?24,PPPPP,#',
+      waitingPeriodSecondsRaw: '60',
+      requestCommandDescription:
+          'PPPPP(Port no. – 5 digit long, Range = 0 to 65535)',
+      response: r'$24,all secondary server settings#',
+      responseDescription:
+          '''IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters''',
+      isActive: true,
+    ),
+    DrifterBuoyCommandModel(
+      id: _secondaryServerFtpPathCommandId,
+      testName: 'Secondary server FTP path',
+      requestCommand: '?25,xxxx..,#',
+      waitingPeriodSecondsRaw: '60',
+      requestCommandDescription:
+          '(Max 20 characters)\n'
+          'Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 20 char. Space char will not be part of address',
+      response: r'$25,all secondary server settings#',
+      responseDescription:
+          '''IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters''',
+      isActive: true,
+    ),
+    DrifterBuoyCommandModel(
+      id: _secondaryServerFtpUsernameCommandId,
+      testName: 'Secondary server FTP user name',
+      requestCommand: '?26,xxxx..,#',
+      waitingPeriodSecondsRaw: '60',
+      requestCommandDescription:
+          '(Max 20 characters)\n'
+          'Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 20 char. Space char will not be part of address',
+      response: r'$26,all secondary server settings#',
+      responseDescription:
+          '''IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters''',
+      isActive: true,
+    ),
+    DrifterBuoyCommandModel(
+      id: _secondaryServerFtpPasswordCommandId,
+      testName: 'Secondary server FTP password',
+      requestCommand: '?27,xxxx..,#',
+      waitingPeriodSecondsRaw: '60',
+      requestCommandDescription:
+          '(Max 20 characters)\n'
+          'Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 20 char. Space char will not be part of address',
+      response: r'$27,all secondary server settings#',
+      responseDescription:
+          '''IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters''',
+      isActive: true,
+    ),
+    DrifterBuoyCommandModel(
+      id: _secondaryServerSmsCellNoCommandId,
+      testName: 'Set secondary server SMS cell no',
+      requestCommand: '?28,+91nnnnnnnnnn,#',
+      waitingPeriodSecondsRaw: '60',
+      requestCommandDescription:
+          'PPPPP(nnnnnnnnnn: Cellular no. – 10 digit long)',
+      response: r'$28,all secondary server settings#',
+      responseDescription:
+          '''IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters''',
+      isActive: true,
+    ),
+    DrifterBuoyCommandModel(
+      id: _secondaryServerTxMediaRedundancyCommandId,
+      testName: 'Secondary server tx media redundancy',
+      requestCommand: '?29,n,#',
+      waitingPeriodSecondsRaw: '60',
+      requestCommandDescription:
+          'n = 0-GSM and GPRS, 1-GSM if GPRS Fail',
+      response: r'$29,all secondary server settings#',
+      responseDescription:
+          '''IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters''',
+      isActive: true,
+    ),
+    DrifterBuoyCommandModel(
+      id: _transmitterFrequencyCommandId,
       testName: 'Set/Get transmitter frequency',
       requestCommand: '?65,N,S,FFFF,#',
       waitingPeriodSecondsRaw: 'NA',
       requestCommandDescription:
-          'S = 0 get, 1 set. N=0 UHF, 1 Radio Sonde. Freq 402.0000 to 403.0000 MHz.',
+          'S = 0 – to get ,1- set if S =0 no need to send FFFF. N= 0 for UHF, 1 for Radio Sonde. Freq from 402.0000 to 403.0000Mhz.FFFF - value of Frequency',
       response: r'$65,station id ,N,S,FFFF,#',
-      responseDescription: 'Set/get frequency status and value.',
+      responseDescription:
+          'If S = 0, then only consider valid FFFF value. Value of S below: 0 - frequency set successful,1 - Checksum error,2 - frequency not set,3 -transmitter communication problem or not connected  4 - get successful,N= 0 for UHF, 1 for Radio Sonde FFFF - value of Frequency',
+      isActive: true,
     ),
     DrifterBuoyCommandModel(
-      id: '69f04328523c7ca665297eb9',
+      id: _setAttenuationCommandId,
       testName: 'Set Attenuation',
       requestCommand: '?66,N,S,xx,#',
       waitingPeriodSecondsRaw: 'NA',
       requestCommandDescription:
-          'N=0 UHF, 1 Radio Sonde. S=0 get, S=1 set. xx is attenuation value.',
+          'N= 0 for UHF, 1 for Radio Sonde S = 0 – to get ,1- set In case of S =0 no need to send xx. Where xx = attenuation value',
       response: r'$66,station id,N,S,xx,#',
-      responseDescription: 'Returns attenuation status/value.',
+      responseDescription:
+          'N= 0 for UHF, 1 for Radio Sonde, S = 0 – to get ,1- set ,xx= attenuation value',
+      isActive: true,
     ),
     DrifterBuoyCommandModel(
-      id: '69f04328523c7ca665297eba',
+      id: _radioSondeTransmitterIdCommandId,
       testName: 'Get station ID of Radio sonde Transmitter',
       requestCommand: '?67,S,xxxxx,#',
       waitingPeriodSecondsRaw: 'NA',
       requestCommandDescription:
-          'S=0 get, 1 set. xxxxx = station id of sonde transmitter (5 chars).',
+          'S = 0 – get, 1- set in case of S =0 no need to send xxxxx xxxxx = station id of sonde transmitter (5 char)',
       response: r'$67,station id,S,xxxx,#',
       responseDescription:
-          'S = 0 get, 1 set. xxxxx = station id of sonde transmitter (5 chars).',
+          'S = 0 – get, 1- set xxxxx = station id of sonde transmitter (5 char)',
+      isActive: true,
     ),
   ];
+
+  static final Map<String, DrifterBuoyCommandModel> _staticCommandsById = {
+    for (final c in _staticCommands) c.id: c,
+  };
 
   Future<void> _onLoadGeneralUserSelfTestDebug(
     LoadGeneralUserSelfTestDebug event,
@@ -199,19 +437,25 @@ class GeneralUserSelfTestDebugBloc
             commands: _staticCommands,
             message: '',
             isSuccessMessage: false,
+            clearParameterizedCommandPrompt: true,
           ),
         );
       },
       (data) {
-        final allowedIds = data.result
-            .where((c) => c.isActive)
-            .map((c) => c.id.trim())
-            .where((id) => id.isNotEmpty)
-            .toSet();
+        final apiCommands = data.result;
+        final List<DrifterBuoyCommandModel> cmds;
 
-        final cmds = allowedIds.isEmpty
-            ? _staticCommands
-            : _staticCommands.where((c) => allowedIds.contains(c.id)).toList();
+        if (apiCommands.isEmpty) {
+          cmds = List<DrifterBuoyCommandModel>.from(_staticCommands);
+        } else {
+          cmds = <DrifterBuoyCommandModel>[];
+          for (final api in apiCommands) {
+            if (!api.isActive) continue;
+            final id = api.id.trim();
+            if (id.isEmpty) continue;
+            cmds.add(_staticCommandsById[id] ?? api);
+          }
+        }
 
         emit(
           state.copyWith(
@@ -221,6 +465,7 @@ class GeneralUserSelfTestDebugBloc
                 ? 'No self-test commands are permitted for this user.'
                 : '',
             isSuccessMessage: false,
+            clearParameterizedCommandPrompt: true,
           ),
         );
       },
@@ -289,6 +534,26 @@ class GeneralUserSelfTestDebugBloc
     }
     if (cmd.id == _radioSondeTransmitterIdCommandId) {
       await _onOpenRadioSondeTransmitterIdPrompt(cmd, index, emit);
+      return;
+    }
+
+    final parameterizedKind = _parameterizedServerFieldKindByCommandId[cmd.id];
+    if (parameterizedKind != null) {
+      emit(
+        state.copyWith(
+          status: GeneralUserSelfTestDebugStatus.loaded,
+          clearRunningCommandIndex: true,
+          parameterizedCommandPrompt: SelfTestParameterizedCommandPrompt(
+            commandId: cmd.id,
+            testName: cmd.testName,
+            fieldKind: parameterizedKind,
+            requestHelpText: cmd.requestCommandDescription,
+          ),
+          clearLastSnapshot: true,
+          message: '',
+          isSuccessMessage: false,
+        ),
+      );
       return;
     }
 
@@ -1719,10 +1984,244 @@ class GeneralUserSelfTestDebugBloc
         clearRadioSondeTransmitterIdPrompt: true,
         clearTransmitterTestPrompt: true,
         clearCheckStatusPrompt: true,
+        clearParameterizedCommandPrompt: true,
         message: '',
         isSuccessMessage: false,
       ),
     );
+  }
+
+  Future<void> _onSubmitGeneralUserParameterizedCommand(
+    SubmitGeneralUserParameterizedCommand event,
+    Emitter<GeneralUserSelfTestDebugState> emit,
+  ) async {
+    if (_ble.connectedRemoteId == null) {
+      emit(
+        state.copyWith(
+          message:
+              'No buoy connected. Pair from Setup and connect over Bluetooth first.',
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
+
+    final commandId = event.commandId.trim();
+    final kind = _parameterizedServerFieldKindByCommandId[commandId];
+    final model = _staticCommandsById[commandId];
+    if (kind == null || model == null) {
+      emit(
+        state.copyWith(
+          message: 'Unknown server command.',
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
+
+    late final String bleLine;
+    try {
+      bleLine = _buildParameterizedServerBleCommand(model, kind, event.value);
+    } on ArgumentError catch (e) {
+      emit(
+        state.copyWith(
+          message: e.message?.toString() ?? e.toString(),
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
+
+    final runningIndex = state.commands.indexWhere((c) => c.id == commandId);
+    final wait = model.responseWaitTimeout;
+
+    emit(
+      state.copyWith(
+        status: GeneralUserSelfTestDebugStatus.running,
+        runningCommandIndex: runningIndex >= 0 ? runningIndex : null,
+        message: '',
+        isSuccessMessage: false,
+      ),
+    );
+
+    try {
+      final responseLine = await _ble.sendDrifterAsciiCommand(bleLine, wait);
+      final summary = _formatParameterizedServerBleSummary(responseLine);
+      emit(
+        state.copyWith(
+          status: GeneralUserSelfTestDebugStatus.loaded,
+          clearRunningCommandIndex: true,
+          clearParameterizedCommandPrompt: true,
+          message: '${model.testName} updated successfully.',
+          isSuccessMessage: true,
+          lastSnapshot: SelfTestBleResponseSnapshot(
+            testName: model.testName,
+            responseLine: responseLine,
+            hideResponseLine: true,
+            helpText: summary,
+            descriptionSuccess: true,
+          ),
+        ),
+      );
+    } on TimeoutException catch (e) {
+      AppLogger.e('Parameterized server command timeout', error: e);
+      emit(
+        state.copyWith(
+          status: GeneralUserSelfTestDebugStatus.loaded,
+          clearRunningCommandIndex: true,
+          message:
+              'Timed out waiting for a response ending with # (${model.testName}).',
+          isSuccessMessage: false,
+        ),
+      );
+    } catch (e, st) {
+      AppLogger.e(
+        'Parameterized server command error',
+        error: e,
+        stackTrace: st,
+      );
+      emit(
+        state.copyWith(
+          status: GeneralUserSelfTestDebugStatus.loaded,
+          clearRunningCommandIndex: true,
+          message: e.toString(),
+          isSuccessMessage: false,
+        ),
+      );
+    }
+  }
+
+  void _onClearGeneralUserParameterizedCommandPrompt(
+    ClearGeneralUserParameterizedCommandPrompt event,
+    Emitter<GeneralUserSelfTestDebugState> emit,
+  ) {
+    emit(state.copyWith(clearParameterizedCommandPrompt: true));
+  }
+
+  /// Parses `$15`–`$19` / `$23`–`$29` style read-back lines:
+  /// `$NN,station,addr,port,path,user,pass,cell,R#`
+  static String _formatParameterizedServerBleSummary(String rawLine) {
+    final trimmed = rawLine.trim();
+    if (trimmed.isEmpty) {
+      return 'The device acknowledged the update. No response text was received.';
+    }
+    final noHash = trimmed.endsWith('#')
+        ? trimmed.substring(0, trimmed.length - 1)
+        : trimmed;
+    final parts = noHash.split(',').map((e) => e.trim()).toList();
+    if (parts.length < 9) {
+      return 'The device responded, but the payload could not be parsed as '
+          'server settings.\n\n'
+          'Raw response:\n$trimmed';
+    }
+    final opcode = parts[0];
+    final station = parts[1];
+    final addr = parts[2];
+    final port = parts[3];
+    final path = parts[4];
+    final user = parts[5];
+    final pass = parts[6];
+    final cell = parts[7];
+    final r = parts[8];
+    if (!opcode.startsWith(r'$')) {
+      return 'The device responded, but the payload could not be parsed as '
+          'server settings.\n\n'
+          'Raw response:\n$trimmed';
+    }
+    String dash(String s) => s.isEmpty ? '—' : s;
+    final rText = switch (r) {
+      '0' => '0 — GSM and GPRS',
+      '1' => '1 — GSM if GPRS fail',
+      _ => dash(r),
+    };
+    return [
+      'Read-back from device:',
+      '',
+      'Response code: $opcode',
+      'Station ID: ${dash(station)}',
+      'FTP server address: ${dash(addr)}',
+      'FTP port: ${dash(port)}',
+      'FTP path: ${dash(path)}',
+      'FTP username: ${dash(user)}',
+      'FTP password: ${dash(pass)}',
+      'Cell number: ${dash(cell)}',
+      'TX redundancy: $rText',
+    ].join('\n');
+  }
+
+  /// FTP-style fields: max 20 chars; shorter values padded with trailing spaces.
+  static String _padFtpFieldTo20(String raw) {
+    final t = raw.trim();
+    if (t.length > 20) {
+      return t.substring(0, 20);
+    }
+    return t.padRight(20, ' ');
+  }
+
+  static String? _normalizePortFiveDigits(String raw) {
+    final digits = raw.trim().replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.isEmpty) {
+      return null;
+    }
+    final v = int.tryParse(digits);
+    if (v == null || v < 0 || v > 65535) {
+      return null;
+    }
+    return v.toString().padLeft(5, '0');
+  }
+
+  static String? _normalizeSecondarySmsCell(String raw) {
+    var s = raw.trim().replaceAll(RegExp(r'\s'), '');
+    if (s.startsWith('+91')) {
+      s = s.substring(3);
+    }
+    if (s.length != 10 || !RegExp(r'^[0-9]{10}$').hasMatch(s)) {
+      return null;
+    }
+    return '+91$s';
+  }
+
+  static String _buildParameterizedServerBleCommand(
+    DrifterBuoyCommandModel cmd,
+    SelfTestParameterizedCommandFieldKind kind,
+    String userValue,
+  ) {
+    final m = RegExp(r'^\?(\d+),').firstMatch(cmd.requestCommand.trim());
+    if (m == null) {
+      throw ArgumentError(
+        'Invalid request template for ${cmd.testName}.',
+      );
+    }
+    final opcode = m.group(1)!;
+    switch (kind) {
+      case SelfTestParameterizedCommandFieldKind.ftpField20:
+        if (userValue.trim().isEmpty) {
+          throw ArgumentError('Enter a value (max 20 characters).');
+        }
+        return '?$opcode,${_padFtpFieldTo20(userValue)},#';
+      case SelfTestParameterizedCommandFieldKind.portFiveDigits:
+        final p = _normalizePortFiveDigits(userValue);
+        if (p == null) {
+          throw ArgumentError(
+            'Port must be a number from 0 to 65535 (sent as 5 digits).',
+          );
+        }
+        return '?$opcode,$p,#';
+      case SelfTestParameterizedCommandFieldKind.smsCellPlus91:
+        final c = _normalizeSecondarySmsCell(userValue);
+        if (c == null) {
+          throw ArgumentError(
+            'Enter a 10-digit mobile number (optional +91 prefix).',
+          );
+        }
+        return '?$opcode,$c,#';
+      case SelfTestParameterizedCommandFieldKind.txRedundancy01:
+        final v = userValue.trim();
+        if (v != '0' && v != '1') {
+          throw ArgumentError('Select 0 (GSM and GPRS) or 1 (GSM if GPRS fail).');
+        }
+        return '?$opcode,$v,#';
+    }
   }
 
   @override
