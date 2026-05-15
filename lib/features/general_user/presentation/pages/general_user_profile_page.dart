@@ -209,7 +209,7 @@ class _GeneralUserProfilePageState extends State<GeneralUserProfilePage> {
                                         ),
                                       ),
                                       SizedBox(height: 20,),
-                                      Text('V 1.0.6'),
+                                      Text('V 1.0.7'),
                                       const Spacer(),
                                       SizedBox(
                                         width: double.infinity,
