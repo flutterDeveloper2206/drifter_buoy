@@ -5,14 +5,20 @@ import 'package:drifter_buoy/core/utils/widgets/app_flushbar.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_icon_circle_button.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_loader.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/self_test_debug/general_user_self_test_debug_bloc.dart';
+import 'package:drifter_buoy/features/general_user/data/models/drifter_buoy_command_model.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/self_test_debug/general_user_self_test_debug_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/self_test_debug/general_user_self_test_debug_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-const String _primaryFtpPasswordCommandId = '69f04328523c7ca665297e8c';
-const String _secondaryFtpPasswordCommandId = '69f04328523c7ca665297e94';
+/// Mongo ids for FTP password catalog rows (same as [GeneralUserSelfTestDebugBloc] static commands).
+const Set<String> _ftpPasswordCatalogIds = {
+  '6a04547227be22811320695b',
+  '6a04547227be228113206963',
+  '6a04547227be22811320696b',
+  '6a04547227be228113206973',
+};
 
 String? _validateSelfTestParameterizedFtp20(String? value) {
   final t = value?.trim() ?? '';
@@ -67,6 +73,8 @@ class GeneralUserSelfTestDebugPage extends StatefulWidget {
 
 class _GeneralUserSelfTestDebugPageState
     extends State<GeneralUserSelfTestDebugPage> {
+  late final TextEditingController _commandSearchController;
+
   bool _isSetStationIdDialogOpen = false;
   bool _isMeasurementTimeDialogOpen = false;
   bool _isTransmitterFrequencyDialogOpen = false;
@@ -75,6 +83,90 @@ class _GeneralUserSelfTestDebugPageState
   bool _isTransmitterTestDialogOpen = false;
   bool _isCheckStatusDialogOpen = false;
   bool _isParameterizedCommandDialogOpen = false;
+
+  /// Blocking BLE progress UI lives in the overlay (not [Navigator]) so we never
+  /// [Navigator.pop] a Flushbar/snackbar route by mistake.
+  OverlayEntry? _bleCommandProgressOverlay;
+
+  @override
+  void initState() {
+    super.initState();
+    _commandSearchController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _removeBleCommandProgressOverlay();
+    _commandSearchController.dispose();
+    super.dispose();
+  }
+
+  /// Shows dimmed full-screen barrier + progress card above routes (safe with Flushbar).
+  void _presentBleCommandProgressOverlay(BuildContext context) {
+    if (_bleCommandProgressOverlay != null || !context.mounted) {
+      return;
+    }
+    final overlayState = Overlay.of(context, rootOverlay: true);
+
+    late final OverlayEntry entry;
+    entry = OverlayEntry(
+      builder: (BuildContext ctx) {
+        return PopScope(
+          canPop: false,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              ModalBarrier(
+                dismissible: false,
+                color: Colors.black54,
+                semanticsLabel: MaterialLocalizations.of(
+                  ctx,
+                ).modalBarrierDismissLabel,
+              ),
+              Material(
+                color: Colors.transparent,
+                child: _BleCommandProgressDialog(theme: Theme.of(context)),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    _bleCommandProgressOverlay = entry;
+    overlayState.insert(entry);
+  }
+
+  void _removeBleCommandProgressOverlay() {
+    final entry = _bleCommandProgressOverlay;
+    if (entry == null) {
+      return;
+    }
+    _bleCommandProgressOverlay = null;
+    entry.remove();
+  }
+
+  /// Indices into the full catalog list matching the search box (name, request, description).
+  List<int> _filterCommandIndices(
+    List<DrifterBuoyCommandModel> commands,
+    String query,
+  ) {
+    final needle = query.trim().toLowerCase();
+    if (needle.isEmpty) {
+      return List<int>.generate(commands.length, (i) => i);
+    }
+    final result = <int>[];
+    for (var i = 0; i < commands.length; i++) {
+      final DrifterBuoyCommandModel c = commands[i];
+      final blob =
+          '${c.testName} ${c.requestCommand} ${c.requestCommandDescription}'
+              .toLowerCase();
+      if (blob.contains(needle)) {
+        result.add(i);
+      }
+    }
+    return result;
+  }
 
   Future<void> _showSetStationIdDialog(
     BuildContext context,
@@ -996,14 +1088,35 @@ class _GeneralUserSelfTestDebugPageState
             >(
               listenWhen: (p, c) =>
                   c.parameterizedCommandPrompt != null &&
-                  c.parameterizedCommandPrompt !=
-                      p.parameterizedCommandPrompt,
+                  c.parameterizedCommandPrompt != p.parameterizedCommandPrompt,
               listener: (context, state) {
                 final prompt = state.parameterizedCommandPrompt;
                 if (prompt == null || _isParameterizedCommandDialogOpen) {
                   return;
                 }
                 _showParameterizedCommandDialog(context, prompt);
+              },
+            ),
+            BlocListener<
+              GeneralUserSelfTestDebugBloc,
+              GeneralUserSelfTestDebugState
+            >(
+              listenWhen: (p, c) =>
+                  c.status == GeneralUserSelfTestDebugStatus.running &&
+                  p.status != GeneralUserSelfTestDebugStatus.running,
+              listener: (context, state) {
+                _presentBleCommandProgressOverlay(context);
+              },
+            ),
+            BlocListener<
+              GeneralUserSelfTestDebugBloc,
+              GeneralUserSelfTestDebugState
+            >(
+              listenWhen: (p, c) =>
+                  p.status == GeneralUserSelfTestDebugStatus.running &&
+                  c.status != GeneralUserSelfTestDebugStatus.running,
+              listener: (context, state) {
+                _removeBleCommandProgressOverlay();
               },
             ),
             BlocListener<
@@ -1025,8 +1138,9 @@ class _GeneralUserSelfTestDebugPageState
                         : snap.descriptionSuccess!
                         ? const Color(0xFF1B5E20)
                         : const Color(0xFFB3261E);
-                    final helpSectionTitle =
-                        snap.hideResponseLine ? 'Summary' : 'Description';
+                    final helpSectionTitle = snap.hideResponseLine
+                        ? 'Summary'
+                        : 'Description';
                     return AlertDialog(
                       title: Text(snap.testName),
                       content: SingleChildScrollView(
@@ -1091,80 +1205,221 @@ class _GeneralUserSelfTestDebugPageState
             children: [
               const _Header(),
               Expanded(
-                child:
-                    BlocBuilder<
-                      GeneralUserSelfTestDebugBloc,
-                      GeneralUserSelfTestDebugState
-                    >(
-                      builder: (context, state) {
-                        if (state.status ==
-                                GeneralUserSelfTestDebugStatus.loading ||
-                            state.status ==
-                                GeneralUserSelfTestDebugStatus.initial) {
-                          return const AppLoader();
-                        }
-                        if (state.status ==
-                            GeneralUserSelfTestDebugStatus.error) {
-                          return AppErrorView(
-                            message: state.message,
-                            onRetry: () {
-                              context.read<GeneralUserSelfTestDebugBloc>().add(
-                                const LoadGeneralUserSelfTestDebug(),
-                              );
-                            },
+                child: BlocBuilder<GeneralUserSelfTestDebugBloc, GeneralUserSelfTestDebugState>(
+                  builder: (context, state) {
+                    if (state.status ==
+                            GeneralUserSelfTestDebugStatus.loading ||
+                        state.status ==
+                            GeneralUserSelfTestDebugStatus.initial) {
+                      return const AppLoader();
+                    }
+                    if (state.status == GeneralUserSelfTestDebugStatus.error) {
+                      return AppErrorView(
+                        message: state.message,
+                        onRetry: () {
+                          context.read<GeneralUserSelfTestDebugBloc>().add(
+                            const LoadGeneralUserSelfTestDebug(),
                           );
-                        }
+                        },
+                      );
+                    }
 
-                        if (state.commands.isEmpty) {
-                          return Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(24),
-                              child: Text(
-                                state.message.isNotEmpty
-                                    ? state.message
-                                    : 'No self-test commands available.',
-                                textAlign: TextAlign.center,
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(color: const Color(0xFF5C6368)),
+                    if (state.commands.isEmpty) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text(
+                            state.message.isNotEmpty
+                                ? state.message
+                                : 'No self-test commands available.',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: const Color(0xFF5C6368)),
+                          ),
+                        ),
+                      );
+                    }
+
+                    final filteredIndices = _filterCommandIndices(
+                      state.commands,
+                      _commandSearchController.text,
+                    );
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+                          child: TextField(
+                            controller: _commandSearchController,
+                            textInputAction: TextInputAction.search,
+                            decoration: InputDecoration(
+                              hintText: 'Search commands',
+                              prefixIcon: const Icon(
+                                Icons.search_rounded,
+                                color: Color(0xFF8A9095),
+                              ),
+                              suffixIcon: _commandSearchController.text.isEmpty
+                                  ? null
+                                  : IconButton(
+                                      tooltip: 'Clear',
+                                      icon: const Icon(Icons.clear_rounded),
+                                      color: const Color(0xFF8A9095),
+                                      onPressed: () {
+                                        _commandSearchController.clear();
+                                        setState(() {});
+                                      },
+                                    ),
+                              filled: true,
+                              fillColor: const Color(0xFFF2F2F2),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 12,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none,
                               ),
                             ),
-                          );
-                        }
-
-                        return ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                          itemCount: state.commands.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: 8),
-                          itemBuilder: (context, index) {
-                            final command = state.commands[index];
-                            final running =
-                                state.runningCommandIndex == index &&
-                                state.status ==
-                                    GeneralUserSelfTestDebugStatus.running;
-                            return _ActionTile(
-                              title: command.testName,
-                              subtitle:
-                                  command.requestCommandDescription.isNotEmpty
-                                  ? command.requestCommandDescription
-                                  : command.requestCommand,
-                              running: running,
-                              onTap: running
-                                  ? null
-                                  : () {
-                                      context
-                                          .read<GeneralUserSelfTestDebugBloc>()
-                                          .add(
-                                            RunGeneralUserSelfTestDebugAction(
-                                              index,
-                                            ),
-                                          );
+                            onChanged: (_) => setState(() {}),
+                          ),
+                        ),
+                        Expanded(
+                          child: filteredIndices.isEmpty
+                              ? Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(24),
+                                    child: Text(
+                                      'No commands match your search.',
+                                      textAlign: TextAlign.center,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color: const Color(0xFF5C6368),
+                                          ),
+                                    ),
+                                  ),
+                                )
+                              : RefreshIndicator(
+                                  onRefresh: () async {
+                                    final bloc = context
+                                        .read<GeneralUserSelfTestDebugBloc>();
+                                    final waitLoaded = bloc.stream.firstWhere(
+                                      (GeneralUserSelfTestDebugState s) =>
+                                          s.status ==
+                                              GeneralUserSelfTestDebugStatus
+                                                  .loaded ||
+                                          s.status ==
+                                              GeneralUserSelfTestDebugStatus
+                                                  .error,
+                                    );
+                                    bloc.add(
+                                      const LoadGeneralUserSelfTestDebug(),
+                                    );
+                                    await waitLoaded;
+                                  },
+                                  child: ListView.separated(
+                                    physics:
+                                        const AlwaysScrollableScrollPhysics(),
+                                    padding: const EdgeInsets.fromLTRB(
+                                      16,
+                                      12,
+                                      16,
+                                      16,
+                                    ),
+                                    itemCount: filteredIndices.length,
+                                    separatorBuilder: (_, __) =>
+                                        const SizedBox(height: 8),
+                                    itemBuilder: (context, listIndex) {
+                                      final commandIndex =
+                                          filteredIndices[listIndex];
+                                      final command =
+                                          state.commands[commandIndex];
+                                      final running =
+                                          state.runningCommandIndex ==
+                                              commandIndex &&
+                                          state.status ==
+                                              GeneralUserSelfTestDebugStatus
+                                                  .running;
+                                      return _ActionTile(
+                                        title:
+                                            '${commandIndex + 1}-${command.testName}',
+                                        subtitle:
+                                            command
+                                                .requestCommandDescription
+                                                .isNotEmpty
+                                            ? command.requestCommandDescription
+                                            : command.requestCommand,
+                                        running: false,
+                                        onTap: running
+                                            ? null
+                                            : () {
+                                                context
+                                                    .read<
+                                                      GeneralUserSelfTestDebugBloc
+                                                    >()
+                                                    .add(
+                                                      RunGeneralUserSelfTestDebugAction(
+                                                        commandIndex,
+                                                      ),
+                                                    );
+                                              },
+                                      );
                                     },
-                            );
-                          },
-                        );
-                      },
-                    ),
+                                  ),
+                                ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Content for [_GeneralUserSelfTestDebugPageState._presentBleCommandProgressOverlay].
+class _BleCommandProgressDialog extends StatelessWidget {
+  const _BleCommandProgressDialog({required this.theme});
+
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Theme(
+      data: theme,
+      child: PopScope(
+        canPop: false,
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 8),
+              const CircularProgressIndicator(color: Color(0xFF2A2F34)),
+              const SizedBox(height: 24),
+              Text(
+                'Process running',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF1D2329),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Please wait ...',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: const Color(0xFF6A7178),
+                ),
               ),
             ],
           ),
@@ -1204,8 +1459,7 @@ class _ParameterizedServerCommandDialogState
   }
 
   bool get _isPasswordField =>
-      widget.prompt.commandId == _primaryFtpPasswordCommandId ||
-      widget.prompt.commandId == _secondaryFtpPasswordCommandId;
+      _ftpPasswordCatalogIds.contains(widget.prompt.commandId);
 
   @override
   Widget build(BuildContext context) {
@@ -1216,9 +1470,9 @@ class _ParameterizedServerCommandDialogState
       header.add(
         SelectableText(
           p.requestHelpText.trim(),
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: const Color(0xFF6A7178),
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: const Color(0xFF6A7178)),
         ),
       );
       header.add(const SizedBox(height: 12));
@@ -1322,10 +1576,7 @@ class _ParameterizedServerCommandDialogState
           mainAxisSize: MainAxisSize.min,
           children: [
             ...header,
-            Form(
-              key: _formKey,
-              child: field,
-            ),
+            Form(key: _formKey, child: field),
           ],
         ),
       ),

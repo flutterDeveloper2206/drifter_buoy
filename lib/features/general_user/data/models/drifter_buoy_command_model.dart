@@ -62,6 +62,16 @@ class DrifterBuoyCommandModel extends Equatable {
     if (raw.toUpperCase() == 'NA' || raw.isEmpty) {
       return const Duration(seconds: 60);
     }
+    final minMatch = RegExp(
+      r'(\d+)\s*min',
+      caseSensitive: false,
+    ).firstMatch(raw);
+    if (minMatch != null) {
+      final mins = int.tryParse(minMatch.group(1)!);
+      if (mins != null && mins > 0) {
+        return Duration(seconds: mins * 60);
+      }
+    }
     final seconds = int.tryParse(raw);
     if (seconds == null || seconds <= 0) {
       return const Duration(seconds: 60);
@@ -124,7 +134,8 @@ class GetAllDrifterBuoyCommandsResponse extends Equatable {
           : int.tryParse((json['statusCode'] ?? '0').toString()) ?? 0,
       message: (json['message'] ?? '').toString(),
       result: list,
-      isSuccess: json['isSuccess'] == true ||
+      isSuccess:
+          json['isSuccess'] == true ||
           (json['isSuccess']?.toString().toLowerCase() == 'true'),
     );
   }

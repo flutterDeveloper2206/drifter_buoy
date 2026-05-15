@@ -1,0 +1,830 @@
+{
+  "statusCode": 200,
+  "message": "ok",
+  "result": {
+    "bluetoothNameLength": 0,
+    "commands": [
+      {
+        "_id": "6a04547227be22811320699c",
+        "testName": "Manual RTC Update",
+        "requestCommand": "?95,,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "This is Request Command",
+        "response": "$95,Factory St-ID, GPS Update Status, DD/MM/YY HH:MM, RTC Update status, #",
+        "responseDescription": "(DD/MM/YY HH:MM) Last RTC updated Date and Time where, RTC Update status – 0 …success",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be22811320699a",
+        "testName": "Manual Data Acquistion/poll",
+        "requestCommand": "?93,,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "NA",
+        "response": "$93,station id,19-12-2025 17:08:00,11.9,78.864,170.12345,C6,48,#",
+        "responseDescription": "Return Data String station id, All sensors data,",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206988",
+        "testName": "Transmitter Test",
+        "requestCommand": "?64,N,S,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "where, N = 0 – Enable plain carrier N = 1 – Modulation, N= 2 - PRBS where S = 0 -ON S = 1- OFF",
+        "response": "$64,station id,S,#",
+        "responseDescription": "Where, S = 0 – Transmitter test OK S = 1 – Transmitter test Not OK",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206950",
+        "testName": "Set Transmission Time",
+        "requestCommand": "?08,HH:MM:SS,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "NA",
+        "response": "$08,station id ,HH:MM:SS#",
+        "responseDescription": "$08,00:10:02,#",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be22811320699d",
+        "testName": "Erase Memory",
+        "requestCommand": "?96,,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "NA",
+        "response": "$96,station id, 1,#",
+        "responseDescription": "$96,Factory (StationId), 1,#",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be22811320694b",
+        "testName": "Restore Default Parameters",
+        "requestCommand": "?03,,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "NA",
+        "response": "$03,list of general parameters#",
+        "responseDescription": "IIIIIIII, NNNNNNNNNNNNNNNN,HH:MM:SS,hh:mm:ss,AAAAAAAAAAAAAAAA,HHH…,KKK…,S, +91nnnnnnnnnn, +91nnnnnnnnnn,YY,HH:MM:SS (Station id, station name, Tx interval, measurement interval, APN , APN, Fast SMS check, admin cell no.1, admin cell no. 2s, sensor power on time, measurement start time) Max length = 8+1+16+1+8+1+8+1+31+1+31+1+1+1+13+1+13+1+2+1+8= 149 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206952",
+        "testName": "Set measurement interval & sensor warm up time",
+        "requestCommand": "?10,HH:MM:SS,XX,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "Allowed Measurement Intervals (HH:MM:SS):00:01:00, 00:05:00, 00:10:00, 00:15:00, 00:20:00, 00:30:00, 01:00:00, Allowed Values for Sensor Warm-up Time (XX):01, 02, 03, 04, 05, 10, 15, 20, 25, 30, 99 (99 = Always ON)",
+        "response": "$10,list of general parameters#",
+        "responseDescription": "IIIIIIII, NNNNNNNNNNNNNNNN,HH:MM:SS,hh:mm:ss,AAAAAAAAAAAAAAAA,HHH…,S, +91nnnnnnnnnn, +91nnnnnnnnnn,YY,HH:MM:SS (Station id, station name, Tx interval, measurement interval, APN , APN, Fast SMS check, admin cell no.1, admin cell no. 2s, sensor power on time, measurement start time) Max length = 8+1+16+1+8+1+8+1+31+1+31+1+1+1+13+1+13+1+2+1+8= 149 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206985",
+        "testName": "Measurement Start Time",
+        "requestCommand": "?61,HH:MM:SS,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "",
+        "response": "$61,list of general parameters#",
+        "responseDescription": "IIIIIIII, NNNNNNNNNNNNNNNN,HH:MM:SS,hh:mm:ss,AAAAAAAAAAAAAAAA,HHH…,S, +91nnnnnnnnnn, +91nnnnnnnnnn,YY,HH:MM:SS (Station id, station name, Tx interval, measurement interval, APN , APN, Fast SMS check, admin cell no.1, admin cell no. 2s, sensor power on time, measurement start time) Max length = 8+1+16+1+8+1+8+1+31+1+31+1+1+1+13+1+13+1+2+1+8= 149 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be22811320694a",
+        "testName": "Check Status",
+        "requestCommand": "?02,,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "Returns Status of GPRS and Peripheral Devices",
+        "response": "$02,C4,00,00,00,00,0,0,0,0,1,VERSION 1.0.2 ,#",
+        "responseDescription": "$02,PP,GG,GG,GG,GG, F1, MT1, F2, MT2, CH, D. L Firmware Version# (Peripheral status, GPRS status of primary server, GPRS status of secondary server, GPRS status of third server, GPRS status of factory server) F1 – Memory 1 Fail Status (0 = OK, 1 = Not OK) MT1– Memory 1 Test Result (0 = OK, 1 = Not OK) F2 – Memory 2 Fail Status (0 = OK, 1 = Not OK) MT2 – Memory 2 Test Result (0 = OK, 1 = Not OK) CH – Battery Charging Status (0 = Charging ON, 1 = Charging OFF, 2 = Fault) DL Firmware Version – Indicates the latest Data Logger firmware version.",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be22811320694d",
+        "testName": "Set all general system parameters",
+        "requestCommand": "?05,List of all general system parameters,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "",
+        "response": "$05,ist of all general system parameters#",
+        "responseDescription": "IIIIIIII, NNNNNNNNNNNNNNNN,HH:MM:SS,hh:mm:ss,AAAAAAAAAAAAAAAA,HHH…,S, +91nnnnnnnnnn, +91nnnnnnnnnn,YY,HH:MM:SS (Station id, station name, Tx interval, measurement interval, APN , APN, Fast SMS check, admin cell no.1, admin cell no. 2s, sensor power on time, measurement start time) Max length = 8+1+16+1+8+1+8+1+31+1+31+1+1+1+13+1+13+1+2+1+8= 149 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be22811320694c",
+        "testName": "Get all general system parameters",
+        "requestCommand": "?04,,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "returns list of general parameters",
+        "response": "$04,list of general parameters#",
+        "responseDescription": "IIIIIIII, NNNNNNNNNNNNNNNN,HH:MM:SS,hh:mm:ss,AAAAAAAAAAAAAAAA,HHH…,S, +91nnnnnnnnnn, +91nnnnnnnnnn,YY,HH:MM:SS (Station id, station name, Tx interval, measurement interval, APN , APN, Fast SMS check, admin cell no.1, admin cell no. 2s, sensor power on time, measurement start time) Max length = 8+1+16+1+8+1+8+1+31+1+31+1+1+1+13+1+13+1+2+1+8= 149 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be22811320694e",
+        "testName": "Set Station Id",
+        "requestCommand": "?06,XXXXXXXX,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "Sets 8 char station id",
+        "response": "$06,list of general parameters#",
+        "responseDescription": "IIIIIIII, NNNNNNNNNNNNNNNN,HH:MM:SS,hh:mm:ss,AAAAAAAAAAAAAAAA,HHH…,S, +91nnnnnnnnnn, +91nnnnnnnnnn,YY,HH:MM:SS (Station id, station name, Tx interval, measurement interval, APN , APN, Fast SMS check, admin cell no.1, admin cell no. 2s, sensor power on time, measurement start time) Max length = 8+1+16+1+8+1+8+1+31+1+31+1+1+1+13+1+13+1+2+1+8= 149 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be22811320694f",
+        "testName": "Set station name",
+        "requestCommand": "?07,NNNNNNNNNNNNNNNN,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "NNNNNNNNNNNNNNNN (New value of station name)",
+        "response": "$07,list of general parameters#",
+        "responseDescription": "IIIIIIII, NNNNNNNNNNNNNNNN,HH:MM:SS,hh:mm:ss,AAAAAAAAAAAAAAAA,HHH…,S, +91nnnnnnnnnn, +91nnnnnnnnnn,YY,HH:MM:SS (Station id, station name, Tx interval, measurement interval, APN , APN, Fast SMS check, admin cell no.1, admin cell no. 2s, sensor power on time, measurement start time) Max length = 8+1+16+1+8+1+8+1+31+1+31+1+1+1+13+1+13+1+2+1+8= 149 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206951",
+        "testName": "Set transmission interval",
+        "requestCommand": "?09,HH:MM:SS,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "Allowed minimum interval = 00:10:00",
+        "response": "$09,list of general parameters#",
+        "responseDescription": "NA",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206953",
+        "testName": "Set APN",
+        "requestCommand": "?11,Para 1, para 2, para 3,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "Para1-> APN name,Para2-> 0 for Vodafone, 1 for other sim Para3-> ( 1 - sim1 APN , 2 – sim2 APN) (APN string – Only chars entered by user, maximum 31 char long. )",
+        "response": "$11,List of all general system parameters ,#",
+        "responseDescription": "",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206954",
+        "testName": "Set RTC server HTTP website address",
+        "requestCommand": "?12,xxxx…,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "(Max 128 characters) Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 40 char. Space char will not be part of address",
+        "response": "$12,list of general parameters#",
+        "responseDescription": "NA",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206955",
+        "testName": "Set RTC server HTTP website key",
+        "requestCommand": "?13,xxxx…,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "(max 15 char)Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 40 char. Space char will not be part of address",
+        "response": "$13,StationId,RTC Server Key#",
+        "responseDescription": "NA",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206956",
+        "testName": "Primary server HTTP website address",
+        "requestCommand": "?14,N,xxx...,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "Where N represents the HTTP server number.(Max 128 characters) Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 128 char. Space char will not be part of address",
+        "response": "$14,all primary server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206957",
+        "testName": "Primary server FTP address",
+        "requestCommand": "?15,xxxx..,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "(max 20 char) .Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 20 char. Space char will not be part of address",
+        "response": "$15,all primary server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206958",
+        "testName": "Primary server FTP port no.",
+        "requestCommand": "?16,PPPPP,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "PPPPP(Port no. – 5 digit long, Range = 0 to 65535)",
+        "response": "$16,all primary server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206959",
+        "testName": "Primary server FTP path",
+        "requestCommand": "?17,xxxx..,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "(Max 20 characters) Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 20 char. Space char will not be part of address",
+        "response": "$17,all primary server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be22811320695a",
+        "testName": "Primary server FTP username",
+        "requestCommand": "?18,xxxx..,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "(Max 20 characters) Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 20 char. Space char will not be part of address",
+        "response": "$18,all primary server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be22811320695b",
+        "testName": "Primary server FTP password",
+        "requestCommand": "?19,xxxx..,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "(Max 20 characters) Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 20 char. Space char will not be part of address",
+        "response": "$19,all primary server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be22811320695c",
+        "testName": "Set primary server SMS cell no",
+        "requestCommand": "?20,+91nnnnnnnnnn,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "(nnnnnnnnnn: Cellular no. – 10 digit long)",
+        "response": "$20,all primary server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be22811320695d",
+        "testName": "Primary server tx media redundancy",
+        "requestCommand": "?21,n,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "n = 0-GSM and GPRS, 1-GSM if GPRS Fail",
+        "response": "$21,all primary server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be22811320695e",
+        "testName": "Secondary server HTTP website address",
+        "requestCommand": "?22,N,xxx..,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "N -represents server number from 0 to 3. (Max 128 characters) Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 128 char. Space char will not be part of address",
+        "response": "$22,all primary server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be22811320695f",
+        "testName": "Secondary server FTP address",
+        "requestCommand": "?23,xxxx..,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "(max 20 char) Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 20 char. Space char will not be part of address",
+        "response": "$23,all secondary server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206960",
+        "testName": "Secondary server FTP port no.",
+        "requestCommand": "?24,PPPPP,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "PPPPP(Port no. – 5 digit long, Range = 0 to 65535)",
+        "response": "$24,all secondary server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206961",
+        "testName": "Secondary server FTP path",
+        "requestCommand": "?25,xxxx..,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "(Max 20 characters) Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 20 char. Space char will not be part of address",
+        "response": "$25,all secondary server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206962",
+        "testName": "Secondary server FTP user name",
+        "requestCommand": "?26,xxxx..,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "(Max 20 characters) Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 20 char. Space char will not be part of address",
+        "response": "$26,all secondary server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206963",
+        "testName": "Secondary server FTP password",
+        "requestCommand": "?27,xxxx..,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "(Max 20 characters) Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 20 char. Space char will not be part of address",
+        "response": "$27,all secondary server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206964",
+        "testName": "Set secondary server SMS cell no",
+        "requestCommand": "?28,+91nnnnnnnnnn,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "PPPPP(nnnnnnnnnn: Cellular no. – 10 digit long)",
+        "response": "$28,all secondary server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206965",
+        "testName": "Secondary server tx media redundancy",
+        "requestCommand": "?29,n,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "n = 0-GSM and GPRS, 1-GSM if GPRS Fail",
+        "response": "$29,all secondary server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206966",
+        "testName": "Third server HTTP website address",
+        "requestCommand": "?30,N,xxx..,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "N -represents server number from 0 to 3. (Max 128 characters) Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 40 char. Space char will not be part of address",
+        "response": "$30,all secondary server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206967",
+        "testName": "Third server FTP address",
+        "requestCommand": "?31,xxxx..,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "(Max 20 characters) Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 128 char. Space char will not be part of address",
+        "response": "$31,all third server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206968",
+        "testName": "Third server FTP port no.",
+        "requestCommand": "?32,PPPPP,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "PPPPP(Port no. – 5 digit long, Range = 0 to 65535)",
+        "response": "$32,all third server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206969",
+        "testName": "Third server FTP path",
+        "requestCommand": "?33,xxxx..,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "(Max 20 characters) Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 20 char. Space char will not be part of address",
+        "response": "$33,all third server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be22811320696a",
+        "testName": "Third server FTP username",
+        "requestCommand": "?34,xxxx..,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "(Max 20 characters) Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 20 char. Space char will not be part of address",
+        "response": "$34,all third server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be22811320696b",
+        "testName": "Third server FTP password",
+        "requestCommand": "?35,xxxx..,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "(Max 20 characters) Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 20 char. Space char will not be part of address",
+        "response": "$35,all third server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be22811320696c",
+        "testName": "Set Third server SMS cell no",
+        "requestCommand": "?36,+91nnnnnnnnnn,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "(nnnnnnnnnn: Cellular no. – 10 digit long)",
+        "response": "$36,all third server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be22811320696d",
+        "testName": "Third server tx media redundancy",
+        "requestCommand": "?37,n,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "n = 0-GSM and GPRS, 1-GSM if GPRS Fail",
+        "response": "$37,all third server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be22811320696e",
+        "testName": "Factory server HTTP website address",
+        "requestCommand": "?38,N,xxx..,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "N -represents server number from 0 to 3. (Max 128 characters) Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 128 char. Space char will not be part of address",
+        "response": "$38,all factory server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be22811320696f",
+        "testName": "Factory server FTP address",
+        "requestCommand": "?39,xxx..,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "where xxx...Ipv4 format or URL format Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 20 char. Space char will not be part of address",
+        "response": "$39,all factory server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206970",
+        "testName": "Factory server FTP port no",
+        "requestCommand": "?40,PPPPP,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "PPPPP(Port no. – 5 digit long, Range = 0 to 65535)",
+        "response": "$40,all factory server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206971",
+        "testName": "Factory server FTP path",
+        "requestCommand": "?41,xxxx...,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "(Max 20 characters) Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 20 char. Space char will not be part of address",
+        "response": "$41,all factory server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206972",
+        "testName": "Factory server FTP username",
+        "requestCommand": "?42,xxxx...,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "(Max 20 characters) Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 20 char. Space char will not be part of address",
+        "response": "$42,all factory server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206973",
+        "testName": "Factory server FTP password",
+        "requestCommand": "?43,xxxx..,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "(Max 20 characters) Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 20 char. Space char will not be part of address",
+        "response": "$43,all factory server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206974",
+        "testName": "Set factory server SMS cell no",
+        "requestCommand": "?44,+91nnnnnnnnnn,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "(nnnnnnnnnn: Cellular no. – 10 digit long)",
+        "response": "$44,all factory server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206975",
+        "testName": "Factory server tx media redundancy",
+        "requestCommand": "?45,n,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "n = 0-GSM and GPRS, 1-GSM if GPRS Fail",
+        "response": "$45,all factory server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206976",
+        "testName": "Set primary server all FTP/HTTP parameters",
+        "requestCommand": "?46,IIIIII,FFF…,PPPPP,ffff…,uuuu…,pppp…,+91nnnn…,R,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "(station id, FTP server address, FTP port no., FTP file path, FTP user name, FTP password, cell no., tx redundancy)Station id – fix 8 characters.FTP port no. – fix 5 character, range 00000 to 65535.FTP server address, FTP file path, FTP user name, FTP password – max 20 characters. If < 20 char, use ‘‘last character.Cell no. – fix 10 charactersTx redundancy – 1 => enable, 0 => disable",
+        "response": "$46,all primary server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206977",
+        "testName": "Set secondary server all FTP/HTTP parameters",
+        "requestCommand": "?47,IIIIII,FFF…,PPPPP,ffff…,uuuu…,pppp…,+91nnnn…,R,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "(station id, FTP server address, FTP port no., FTP file path, FTP user name, FTP password, cell no., tx redundancy)Station id – fix 8 characters.FTP port no. – fix 5 character, range 00000 to 65535.FTP server address, FTP file path, FTP user name, FTP password – max 20 characters. If < 20 char, use ‘‘last character.Cell no. – fix 10 charactersTx redundancy – 1 => enable, 0 => disable",
+        "response": "$47,all secondary server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206978",
+        "testName": "Set third server all FTP/HTTP parameters",
+        "requestCommand": "?48,IIIIII,FFF…,PPPPP,ffff…,uuuu…,pppp…,+91nnnn…,R,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "(station id, FTP server address, FTP port no., FTP file path, FTP user name, FTP password, cell no., tx redundancy)Station id – fix 8 characters.FTP port no. – fix 5 character, range 00000 to 65535.FTP server address, FTP file path, FTP user name, FTP password – max 20 characters. If < 20 char, use ‘‘last character.Cell no. – fix 10 charactersTx redundancy – 1 => enable, 0 => disable",
+        "response": "$48,all third server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206979",
+        "testName": "Set factory server all FTP/HTTP parameters",
+        "requestCommand": "?49,IIIIII,FFF…,PPPPP,ffff…,uuuu…,pppp…,+91nnnn…,R,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "(station id, FTP server address, FTP port no., FTP file path, FTP user name, FTP password, cell no., tx redundancy)Station id – fix 8 characters.FTP port no. – fix 5 character, range 00000 to 65535.FTP server address, FTP file path, FTP user name, FTP password – max 20 characters. If < 20 char, use ‘‘last character.Cell no. – fix 10 charactersTx redundancy – 1 => enable, 0 => disable",
+        "response": "$49,all factory server settings#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be22811320697a",
+        "testName": "Get primary server all FTP/HTTP parameters",
+        "requestCommand": "?50,,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "Returns all primary settings",
+        "response": "$50, all primary server settings,#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be22811320697b",
+        "testName": "Get secondary server all FTP/HTTP parameters",
+        "requestCommand": "?51,,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "Returns all secondary settings",
+        "response": "$51, all secondary server settings,#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be22811320697c",
+        "testName": "Get third server all FTP/HTTP parameters",
+        "requestCommand": "?52,,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "Returns all third settings",
+        "response": "$52, all third server settings,#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be22811320697d",
+        "testName": "Get factory server all FTP/HTTP parameters",
+        "requestCommand": "?53,,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "Returns all factory settings",
+        "response": "$53, all factory server settings,#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be22811320697e",
+        "testName": "Restore primary server all FTP/HTTP parameters",
+        "requestCommand": "?54,,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "Returns all primary settings",
+        "response": "$54, all primary server settings,#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be22811320697f",
+        "testName": "Restore secondary server all FTP/HTTP parameters",
+        "requestCommand": "?55,,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "Returns all secondary settings",
+        "response": "$55, all secondary server settings,#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206980",
+        "testName": "Restore third server all FTP/HTTP parameters",
+        "requestCommand": "?56,,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "Returns all third settings",
+        "response": "$56, all third server settings,#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206981",
+        "testName": "Restore factory server all FTP/HTTP parameters",
+        "requestCommand": "?57,,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "Returns all factory settings",
+        "response": "$57, all factory server settings,#",
+        "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206982",
+        "testName": "Fast SMS check",
+        "requestCommand": "?58,N,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "N=0 Disable, 1Enable",
+        "response": "$58,all general system parameters#",
+        "responseDescription": "IIIIIIII, NNNNNNNNNNNNNNNN,HH:MM:SS,hh:mm:ss,AAAAAAAAAAAAAAAA,HHH…,S, +91nnnnnnnnnn, +91nnnnnnnnnn,YY,HH:MM:SS (Station id, station name, Tx interval, measurement interval, APN , APN, Fast SMS check, admin cell no.1, admin cell no. 2s, sensor power on time, measurement start time) Max length = 8+1+16+1+8+1+8+1+31+1+31+1+1+1+13+1+13+1+2+1+8= 149 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206983",
+        "testName": "Set admin 1 SMS cell no",
+        "requestCommand": "?59,+91nnnnnnnnnn,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "(nnnnnnnnnn: Cellular no. – 10 digit long)",
+        "response": "$59,all general system parameters#",
+        "responseDescription": "IIIIIIII, NNNNNNNNNNNNNNNN,HH:MM:SS,hh:mm:ss,AAAAAAAAAAAAAAAA,HHH…,S, +91nnnnnnnnnn, +91nnnnnnnnnn,YY,HH:MM:SS (Station id, station name, Tx interval, measurement interval, APN , APN, Fast SMS check, admin cell no.1, admin cell no. 2s, sensor power on time, measurement start time) Max length = 8+1+16+1+8+1+8+1+31+1+31+1+1+1+13+1+13+1+2+1+8= 149 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206984",
+        "testName": "Set admin 2 SMS cell no",
+        "requestCommand": "?60,+91nnnnnnnnnn,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "(nnnnnnnnnn: Cellular no. – 10 digit long)",
+        "response": "$60,all general system parameters#",
+        "responseDescription": "IIIIIIII, NNNNNNNNNNNNNNNN,HH:MM:SS,hh:mm:ss,AAAAAAAAAAAAAAAA,HHH…,S, +91nnnnnnnnnn, +91nnnnnnnnnn,YY,HH:MM:SS (Station id, station name, Tx interval, measurement interval, APN , APN, Fast SMS check, admin cell no.1, admin cell no. 2s, sensor power on time, measurement start time) Max length = 8+1+16+1+8+1+8+1+31+1+31+1+1+1+13+1+13+1+2+1+8= 149 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206986",
+        "testName": "HTTP Server Username",
+        "requestCommand": "?62,N,username,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "N-ServerNo 1 to 4, username for the selected server (max 64 char)",
+        "response": "$62,station id,N,azista123..#",
+        "responseDescription": "N – Server number from 1 to 4 azista123... – username for the selected server (Max 64-character length)",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206987",
+        "testName": "Get transmission start time GPRS",
+        "requestCommand": "?63,,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "returns current tranmission time",
+        "response": "$63,station id,HH:MM:SS#",
+        "responseDescription": "NA",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206989",
+        "testName": "Set/Get transmitter frequency",
+        "requestCommand": "?65,N,S,FFFF,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "S = 0 – to get ,1- set if S =0 no need to send FFFF. N= 0 for UHF, 1 for Radio Sonde. Freq from 402.0000 to 403.0000Mhz.FFFF - value of Frequency",
+        "response": "$65,station id ,N,S,FFFF,#",
+        "responseDescription": "If S = 0, then only consider valid FFFF value. Value of S below: 0 - frequency set successful,1 - Checksum error,2 - frequency not set,3 -transmitter communication problem or not connected 4 - get successful,N= 0 for UHF, 1 for Radio Sonde FFFF - value of Frequency",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be22811320698a",
+        "testName": "Set Attenuation",
+        "requestCommand": "?66,N,S,xx,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "N= 0 for UHF, 1 for Radio Sonde S = 0 – to get ,1- set In case of S =0 no need to send xx. Where xx = attenuation value",
+        "response": "$66,station id,N,S,xx,#",
+        "responseDescription": "N= 0 for UHF, 1 for Radio Sonde, S = 0 – to get ,1- set ,xx= attenuation value",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be22811320698b",
+        "testName": "Get station ID of Radio sonde Transmitter",
+        "requestCommand": "?67,S,xxxxx,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "S = 0 – get, 1- set in case of S =0 no need to send xxxxx xxxxx = station id of sonde transmitter (5 char)",
+        "response": "$67,station id,S,xxxx,#",
+        "responseDescription": "S = 0 – get, 1- set xxxxx = station id of sonde transmitter (5 char)",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be22811320698c",
+        "testName": "Set DL cell no",
+        "requestCommand": "?68,N,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "where N = 1=D.L.Cell no.1 (+91 and 10 number and 13 digit number functionality),2= D.L.Cell no.2 (+91 and 10 number and 13 digit number functionality),3= MSSISDN no.1 (not allow +91 only 13 digit number allow),4=MSSISDN no.2 (not allow +91 only 13 digit number allow)",
+        "response": "$68,Stationid,+91nnnnnnnnnn,#",
+        "responseDescription": "NA",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be22811320698e",
+        "testName": "Power Switching",
+        "requestCommand": "?76,,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "",
+        "response": "$76,StationId,1#",
+        "responseDescription": "1 indicate success",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be22811320698f",
+        "testName": "Sim Card Test",
+        "requestCommand": "?77,1,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "",
+        "response": "$77,Station ID, 0, -067, 0, -072, EC200UCNAAR03A14M08,#",
+        "responseDescription": "SIM1_slot_status – 0: Success,1: Failure, Signal_strength_SIM1: -067, SIM2_slot_status - 0: Success,1: Failure, Signal_strength_SIM2: -072 ,Modem Firmware Ver: EC200UCNAAR03A14M08",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206990",
+        "testName": "Sleep Current Test",
+        "requestCommand": "?79,,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "",
+        "response": "$79,StationId,1#",
+        "responseDescription": "1-indicate success",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206991",
+        "testName": "SET Sensor ALL parameter",
+        "requestCommand": "?80,(Sensor no, channel no,F.G, factory off, senG, Soff, Resolution, sen Min, sens Max, Averag Scheme, vactor, start time, interval, total sample, mode, Tx.G, Tx.O ),#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "NA",
+        "response": "$80,List of all sensor parameters,#",
+        "responseDescription": "Ss, ww, MMMMMM.MMMMM, ± xxxxx.xxxxx, ±zzzzz.zzzzz,±ddddd.ddddd,±vvvvv.vvvvv,±nnnnn.nnnnn,±ccccc.ccccc,a,rr,HH:MM:SS,HH:MM:SS,zz,f,±yyyyy.yyyyy,±ppppp.ppppp (Sensor no, F.G, factory off, senG, S.off, Resolution, sen Min, sens Max, Averag Scheme, vactor, start time, interval, total sample, mode, Tx.G, Tx.O ) Max length = 8+2+10+10+10+10+10+10+10+1+2+1+10+10 = 155 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206994",
+        "testName": "GET sensor parameter",
+        "requestCommand": "?81,Sensor Number,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "NA",
+        "response": "$81,List of all sensor parameters,#",
+        "responseDescription": "Ss, ww, MMMMMM.MMMMM, ± xxxxx.xxxxx, ±zzzzz.zzzzz,±ddddd.ddddd,±vvvvv.vvvvv,±nnnnn.nnnnn,±ccccc.ccccc,a,rr,HH:MM:SS,HH:MM:SS,zz,f,±yyyyy.yyyyy,±ppppp.ppppp (Sensor no, F.G, factory off, senG, S.off, Resolution, sen Min, sens Max, Averag Scheme, vactor, start time, interval, total sample, mode, Tx.G, Tx.O ) Max length = 8+2+10+10+10+10+10+10+10+1+2+1+10+10 = 155 characters",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206993",
+        "testName": "SET sensors parameters",
+        "requestCommand": "?82,(sensor no,unit,SenSelStatus,BaudRate,ReqLen,Start Char,Fp,Lp,Resp Len,RelayNo,PeriodicSmpl,DerievedPara,RequestString,Sensor name,id, model,rstcnt,datum,dec_len,frac_len,max_threshold,min_threshold)",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "NA",
+        "response": "$82,Station ID, sensor no,unit,SenSelStatus,BaudRate,ReqLen,Start Char,Fp,Lp,Resp Len,RelayNo,PeriodicSmpl,DerievedPara,RequestString,Sensor name,id, model,rstcnt,datum,dec_len,frac_len,max_threshold,min_threshold, #",
+        "responseDescription": "NA",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206994",
+        "testName": "GET sensor parameter",
+        "requestCommand": "?83,Sensor number,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "NA",
+        "response": "$83,Station ID, sensor no,unit,SenSelStatus,BaudRate,ReqLen,Start Char,Fp,Lp,Resp Len,RelayNo,PeriodicSmpl,DerievedPara,RequestString,Sensor name,id, model,rstcnt,datum,dec_len,frac_len,max_threshold,min_threshold, #",
+        "responseDescription": "NA",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206995",
+        "testName": "Battery Voltage",
+        "requestCommand": "?84,xx,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "Where xx is between 00 to 11.",
+        "response": "$84,station id ,Battery Voltage, CNT: Counts,#",
+        "responseDescription": "NA",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206997",
+        "testName": "GPRS RSSI",
+        "requestCommand": "?89,,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "",
+        "response": "$89,Factory Stationid,RSSI,#",
+        "responseDescription": "NA",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be22811320699f",
+        "testName": "Set HTTP Port",
+        "requestCommand": "?98,1,PPPPP,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "Where PPPPP is between 0 to 65535",
+        "response": "$98,station id, User1HTTPPort, User2HTTPPort, User3HTTPPort, FactHTTPPort,#",
+        "responseDescription": "NA",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206998",
+        "testName": "Memory test",
+        "requestCommand": "?91,,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "",
+        "response": "$91,station Id ,memorystatus,memory 2 status,#",
+        "responseDescription": "",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be228113206999",
+        "testName": "manual FTP",
+        "requestCommand": "?92,,#",
+        "waitingPeriodSecondsRaw": "1 min",
+        "requestCommandDescription": "$92,Factory station id,0",
+        "response": "$92,00000000,0,#",
+        "responseDescription": "0 indicates task is completed.",
+        "isActive": true
+      }
+    ]
+  },
+  "isSuccess": true
+}
