@@ -13,6 +13,7 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_detai
 import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_detail/general_user_setup_detail_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_detail/general_user_setup_detail_state.dart';
 import 'package:drifter_buoy/features/general_user/presentation/widgets/setup_bluetooth_devices_sheet.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -102,6 +103,21 @@ class _GeneralUserSetupDetailPageState extends State<GeneralUserSetupDetailPage>
         ),
       );
     });
+  }
+
+  void _onSelfTestDebugTap(BuildContext context) {
+    if (kDebugMode) {
+      context.push(AppRoutes.selfTestDebugPath);
+      return;
+    }
+    if (_ble.connectedRemoteId == null) {
+      AppFlushbar.error(
+        'Connect a Bluetooth device first to use Self-Test and Debug.',
+        context: context,
+      );
+      return;
+    }
+    context.push(AppRoutes.selfTestDebugPath);
   }
 
   Future<void> _handleBackTap(BuildContext context) async {
@@ -306,8 +322,7 @@ class _GeneralUserSetupDetailPageState extends State<GeneralUserSetupDetailPage>
                             const SizedBox(height: 12),
                             _WhiteCard(
                               child: InkWell(
-                                onTap: () =>
-                                    context.push(AppRoutes.selfTestDebugPath),
+                                onTap: () => _onSelfTestDebugTap(context),
                                 borderRadius: BorderRadius.circular(12),
                                 child: Padding(
                                   padding: const EdgeInsets.symmetric(

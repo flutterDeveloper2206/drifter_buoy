@@ -40,6 +40,88 @@ class GeneralUserExportBloc
         : 'Buoy Data Report';
   }
 
+  /// Fingerprint for the report API request currently implied by [state].
+  /// Used to reuse preview rows on export without a second network call.
+  String? _reportDataSourceKey(GeneralUserExportState s) {
+    final dates = _apiDateStrings(s);
+    if (dates == null || s.reportType == null) {
+      return null;
+    }
+    final rt = s.reportType!.name;
+    switch (s.mode) {
+      case GeneralUserExportMode.buoyDistance:
+        final bid = s.buoyId;
+        if (bid == null || bid.isEmpty) {
+          return null;
+        }
+        return '${s.mode.name}|$rt|${dates.$1}|${dates.$2}|$bid';
+      case GeneralUserExportMode.multiSelection:
+        if (s.selectedBuoyIds.isEmpty) {
+          return null;
+        }
+        if (s.reportType == ExportReportType.buoyDistance &&
+            s.selectedBuoyIds.length != 1) {
+          return null;
+        }
+        final buoyKey = s.reportType == ExportReportType.buoyDistance
+            ? s.selectedBuoyIds.first
+            : s.selectedBuoyIds.join(',');
+        return '${s.mode.name}|$rt|${dates.$1}|${dates.$2}|$buoyKey';
+    }
+  }
+
+  Future<void> _completeExportFromRows({
+    required Emitter<GeneralUserExportState> emit,
+    required List<String> columnOrder,
+    required List<Map<String, String>> rows,
+    required ExportReportType reportType,
+    required ExportFormat format,
+    required bool forShare,
+    required String fileName,
+  }) async {
+    try {
+      final Uint8List bytes;
+      if (format == ExportFormat.csv) {
+        final csv = buildDynamicCsv(
+          columnOrder: columnOrder,
+          rows: rows,
+        );
+        bytes = encodeCsvToUtf8Bytes(csv);
+      } else {
+        bytes = await buildDynamicPdf(
+          columnOrder: columnOrder,
+          rows: rows,
+          title: GeneralUserExportBloc._pdfReportTitleFor(reportType),
+        );
+      }
+      emit(
+        state.copyWith(
+          status: GeneralUserExportStatus.loaded,
+          reportColumns: columnOrder,
+          reportRows: rows,
+          deliverable: GeneralUserExportDeliverable(
+            bytes: bytes,
+            fileName: fileName,
+            forShare: forShare,
+          ),
+        ),
+      );
+    } catch (error, stackTrace) {
+      AppLogger.e(
+        'Export file build failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      emit(
+        state.copyWith(
+          status: GeneralUserExportStatus.loaded,
+          message: _buildExportFailureMessage(error, format),
+          isSuccessMessage: false,
+        ),
+      );
+    }
+  }
+
   Future<void> _onLoadGeneralUserExport(
     LoadGeneralUserExport event,
     Emitter<GeneralUserExportState> emit,
@@ -76,6 +158,7 @@ class GeneralUserExportBloc
           isSuccessMessage: false,
           reportColumns: const [],
           reportRows: const [],
+          reportDataSourceKey: null,
           isReportLoading: false,
           deliverable: null,
           buoyScreenNotice: '',
@@ -309,6 +392,42 @@ class GeneralUserExportBloc
       return;
     }
 
+    final requestKey = _reportDataSourceKey(state);
+    final useCachedReport =
+        requestKey != null &&
+        requestKey == state.reportDataSourceKey &&
+        state.reportRows.isNotEmpty;
+
+    if (useCachedReport) {
+      final cols = state.reportColumns.isNotEmpty
+          ? state.reportColumns
+          : deriveReportColumnOrder(state.reportRows);
+      final fileBuoyId = state.selectedBuoyIds.length == 1
+          ? state.selectedBuoyIds.first
+          : 'MultipleBuoys';
+      final reportTypeLabel =
+          reportType == ExportReportType.buoyDistance
+          ? 'Distance Report'
+          : 'Data Report';
+      final name = exportMultiBuoyDataReportFileName(
+        buoyId: fileBuoyId,
+        reportType: reportTypeLabel,
+        fromDate: dates.$1,
+        toDate: dates.$2,
+        csv: format == ExportFormat.csv,
+      );
+      await _completeExportFromRows(
+        emit: emit,
+        columnOrder: cols,
+        rows: state.reportRows,
+        reportType: reportType,
+        format: format,
+        forShare: forShare,
+        fileName: name,
+      );
+      return;
+    }
+
     final idsCsv = state.selectedBuoyIds.join(',');
     final outcome = reportType == ExportReportType.buoyDistance
         ? await _getBuoyDistanceReport(
@@ -333,62 +452,30 @@ class GeneralUserExportBloc
         );
       },
       (response) async {
-        try {
-          final cols = deriveReportColumnOrder(response.rows);
-          final Uint8List bytes;
-          if (format == ExportFormat.csv) {
-            final csv = buildDynamicCsv(
-              columnOrder: cols,
-              rows: response.rows,
-            );
-            bytes = encodeCsvToUtf8Bytes(csv);
-          } else {
-            bytes = await buildDynamicPdf(
-              columnOrder: cols,
-              rows: response.rows,
-              title: GeneralUserExportBloc._pdfReportTitleFor(reportType),
-            );
-          }
-          final fileBuoyId = state.selectedBuoyIds.length == 1
-              ? state.selectedBuoyIds.first
-              : 'MultipleBuoys';
-          final reportTypeLabel =
-              reportType == ExportReportType.buoyDistance
-              ? 'Distance Report'
-              : 'Data Report';
-          final name = exportMultiBuoyDataReportFileName(
-            buoyId: fileBuoyId,
-            reportType: reportTypeLabel,
-            fromDate: dates.$1,
-            toDate: dates.$2,
-            csv: format == ExportFormat.csv,
-          );
-          emit(
-            state.copyWith(
-              status: GeneralUserExportStatus.loaded,
-              reportColumns: cols,
-              reportRows: response.rows,
-              deliverable: GeneralUserExportDeliverable(
-                bytes: bytes,
-                fileName: name,
-                forShare: forShare,
-              ),
-            ),
-          );
-        } catch (error, stackTrace) {
-          AppLogger.e(
-            'Multi export file build failed',
-            error: error,
-            stackTrace: stackTrace,
-          );
-          emit(
-            state.copyWith(
-              status: GeneralUserExportStatus.loaded,
-              message: 'Could not build export file.',
-              isSuccessMessage: false,
-            ),
-          );
-        }
+        final cols = deriveReportColumnOrder(response.rows);
+        final fileBuoyId = state.selectedBuoyIds.length == 1
+            ? state.selectedBuoyIds.first
+            : 'MultipleBuoys';
+        final reportTypeLabel =
+            reportType == ExportReportType.buoyDistance
+            ? 'Distance Report'
+            : 'Data Report';
+        final name = exportMultiBuoyDataReportFileName(
+          buoyId: fileBuoyId,
+          reportType: reportTypeLabel,
+          fromDate: dates.$1,
+          toDate: dates.$2,
+          csv: format == ExportFormat.csv,
+        );
+        await _completeExportFromRows(
+          emit: emit,
+          columnOrder: cols,
+          rows: response.rows,
+          reportType: reportType,
+          format: format,
+          forShare: forShare,
+          fileName: name,
+        );
       },
     );
   }
@@ -464,6 +551,37 @@ class GeneralUserExportBloc
       ),
     );
 
+    final requestKey = _reportDataSourceKey(state);
+    final useCachedReport =
+        requestKey != null &&
+        requestKey == state.reportDataSourceKey &&
+        state.reportRows.isNotEmpty;
+
+    if (useCachedReport) {
+      final cols = state.reportColumns.isNotEmpty
+          ? state.reportColumns
+          : deriveReportColumnOrder(state.reportRows);
+      final name = exportReportFileName(
+        buoyId: bid,
+        reportType: reportType == ExportReportType.buoyDistance
+            ? 'Distance Report'
+            : 'Data Report',
+        fromDate: dates.$1,
+        toDate: dates.$2,
+        csv: format == ExportFormat.csv,
+      );
+      await _completeExportFromRows(
+        emit: emit,
+        columnOrder: cols,
+        rows: state.reportRows,
+        reportType: reportType,
+        format: format,
+        forShare: forShare,
+        fileName: name,
+      );
+      return;
+    }
+
     final outcome = reportType == ExportReportType.buoyData
         ? await _getBuoyDataReport(
             buoyIdsCsv: bid,
@@ -487,59 +605,44 @@ class GeneralUserExportBloc
         );
       },
       (response) async {
-        try {
-          final cols = deriveReportColumnOrder(response.rows);
-          final Uint8List bytes;
-          if (format == ExportFormat.csv) {
-            final csv = buildDynamicCsv(
-              columnOrder: cols,
-              rows: response.rows,
-            );
-            bytes = encodeCsvToUtf8Bytes(csv);
-          } else {
-            bytes = await buildDynamicPdf(
-              columnOrder: cols,
-              rows: response.rows,
-              title: GeneralUserExportBloc._pdfReportTitleFor(reportType),
-            );
-          }
-          final name = exportReportFileName(
-            buoyId: bid,
-            reportType: reportType == ExportReportType.buoyDistance
-                ? 'Distance Report'
-                : 'Data Report',
-            fromDate: dates.$1,
-            toDate: dates.$2,
-            csv: format == ExportFormat.csv,
-          );
-          emit(
-            state.copyWith(
-              status: GeneralUserExportStatus.loaded,
-              reportColumns: cols,
-              reportRows: response.rows,
-              deliverable: GeneralUserExportDeliverable(
-                bytes: bytes,
-                fileName: name,
-                forShare: forShare,
-              ),
-            ),
-          );
-        } catch (error, stackTrace) {
-          AppLogger.e(
-            'Export file build failed',
-            error: error,
-            stackTrace: stackTrace,
-          );
-          emit(
-            state.copyWith(
-              status: GeneralUserExportStatus.loaded,
-              message: 'Could not build export file.',
-              isSuccessMessage: false,
-            ),
-          );
-        }
+        final cols = deriveReportColumnOrder(response.rows);
+        final name = exportReportFileName(
+          buoyId: bid,
+          reportType: reportType == ExportReportType.buoyDistance
+              ? 'Distance Report'
+              : 'Data Report',
+          fromDate: dates.$1,
+          toDate: dates.$2,
+          csv: format == ExportFormat.csv,
+        );
+        await _completeExportFromRows(
+          emit: emit,
+          columnOrder: cols,
+          rows: response.rows,
+          reportType: reportType,
+          format: format,
+          forShare: forShare,
+          fileName: name,
+        );
       },
     );
+  }
+
+  /// Best-effort, user-facing message for an export failure. Distinguishes
+  /// the common "PDF has too many pages" case so users can switch to CSV or
+  /// narrow their date range instead of seeing a generic error.
+  static String _buildExportFailureMessage(
+    Object error,
+    ExportFormat format,
+  ) {
+    final text = error.toString().toLowerCase();
+    final looksLikeTooManyPages =
+        text.contains('toomanypages') || text.contains('too many pages');
+    if (format == ExportFormat.pdf && looksLikeTooManyPages) {
+      return 'This report is too large to export as PDF. '
+          'Please choose a smaller date range or export as CSV.';
+    }
+    return 'Could not build export file. Please try again.';
   }
 
   Future<void> _fetchBuoyReport(Emitter<GeneralUserExportState> emit) async {
@@ -559,6 +662,7 @@ class GeneralUserExportBloc
           isReportLoading: false,
           reportColumns: const [],
           reportRows: const [],
+          clearReportDataSourceKey: true,
           assignBuoyScreenNotice: true,
           buoyScreenNotice: 'Data not found',
         ),
@@ -594,6 +698,7 @@ class GeneralUserExportBloc
             isReportLoading: false,
             reportColumns: const [],
             reportRows: const [],
+            clearReportDataSourceKey: true,
             assignBuoyScreenNotice: true,
             buoyScreenNotice: failure.message,
           ),
@@ -607,6 +712,9 @@ class GeneralUserExportBloc
             isReportLoading: false,
             reportColumns: cols,
             reportRows: response.rows,
+            assignReportDataSourceKey: true,
+            reportDataSourceKey:
+                empty ? null : _reportDataSourceKey(state),
             assignBuoyScreenNotice: true,
             buoyScreenNotice: empty ? 'Data not found' : '',
           ),
@@ -630,6 +738,7 @@ class GeneralUserExportBloc
           isReportLoading: false,
           reportColumns: const [],
           reportRows: const [],
+          clearReportDataSourceKey: true,
           assignBuoyScreenNotice: true,
           buoyScreenNotice: 'Data not found',
         ),
@@ -653,6 +762,7 @@ class GeneralUserExportBloc
           isReportLoading: false,
           reportColumns: const [],
           reportRows: const [],
+          clearReportDataSourceKey: true,
           assignBuoyScreenNotice: true,
           buoyScreenNotice: 'Select exactly one buoy for Distance Report.',
         ),
@@ -680,6 +790,7 @@ class GeneralUserExportBloc
             isReportLoading: false,
             reportColumns: const [],
             reportRows: const [],
+            clearReportDataSourceKey: true,
             assignBuoyScreenNotice: true,
             buoyScreenNotice: failure.message,
           ),
@@ -693,6 +804,9 @@ class GeneralUserExportBloc
             isReportLoading: false,
             reportColumns: cols,
             reportRows: response.rows,
+            assignReportDataSourceKey: true,
+            reportDataSourceKey:
+                empty ? null : _reportDataSourceKey(state),
             assignBuoyScreenNotice: true,
             buoyScreenNotice: empty ? 'Data not found' : '',
           ),

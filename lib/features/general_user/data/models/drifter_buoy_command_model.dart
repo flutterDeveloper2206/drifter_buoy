@@ -52,7 +52,7 @@ class DrifterBuoyCommandModel extends Equatable {
           .toString(),
       response: (json['response'] ?? '').toString(),
       responseDescription: (json['responseDescription'] ?? '').toString(),
-      isActive: _parseIsActive(json['isActive']),
+      isActive: _parseIsActive(json['isActive'] ?? json['isactive']),
     );
   }
 
@@ -61,6 +61,16 @@ class DrifterBuoyCommandModel extends Equatable {
     final raw = waitingPeriodSecondsRaw.trim();
     if (raw.toUpperCase() == 'NA' || raw.isEmpty) {
       return const Duration(seconds: 60);
+    }
+    final minMatch = RegExp(
+      r'(\d+)\s*min',
+      caseSensitive: false,
+    ).firstMatch(raw);
+    if (minMatch != null) {
+      final mins = int.tryParse(minMatch.group(1)!);
+      if (mins != null && mins > 0) {
+        return Duration(seconds: mins * 60);
+      }
     }
     final seconds = int.tryParse(raw);
     if (seconds == null || seconds <= 0) {
@@ -124,7 +134,9 @@ class GetAllDrifterBuoyCommandsResponse extends Equatable {
           : int.tryParse((json['statusCode'] ?? '0').toString()) ?? 0,
       message: (json['message'] ?? '').toString(),
       result: list,
-      isSuccess: (json['isSuccess'] ?? false) as bool? ?? false,
+      isSuccess:
+          json['isSuccess'] == true ||
+          (json['isSuccess']?.toString().toLowerCase() == 'true'),
     );
   }
   @override

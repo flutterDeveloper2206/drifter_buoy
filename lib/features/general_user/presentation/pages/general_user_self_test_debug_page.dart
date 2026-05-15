@@ -5,11 +5,63 @@ import 'package:drifter_buoy/core/utils/widgets/app_flushbar.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_icon_circle_button.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_loader.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/self_test_debug/general_user_self_test_debug_bloc.dart';
+import 'package:drifter_buoy/features/general_user/data/models/drifter_buoy_command_model.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/self_test_debug/general_user_self_test_debug_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/self_test_debug/general_user_self_test_debug_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+
+/// Mongo ids for FTP password catalog rows (same as [GeneralUserSelfTestDebugBloc] static commands).
+const Set<String> _ftpPasswordCatalogIds = {
+  '6a04547227be22811320695b',
+  '6a04547227be228113206963',
+  '6a04547227be22811320696b',
+  '6a04547227be228113206973',
+};
+
+String? _validateSelfTestParameterizedFtp20(String? value) {
+  final t = value?.trim() ?? '';
+  if (t.isEmpty) {
+    return 'Enter a value (1–20 characters).';
+  }
+  if (t.length > 20) {
+    return 'Maximum 20 characters.';
+  }
+  if (!RegExp(r'^[\x20-\x7E]+$').hasMatch(t)) {
+    return 'Use printable ASCII only.';
+  }
+  return null;
+}
+
+String? _validateSelfTestParameterizedPort(String? value) {
+  final t = value?.trim() ?? '';
+  if (t.isEmpty) {
+    return 'Enter a port number.';
+  }
+  if (!RegExp(r'^\d{1,5}$').hasMatch(t)) {
+    return 'Use 1–5 digits only.';
+  }
+  final n = int.tryParse(t);
+  if (n == null || n < 0 || n > 65535) {
+    return 'Port must be between 0 and 65535.';
+  }
+  return null;
+}
+
+String? _validateSelfTestParameterizedSmsCell(String? value) {
+  var s = value?.trim().replaceAll(RegExp(r'\s'), '') ?? '';
+  if (s.isEmpty) {
+    return 'Enter a mobile number.';
+  }
+  if (s.startsWith('+91')) {
+    s = s.substring(3);
+  }
+  if (s.length != 10 || !RegExp(r'^[0-9]{10}$').hasMatch(s)) {
+    return 'Use 10 digits, or +91 followed by 10 digits.';
+  }
+  return null;
+}
 
 class GeneralUserSelfTestDebugPage extends StatefulWidget {
   const GeneralUserSelfTestDebugPage({super.key});
@@ -21,6 +73,8 @@ class GeneralUserSelfTestDebugPage extends StatefulWidget {
 
 class _GeneralUserSelfTestDebugPageState
     extends State<GeneralUserSelfTestDebugPage> {
+  late final TextEditingController _commandSearchController;
+
   bool _isSetStationIdDialogOpen = false;
   bool _isMeasurementTimeDialogOpen = false;
   bool _isTransmitterFrequencyDialogOpen = false;
@@ -28,6 +82,91 @@ class _GeneralUserSelfTestDebugPageState
   bool _isRadioSondeTransmitterIdDialogOpen = false;
   bool _isTransmitterTestDialogOpen = false;
   bool _isCheckStatusDialogOpen = false;
+  bool _isParameterizedCommandDialogOpen = false;
+
+  /// Blocking BLE progress UI lives in the overlay (not [Navigator]) so we never
+  /// [Navigator.pop] a Flushbar/snackbar route by mistake.
+  OverlayEntry? _bleCommandProgressOverlay;
+
+  @override
+  void initState() {
+    super.initState();
+    _commandSearchController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _removeBleCommandProgressOverlay();
+    _commandSearchController.dispose();
+    super.dispose();
+  }
+
+  /// Shows dimmed full-screen barrier + progress card above routes (safe with Flushbar).
+  void _presentBleCommandProgressOverlay(BuildContext context) {
+    if (_bleCommandProgressOverlay != null || !context.mounted) {
+      return;
+    }
+    final overlayState = Overlay.of(context, rootOverlay: true);
+
+    late final OverlayEntry entry;
+    entry = OverlayEntry(
+      builder: (BuildContext ctx) {
+        return PopScope(
+          canPop: false,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              ModalBarrier(
+                dismissible: false,
+                color: Colors.black54,
+                semanticsLabel: MaterialLocalizations.of(
+                  ctx,
+                ).modalBarrierDismissLabel,
+              ),
+              Material(
+                color: Colors.transparent,
+                child: _BleCommandProgressDialog(theme: Theme.of(context)),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    _bleCommandProgressOverlay = entry;
+    overlayState.insert(entry);
+  }
+
+  void _removeBleCommandProgressOverlay() {
+    final entry = _bleCommandProgressOverlay;
+    if (entry == null) {
+      return;
+    }
+    _bleCommandProgressOverlay = null;
+    entry.remove();
+  }
+
+  /// Indices into the full catalog list matching the search box (name, request, description).
+  List<int> _filterCommandIndices(
+    List<DrifterBuoyCommandModel> commands,
+    String query,
+  ) {
+    final needle = query.trim().toLowerCase();
+    if (needle.isEmpty) {
+      return List<int>.generate(commands.length, (i) => i);
+    }
+    final result = <int>[];
+    for (var i = 0; i < commands.length; i++) {
+      final DrifterBuoyCommandModel c = commands[i];
+      final blob =
+          '${c.testName} ${c.requestCommand} ${c.requestCommandDescription}'
+              .toLowerCase();
+      if (blob.contains(needle)) {
+        result.add(i);
+      }
+    }
+    return result;
+  }
 
   Future<void> _showSetStationIdDialog(
     BuildContext context,
@@ -664,6 +803,41 @@ class _GeneralUserSelfTestDebugPageState
     }
   }
 
+  Future<void> _showParameterizedCommandDialog(
+    BuildContext context,
+    SelfTestParameterizedCommandPrompt prompt,
+  ) async {
+    if (_isParameterizedCommandDialogOpen) {
+      return;
+    }
+    _isParameterizedCommandDialogOpen = true;
+    try {
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) {
+          return BlocProvider<GeneralUserSelfTestDebugBloc>.value(
+            value: context.read<GeneralUserSelfTestDebugBloc>(),
+            child: _ParameterizedServerCommandDialog(prompt: prompt),
+          );
+        },
+      );
+    } finally {
+      _isParameterizedCommandDialogOpen = false;
+    }
+    if (!context.mounted) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!context.mounted) {
+        return;
+      }
+      context.read<GeneralUserSelfTestDebugBloc>().add(
+        const ClearGeneralUserParameterizedCommandPrompt(),
+      );
+    });
+  }
+
   static const Color _checkOkGreen = Color(0xFF1B5E20);
   static const Color _checkBadRed = Color(0xFFB3261E);
   static const Color _checkWarnAmber = Color(0xFFBF360C);
@@ -913,6 +1087,43 @@ class _GeneralUserSelfTestDebugPageState
               GeneralUserSelfTestDebugState
             >(
               listenWhen: (p, c) =>
+                  c.parameterizedCommandPrompt != null &&
+                  c.parameterizedCommandPrompt != p.parameterizedCommandPrompt,
+              listener: (context, state) {
+                final prompt = state.parameterizedCommandPrompt;
+                if (prompt == null || _isParameterizedCommandDialogOpen) {
+                  return;
+                }
+                _showParameterizedCommandDialog(context, prompt);
+              },
+            ),
+            BlocListener<
+              GeneralUserSelfTestDebugBloc,
+              GeneralUserSelfTestDebugState
+            >(
+              listenWhen: (p, c) =>
+                  c.status == GeneralUserSelfTestDebugStatus.running &&
+                  p.status != GeneralUserSelfTestDebugStatus.running,
+              listener: (context, state) {
+                _presentBleCommandProgressOverlay(context);
+              },
+            ),
+            BlocListener<
+              GeneralUserSelfTestDebugBloc,
+              GeneralUserSelfTestDebugState
+            >(
+              listenWhen: (p, c) =>
+                  p.status == GeneralUserSelfTestDebugStatus.running &&
+                  c.status != GeneralUserSelfTestDebugStatus.running,
+              listener: (context, state) {
+                _removeBleCommandProgressOverlay();
+              },
+            ),
+            BlocListener<
+              GeneralUserSelfTestDebugBloc,
+              GeneralUserSelfTestDebugState
+            >(
+              listenWhen: (p, c) =>
                   c.lastSnapshot != null && c.lastSnapshot != p.lastSnapshot,
               listener: (context, state) {
                 final snap = state.lastSnapshot;
@@ -927,6 +1138,9 @@ class _GeneralUserSelfTestDebugPageState
                         : snap.descriptionSuccess!
                         ? const Color(0xFF1B5E20)
                         : const Color(0xFFB3261E);
+                    final helpSectionTitle = snap.hideResponseLine
+                        ? 'Summary'
+                        : 'Description';
                     return AlertDialog(
                       title: Text(snap.testName),
                       content: SingleChildScrollView(
@@ -953,7 +1167,7 @@ class _GeneralUserSelfTestDebugPageState
                               if (!snap.hideResponseLine)
                                 const SizedBox(height: 16),
                               Text(
-                                'Description',
+                                helpSectionTitle,
                                 style: Theme.of(ctx).textTheme
                                     .compactSectionTitle(
                                       const Color(0xFF1D2329),
@@ -991,85 +1205,414 @@ class _GeneralUserSelfTestDebugPageState
             children: [
               const _Header(),
               Expanded(
-                child:
-                    BlocBuilder<
-                      GeneralUserSelfTestDebugBloc,
-                      GeneralUserSelfTestDebugState
-                    >(
-                      builder: (context, state) {
-                        if (state.status ==
-                                GeneralUserSelfTestDebugStatus.loading ||
-                            state.status ==
-                                GeneralUserSelfTestDebugStatus.initial) {
-                          return const AppLoader();
-                        }
-                        if (state.status ==
-                            GeneralUserSelfTestDebugStatus.error) {
-                          return AppErrorView(
-                            message: state.message,
-                            onRetry: () {
-                              context.read<GeneralUserSelfTestDebugBloc>().add(
-                                const LoadGeneralUserSelfTestDebug(),
-                              );
-                            },
+                child: BlocBuilder<GeneralUserSelfTestDebugBloc, GeneralUserSelfTestDebugState>(
+                  builder: (context, state) {
+                    if (state.status ==
+                            GeneralUserSelfTestDebugStatus.loading ||
+                        state.status ==
+                            GeneralUserSelfTestDebugStatus.initial) {
+                      return const AppLoader();
+                    }
+                    if (state.status == GeneralUserSelfTestDebugStatus.error) {
+                      return AppErrorView(
+                        message: state.message,
+                        onRetry: () {
+                          context.read<GeneralUserSelfTestDebugBloc>().add(
+                            const LoadGeneralUserSelfTestDebug(),
                           );
-                        }
+                        },
+                      );
+                    }
 
-                        if (state.commands.isEmpty) {
-                          return Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(24),
-                              child: Text(
-                                state.message.isNotEmpty
-                                    ? state.message
-                                    : 'No self-test commands available.',
-                                textAlign: TextAlign.center,
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(color: const Color(0xFF5C6368)),
+                    if (state.commands.isEmpty) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text(
+                            state.message.isNotEmpty
+                                ? state.message
+                                : 'No self-test commands available.',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: const Color(0xFF5C6368)),
+                          ),
+                        ),
+                      );
+                    }
+
+                    final filteredIndices = _filterCommandIndices(
+                      state.commands,
+                      _commandSearchController.text,
+                    );
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+                          child: TextField(
+                            controller: _commandSearchController,
+                            textInputAction: TextInputAction.search,
+                            decoration: InputDecoration(
+                              hintText: 'Search commands',
+                              prefixIcon: const Icon(
+                                Icons.search_rounded,
+                                color: Color(0xFF8A9095),
+                              ),
+                              suffixIcon: _commandSearchController.text.isEmpty
+                                  ? null
+                                  : IconButton(
+                                      tooltip: 'Clear',
+                                      icon: const Icon(Icons.clear_rounded),
+                                      color: const Color(0xFF8A9095),
+                                      onPressed: () {
+                                        _commandSearchController.clear();
+                                        setState(() {});
+                                      },
+                                    ),
+                              filled: true,
+                              fillColor: const Color(0xFFF2F2F2),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 12,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none,
                               ),
                             ),
-                          );
-                        }
-
-                        return ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                          itemCount: state.commands.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: 8),
-                          itemBuilder: (context, index) {
-                            final command = state.commands[index];
-                            final running =
-                                state.runningCommandIndex == index &&
-                                state.status ==
-                                    GeneralUserSelfTestDebugStatus.running;
-                            return _ActionTile(
-                              title: command.testName,
-                              subtitle:
-                                  command.requestCommandDescription.isNotEmpty
-                                  ? command.requestCommandDescription
-                                  : command.requestCommand,
-                              running: running,
-                              onTap: running
-                                  ? null
-                                  : () {
-                                      context
-                                          .read<GeneralUserSelfTestDebugBloc>()
-                                          .add(
-                                            RunGeneralUserSelfTestDebugAction(
-                                              index,
-                                            ),
-                                          );
+                            onChanged: (_) => setState(() {}),
+                          ),
+                        ),
+                        Expanded(
+                          child: filteredIndices.isEmpty
+                              ? Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(24),
+                                    child: Text(
+                                      'No commands match your search.',
+                                      textAlign: TextAlign.center,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color: const Color(0xFF5C6368),
+                                          ),
+                                    ),
+                                  ),
+                                )
+                              : RefreshIndicator(
+                                  onRefresh: () async {
+                                    final bloc = context
+                                        .read<GeneralUserSelfTestDebugBloc>();
+                                    final waitLoaded = bloc.stream.firstWhere(
+                                      (GeneralUserSelfTestDebugState s) =>
+                                          s.status ==
+                                              GeneralUserSelfTestDebugStatus
+                                                  .loaded ||
+                                          s.status ==
+                                              GeneralUserSelfTestDebugStatus
+                                                  .error,
+                                    );
+                                    bloc.add(
+                                      const LoadGeneralUserSelfTestDebug(),
+                                    );
+                                    await waitLoaded;
+                                  },
+                                  child: ListView.separated(
+                                    physics:
+                                        const AlwaysScrollableScrollPhysics(),
+                                    padding: const EdgeInsets.fromLTRB(
+                                      16,
+                                      12,
+                                      16,
+                                      16,
+                                    ),
+                                    itemCount: filteredIndices.length,
+                                    separatorBuilder: (_, __) =>
+                                        const SizedBox(height: 8),
+                                    itemBuilder: (context, listIndex) {
+                                      final commandIndex =
+                                          filteredIndices[listIndex];
+                                      final command =
+                                          state.commands[commandIndex];
+                                      final running =
+                                          state.runningCommandIndex ==
+                                              commandIndex &&
+                                          state.status ==
+                                              GeneralUserSelfTestDebugStatus
+                                                  .running;
+                                      return _ActionTile(
+                                        title:
+                                            '${commandIndex + 1}-${command.testName}',
+                                        subtitle:
+                                            command
+                                                .requestCommandDescription
+                                                .isNotEmpty
+                                            ? command.requestCommandDescription
+                                            : command.requestCommand,
+                                        running: false,
+                                        onTap: running
+                                            ? null
+                                            : () {
+                                                context
+                                                    .read<
+                                                      GeneralUserSelfTestDebugBloc
+                                                    >()
+                                                    .add(
+                                                      RunGeneralUserSelfTestDebugAction(
+                                                        commandIndex,
+                                                      ),
+                                                    );
+                                              },
+                                      );
                                     },
-                            );
-                          },
-                        );
-                      },
-                    ),
+                                  ),
+                                ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Content for [_GeneralUserSelfTestDebugPageState._presentBleCommandProgressOverlay].
+class _BleCommandProgressDialog extends StatelessWidget {
+  const _BleCommandProgressDialog({required this.theme});
+
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Theme(
+      data: theme,
+      child: PopScope(
+        canPop: false,
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 8),
+              const CircularProgressIndicator(color: Color(0xFF2A2F34)),
+              const SizedBox(height: 24),
+              Text(
+                'Process running',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF1D2329),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Please wait ...',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: const Color(0xFF6A7178),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ParameterizedServerCommandDialog extends StatefulWidget {
+  const _ParameterizedServerCommandDialog({required this.prompt});
+
+  final SelfTestParameterizedCommandPrompt prompt;
+
+  @override
+  State<_ParameterizedServerCommandDialog> createState() =>
+      _ParameterizedServerCommandDialogState();
+}
+
+class _ParameterizedServerCommandDialogState
+    extends State<_ParameterizedServerCommandDialog> {
+  late final TextEditingController _textController;
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  int _redundancy = 0;
+  bool _hidePasswordCharacters = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _textController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    super.dispose();
+  }
+
+  bool get _isPasswordField =>
+      _ftpPasswordCatalogIds.contains(widget.prompt.commandId);
+
+  @override
+  Widget build(BuildContext context) {
+    final p = widget.prompt;
+    final header = <Widget>[];
+
+    if (p.requestHelpText.trim().isNotEmpty) {
+      header.add(
+        SelectableText(
+          p.requestHelpText.trim(),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: const Color(0xFF6A7178)),
+        ),
+      );
+      header.add(const SizedBox(height: 12));
+    }
+
+    late final Widget field;
+    switch (p.fieldKind) {
+      case SelfTestParameterizedCommandFieldKind.ftpField20:
+        field = TextFormField(
+          controller: _textController,
+          maxLength: 20,
+          obscureText: _isPasswordField && _hidePasswordCharacters,
+          validator: _validateSelfTestParameterizedFtp20,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          decoration: InputDecoration(
+            labelText: _isPasswordField ? 'Password' : 'Value',
+            helperText:
+                '1–20 printable characters. Shorter values are padded when sent.',
+            border: const OutlineInputBorder(),
+            counterText: '',
+            suffixIcon: _isPasswordField
+                ? IconButton(
+                    tooltip: _hidePasswordCharacters
+                        ? 'Show password'
+                        : 'Hide password',
+                    onPressed: () {
+                      setState(() {
+                        _hidePasswordCharacters = !_hidePasswordCharacters;
+                      });
+                    },
+                    icon: Icon(
+                      _hidePasswordCharacters
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                    ),
+                  )
+                : null,
+          ),
+        );
+        break;
+      case SelfTestParameterizedCommandFieldKind.portFiveDigits:
+        field = TextFormField(
+          controller: _textController,
+          keyboardType: TextInputType.number,
+          maxLength: 5,
+          validator: _validateSelfTestParameterizedPort,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          decoration: const InputDecoration(
+            labelText: 'Port',
+            helperText: '0–65535 (sent as 5 digits with leading zeros).',
+            border: OutlineInputBorder(),
+            counterText: '',
+          ),
+        );
+        break;
+      case SelfTestParameterizedCommandFieldKind.smsCellPlus91:
+        field = TextFormField(
+          controller: _textController,
+          keyboardType: TextInputType.phone,
+          validator: _validateSelfTestParameterizedSmsCell,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          decoration: const InputDecoration(
+            labelText: 'Mobile number',
+            helperText: '10 digits, or +91 and 10 digits.',
+            border: OutlineInputBorder(),
+          ),
+        );
+        break;
+      case SelfTestParameterizedCommandFieldKind.txRedundancy01:
+        field = RadioGroup<int>(
+          groupValue: _redundancy,
+          onChanged: (v) {
+            if (v != null) {
+              setState(() => _redundancy = v);
+            }
+          },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              RadioListTile<int>(
+                contentPadding: EdgeInsets.zero,
+                value: 0,
+                title: const Text('0 — GSM and GPRS'),
+              ),
+              RadioListTile<int>(
+                contentPadding: EdgeInsets.zero,
+                value: 1,
+                title: const Text('1 — GSM if GPRS fail'),
+              ),
+            ],
+          ),
+        );
+        break;
+    }
+
+    return AlertDialog(
+      title: Text(p.testName),
+      content: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ...header,
+            Form(key: _formKey, child: field),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            FocusScope.of(context).unfocus();
+            Navigator.of(context).pop();
+          },
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () {
+            FocusScope.of(context).unfocus();
+            if (p.fieldKind !=
+                SelfTestParameterizedCommandFieldKind.txRedundancy01) {
+              if (!(_formKey.currentState?.validate() ?? false)) {
+                return;
+              }
+            }
+            final value =
+                p.fieldKind ==
+                    SelfTestParameterizedCommandFieldKind.txRedundancy01
+                ? '$_redundancy'
+                : _textController.text;
+            context.read<GeneralUserSelfTestDebugBloc>().add(
+              SubmitGeneralUserParameterizedCommand(
+                commandId: p.commandId,
+                value: value,
+              ),
+            );
+            Navigator.of(context).pop();
+          },
+          child: const Text('Update'),
+        ),
+      ],
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:drifter_buoy/core/constants/app_routes.dart';
 import 'package:drifter_buoy/core/utils/app_logger.dart';
 import 'package:drifter_buoy/core/utils/export_deliverable_actions.dart';
+import 'package:drifter_buoy/core/utils/export_report_dynamic_codec.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_common_dropdown.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_export_format_card.dart';
@@ -352,6 +353,30 @@ class _GeneralUserExportPageState extends State<GeneralUserExportPage> {
             ),
             BlocListener<GeneralUserExportBloc, GeneralUserExportState>(
               listenWhen: (previous, current) =>
+                  previous.status != GeneralUserExportStatus.exporting &&
+                  current.status == GeneralUserExportStatus.exporting,
+              listener: (context, state) {
+                showDialog<void>(
+                  context: context,
+                  barrierDismissible: false,
+                  useRootNavigator: true,
+                  builder: (dialogContext) => const _ExportingDataDialog(),
+                );
+              },
+            ),
+            BlocListener<GeneralUserExportBloc, GeneralUserExportState>(
+              listenWhen: (previous, current) =>
+                  previous.status == GeneralUserExportStatus.exporting &&
+                  current.status != GeneralUserExportStatus.exporting,
+              listener: (context, state) {
+                final nav = Navigator.of(context, rootNavigator: true);
+                if (nav.canPop()) {
+                  nav.pop();
+                }
+              },
+            ),
+            BlocListener<GeneralUserExportBloc, GeneralUserExportState>(
+              listenWhen: (previous, current) =>
                   current.deliverable != null &&
                   current.deliverable != previous.deliverable,
               listener: (context, state) async {
@@ -643,6 +668,17 @@ class _GeneralUserExportPageState extends State<GeneralUserExportPage> {
                                     isExporting || _exportButtonDisabled(state)
                                     ? null
                                     : () {
+                                        if (state.format ==
+                                                ExportFormat.pdf &&
+                                            state.reportRows.length >
+                                                kExportPdfLargeRowWarningThreshold) {
+                                          AppFlushbar.info(
+                                            'Large report: PDF may take a minute. '
+                                            'CSV export is faster for the full dataset.',
+                                            title: 'Export',
+                                            context: context,
+                                          );
+                                        }
                                         if (state.mode ==
                                             GeneralUserExportMode
                                                 .buoyDistance) {
@@ -1016,4 +1052,46 @@ String _formatApproxFileSize(int bytes) {
     return '~${kb.toStringAsFixed(1)} KB';
   }
   return '~${(kb / 1024).toStringAsFixed(1)} MB';
+}
+
+class _ExportingDataDialog extends StatelessWidget {
+  const _ExportingDataDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      child: AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        contentPadding: const EdgeInsets.fromLTRB(28, 28, 28, 24),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(
+              width: 40,
+              height: 40,
+              child: CircularProgressIndicator(strokeWidth: 3),
+            ),
+            const SizedBox(height: 22),
+            Text(
+              'Exporting your data .....',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF30353A),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Please wait',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: const Color(0xFF5C5C5C),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

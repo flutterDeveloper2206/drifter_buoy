@@ -37,6 +37,7 @@ class GeneralUserExportState extends Equatable {
     required this.isSuccessMessage,
     required this.reportColumns,
     required this.reportRows,
+    required this.reportDataSourceKey,
     required this.isReportLoading,
     required this.deliverable,
     required this.buoyScreenNotice,
@@ -57,6 +58,10 @@ class GeneralUserExportState extends Equatable {
   final bool isSuccessMessage;
   final List<String> reportColumns;
   final List<Map<String, String>> reportRows;
+  /// Present when [reportRows] were loaded for this exact API request key.
+  /// Used to skip a duplicate network call on export when the preview data
+  /// is still valid.
+  final String? reportDataSourceKey;
   final bool isReportLoading;
   final GeneralUserExportDeliverable? deliverable;
 
@@ -79,6 +84,7 @@ class GeneralUserExportState extends Equatable {
       isSuccessMessage = false,
       reportColumns = const [],
       reportRows = const [],
+      reportDataSourceKey = null,
       isReportLoading = false,
       deliverable = null,
       buoyScreenNotice = '';
@@ -105,6 +111,9 @@ class GeneralUserExportState extends Equatable {
     bool? isSuccessMessage,
     List<String>? reportColumns,
     List<Map<String, String>>? reportRows,
+    String? reportDataSourceKey,
+    bool assignReportDataSourceKey = false,
+    bool clearReportDataSourceKey = false,
     bool? isReportLoading,
     GeneralUserExportDeliverable? deliverable,
     bool clearDeliverable = false,
@@ -129,6 +138,11 @@ class GeneralUserExportState extends Equatable {
       isSuccessMessage: isSuccessMessage ?? this.isSuccessMessage,
       reportColumns: reportColumns ?? this.reportColumns,
       reportRows: reportRows ?? this.reportRows,
+      reportDataSourceKey: clearReportDataSourceKey
+          ? null
+          : (assignReportDataSourceKey
+                ? reportDataSourceKey
+                : this.reportDataSourceKey),
       isReportLoading: isReportLoading ?? this.isReportLoading,
       deliverable: clearDeliverable ? null : (deliverable ?? this.deliverable),
       buoyScreenNotice: assignBuoyScreenNotice
@@ -154,6 +168,7 @@ class GeneralUserExportState extends Equatable {
         isSuccessMessage,
         reportColumns,
         reportRows,
+        reportDataSourceKey,
         isReportLoading,
         deliverable,
         buoyScreenNotice,
