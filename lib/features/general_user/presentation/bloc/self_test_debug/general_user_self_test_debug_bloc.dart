@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:drifter_buoy/core/bluetooth/ble_connection_service.dart';
 import 'package:drifter_buoy/core/utils/app_logger.dart';
@@ -25,12 +26,36 @@ class GeneralUserSelfTestDebugBloc
     on<ClearGeneralUserSetStationIdPrompt>(
       _onClearGeneralUserSetStationIdPrompt,
     );
+    on<SubmitGeneralUserSetStationName>(_onSubmitGeneralUserSetStationName);
+    on<ClearGeneralUserSetStationNamePrompt>(
+      _onClearGeneralUserSetStationNamePrompt,
+    );
     on<SubmitGeneralUserMeasurementStartTime>(
       _onSubmitGeneralUserMeasurementStartTime,
     );
     on<ClearGeneralUserMeasurementStartTimePrompt>(
       _onClearGeneralUserMeasurementStartTimePrompt,
     );
+    on<SubmitGeneralUserSetTransmissionTime>(
+      _onSubmitGeneralUserSetTransmissionTime,
+    );
+    on<ClearGeneralUserTransmissionTimePrompt>(
+      _onClearGeneralUserTransmissionTimePrompt,
+    );
+    on<SubmitGeneralUserSetTransmissionInterval>(
+      _onSubmitGeneralUserSetTransmissionInterval,
+    );
+    on<ClearGeneralUserTransmissionIntervalPrompt>(
+      _onClearGeneralUserTransmissionIntervalPrompt,
+    );
+    on<SubmitGeneralUserSetMeasurementInterval>(
+      _onSubmitGeneralUserSetMeasurementInterval,
+    );
+    on<ClearGeneralUserMeasurementIntervalPrompt>(
+      _onClearGeneralUserMeasurementIntervalPrompt,
+    );
+    on<SubmitGeneralUserSetApn>(_onSubmitGeneralUserSetApn);
+    on<ClearGeneralUserSetApnPrompt>(_onClearGeneralUserSetApnPrompt);
     on<SubmitGeneralUserTransmitterFrequency>(
       _onSubmitGeneralUserTransmitterFrequency,
     );
@@ -59,6 +84,12 @@ class GeneralUserSelfTestDebugBloc
     on<ClearGeneralUserParameterizedCommandPrompt>(
       _onClearGeneralUserParameterizedCommandPrompt,
     );
+    on<SubmitGeneralUserRestoreServerParameters>(
+      _onSubmitGeneralUserRestoreServerParameters,
+    );
+    on<ClearGeneralUserRestoreServerParametersPrompt>(
+      _onClearGeneralUserRestoreServerParametersPrompt,
+    );
     _disconnectSub = _ble.disconnectedRemoteIds.listen((_) {
       add(const NotifyBlePeripheralDisconnected());
     });
@@ -79,16 +110,35 @@ class GeneralUserSelfTestDebugBloc
   static const String _eraseMemoryCommandId = '6a04547227be22811320699d';
   static const String _restoreDefaultParametersCommandId =
       '6a04547227be22811320694b';
-  static const String _setMeasurementIntervalSensorWarmUpTimeCommandId =
+  static const String _setMeasurementIntervalCommandId =
       '6a04547227be228113206952';
   static const String _measurementStartTimeCommandId =
       '6a04547227be228113206985';
   static const String _checkStatusCommandId = '6a04547227be22811320694a';
   static const String _setAllGeneralSystemParametersCommandId =
       '6a04547227be22811320694d';
+
+  /// Embedded in [SubmitGeneralUserParameterizedCommand.value] for the
+  /// multi-field “set all general” (`?05`) dialog — avoids relying on a separate
+  /// event type that may not match after hot reload.
+  static const String setAllGeneralParametersPayloadPrefix =
+      '__drifterSetAllGeneral__';
+
+  /// Clears [GeneralUserSelfTestDebugState.setAllGeneralParametersPrompt] after
+  /// the dialog closes; sent as [SubmitGeneralUserParameterizedCommand.value].
+  static const String setAllGeneralParametersClearPromptMarker =
+      '__drifterClearSetAllGeneralPrompt__';
+  static const String setAllServerParametersPayloadPrefix =
+      '__drifterSetAllServer__';
+  static const String setAllServerParametersClearPromptMarker =
+      '__drifterClearSetAllServerPrompt__';
   static const String _getAllGeneralSystemParametersCommandId =
       '6a04547227be22811320694c';
+
+  /// Sheet Mongo id; BLE opcode is determined by [DrifterBuoyCommandModel.requestCommand] (`?06,`).
   static const String _setStationIdCommandId = '6a04547227be22811320694e';
+
+  /// Sheet Mongo id; BLE opcode is determined by `requestCommand` (`?07,`).
   static const String _setStationNameCommandId = '6a04547227be22811320694f';
   static const String _setTransmissionIntervalCommandId =
       '6a04547227be228113206951';
@@ -176,6 +226,34 @@ class GeneralUserSelfTestDebugBloc
       '6a04547227be22811320697c';
   static const String _getFactoryServerAllFtpHttpParametersCommandId =
       '6a04547227be22811320697d';
+  static const Set<String> _setAllServerCommandIds = {
+    _setPrimaryServerAllFtpHttpParametersCommandId,
+    _setSecondaryServerAllFtpHttpParametersCommandId,
+    _setThirdServerAllFtpHttpParametersCommandId,
+    _setFactoryServerAllFtpHttpParametersCommandId,
+  };
+  static const Set<String> _restoreAllServerCommandIds = {
+    _restorePrimaryServerAllFtpHttpParametersCommandId,
+    _restoreSecondaryServerAllFtpHttpParametersCommandId,
+    _restoreThirdServerAllFtpHttpParametersCommandId,
+    _restoreFactoryServerAllFtpHttpParametersCommandId,
+  };
+  static const Map<String, String> _setAllToGetServerCommandId = {
+    _setPrimaryServerAllFtpHttpParametersCommandId:
+        _getPrimaryServerAllFtpHttpParametersCommandId,
+    _setSecondaryServerAllFtpHttpParametersCommandId:
+        _getSecondaryServerAllFtpHttpParametersCommandId,
+    _setThirdServerAllFtpHttpParametersCommandId:
+        _getThirdServerAllFtpHttpParametersCommandId,
+    _setFactoryServerAllFtpHttpParametersCommandId:
+        _getFactoryServerAllFtpHttpParametersCommandId,
+  };
+  static const Set<String> _getAllServerCommandIds = {
+    _getPrimaryServerAllFtpHttpParametersCommandId,
+    _getSecondaryServerAllFtpHttpParametersCommandId,
+    _getThirdServerAllFtpHttpParametersCommandId,
+    _getFactoryServerAllFtpHttpParametersCommandId,
+  };
   static const String _restorePrimaryServerAllFtpHttpParametersCommandId =
       '6a04547227be22811320697e';
   static const String _restoreSecondaryServerAllFtpHttpParametersCommandId =
@@ -215,6 +293,12 @@ class GeneralUserSelfTestDebugBloc
   /// BLE templates that collect one user field before [_ble.sendDrifterAsciiCommand].
   static const Map<String, SelfTestParameterizedCommandFieldKind>
   _parameterizedServerFieldKindByCommandId = {
+    _setRtcServerHttpWebsiteAddressCommandId:
+        SelfTestParameterizedCommandFieldKind.rtcHttpWebsite128,
+    _setRtcServerHttpWebsiteKeyCommandId:
+        SelfTestParameterizedCommandFieldKind.rtcHttpKey15,
+    _primaryServerHttpWebsiteAddressCommandId:
+        SelfTestParameterizedCommandFieldKind.primaryHttpWebsiteIndex128,
     _primaryServerFtpAddressCommandId:
         SelfTestParameterizedCommandFieldKind.ftpField20,
     _primaryServerFtpPortCommandId:
@@ -229,6 +313,9 @@ class GeneralUserSelfTestDebugBloc
         SelfTestParameterizedCommandFieldKind.smsCellPlus91,
     _primaryServerTxMediaRedundancyCommandId:
         SelfTestParameterizedCommandFieldKind.txRedundancy01,
+    _secondaryServerHttpWebsiteAddressCommandId:
+        SelfTestParameterizedCommandFieldKind
+            .secondaryHttpWebsiteIndex0to3And128,
     _secondaryServerFtpAddressCommandId:
         SelfTestParameterizedCommandFieldKind.ftpField20,
     _secondaryServerFtpPortCommandId:
@@ -243,6 +330,9 @@ class GeneralUserSelfTestDebugBloc
         SelfTestParameterizedCommandFieldKind.smsCellPlus91,
     _secondaryServerTxMediaRedundancyCommandId:
         SelfTestParameterizedCommandFieldKind.txRedundancy01,
+    _thirdServerHttpWebsiteAddressCommandId:
+        SelfTestParameterizedCommandFieldKind
+            .thirdHttpWebsiteIndex0to3And128Trailing40,
     _thirdServerFtpAddressCommandId:
         SelfTestParameterizedCommandFieldKind.ftpField20,
     _thirdServerFtpPortNoCommandId:
@@ -257,6 +347,8 @@ class GeneralUserSelfTestDebugBloc
         SelfTestParameterizedCommandFieldKind.smsCellPlus91,
     _thirdServerTxMediaRedundancyCommandId:
         SelfTestParameterizedCommandFieldKind.txRedundancy01,
+    _factoryServerHttpWebsiteAddressCommandId:
+        SelfTestParameterizedCommandFieldKind.factoryHttpWebsiteIndex0to3And128,
     _factoryServerFtpAddressCommandId:
         SelfTestParameterizedCommandFieldKind.ftpField20,
     _factoryServerFtpPortNoCommandId:
@@ -275,9 +367,22 @@ class GeneralUserSelfTestDebugBloc
         SelfTestParameterizedCommandFieldKind.smsCellPlus91,
     _setAdmin2SmsCellNoCommandId:
         SelfTestParameterizedCommandFieldKind.smsCellPlus91,
+    _batteryVoltageCommandId:
+        SelfTestParameterizedCommandFieldKind.batteryVoltageIndex00to11,
   };
 
   static const String _fetchStationIdCommand = '?04,,#';
+
+  /// Catalog choices for `?10` measurement interval field (HH:MM:SS).
+  static const List<String> _allowedMeasurementIntervalHms = [
+    '00:01:00',
+    '00:05:00',
+    '00:10:00',
+    '00:15:00',
+    '00:20:00',
+    '00:30:00',
+    '01:00:00',
+  ];
 
   /// BLE request for `?65,N,S,FFFF,#`. When **S = 0** (get), FFFF must be empty:
   /// `?65,N,0,,#`. When **S = 1** (set), send four digit MHz fragment, e.g.
@@ -345,7 +450,7 @@ class GeneralUserSelfTestDebugBloc
       id: _setTransmissionTimeCommandId,
       testName: 'Set Transmission Time',
       requestCommand: '?08,HH:MM:SS,#',
-      waitingPeriodSecondsRaw: '1 min',
+      waitingPeriodSecondsRaw: 'NA',
       requestCommandDescription: 'NA',
       response: r'$08,station id ,HH:MM:SS#',
       responseDescription: r'$08,00:10:02,#',
@@ -373,12 +478,12 @@ class GeneralUserSelfTestDebugBloc
       isActive: true,
     ),
     DrifterBuoyCommandModel(
-      id: _setMeasurementIntervalSensorWarmUpTimeCommandId,
-      testName: 'Set measurement interval & sensor warm up time',
-      requestCommand: '?10,HH:MM:SS,XX,#',
-      waitingPeriodSecondsRaw: '1 min',
+      id: _setMeasurementIntervalCommandId,
+      testName: 'Set measurement interval',
+      requestCommand: '?10,HH:MM:SS,#',
+      waitingPeriodSecondsRaw: 'NA',
       requestCommandDescription:
-          'Allowed Measurement Intervals (HH:MM:SS):00:01:00, 00:05:00, 00:10:00, 00:15:00, 00:20:00, 00:30:00, 01:00:00, Allowed Values for Sensor Warm-up Time (XX):01, 02, 03, 04, 05, 10, 15, 20, 25, 30, 99 (99 = Always ON)',
+          'Allowed Measurement Intervals (HH:MM:SS):00:01:00, 00:05:00, 00:10:00, 00:15:00, 00:20:00, 00:30:00, 01:00:00',
       response: r'$10,list of general parameters#',
       responseDescription:
           'IIIIIIII, NNNNNNNNNNNNNNNN,HH:MM:SS,hh:mm:ss,AAAAAAAAAAAAAAAA,HHH…,S, +91nnnnnnnnnn, +91nnnnnnnnnn,YY,HH:MM:SS (Station id, station name, Tx interval, measurement interval, APN , APN, Fast SMS check, admin cell no.1, admin cell no. 2s, sensor power on time, measurement start time) Max length = 8+1+16+1+8+1+8+1+31+1+31+1+1+1+13+1+13+1+2+1+8= 149 characters',
@@ -410,9 +515,14 @@ class GeneralUserSelfTestDebugBloc
     DrifterBuoyCommandModel(
       id: _setAllGeneralSystemParametersCommandId,
       testName: 'Set all general system parameters',
-      requestCommand: '?05,List of all general system parameters,#',
+      requestCommand: '?05,<nine comma-separated fields>,#',
       waitingPeriodSecondsRaw: '1 min',
-      requestCommandDescription: '',
+      requestCommandDescription:
+          'Nine fields: Station id (8), Station name (16), Tx interval (HH:MM:SS), '
+          'Measurement interval (HH:MM:SS), APN (≤31), Fast SMS check (0 or 1), '
+          'Admin cell 1 (+91…), Admin cell 2 (+91…), Measurement start time (HH:MM:SS). '
+          'Example: ?05,D0110000,Ahemdabadabcdefg,01:10:10,00:10:10,/DLTEST1abcdefg/,1,'
+          '+916357315181,+916357315181,09:10:10,#',
       response: r'$05,ist of all general system parameters#',
       responseDescription:
           'IIIIIIII, NNNNNNNNNNNNNNNN,HH:MM:SS,hh:mm:ss,AAAAAAAAAAAAAAAA,HHH…,S, +91nnnnnnnnnn, +91nnnnnnnnnn,YY,HH:MM:SS (Station id, station name, Tx interval, measurement interval, APN , APN, Fast SMS check, admin cell no.1, admin cell no. 2s, sensor power on time, measurement start time) Max length = 8+1+16+1+8+1+8+1+31+1+31+1+1+1+13+1+13+1+2+1+8= 149 characters',
@@ -444,7 +554,7 @@ class GeneralUserSelfTestDebugBloc
       id: _setStationNameCommandId,
       testName: 'Set station name',
       requestCommand: '?07,NNNNNNNNNNNNNNNN,#',
-      waitingPeriodSecondsRaw: '1 min',
+      waitingPeriodSecondsRaw: 'NA',
       requestCommandDescription: 'NNNNNNNNNNNNNNNN (New value of station name)',
       response: r'$07,list of general parameters#',
       responseDescription:
@@ -455,7 +565,7 @@ class GeneralUserSelfTestDebugBloc
       id: _setTransmissionIntervalCommandId,
       testName: 'Set transmission interval',
       requestCommand: '?09,HH:MM:SS,#',
-      waitingPeriodSecondsRaw: '1 min',
+      waitingPeriodSecondsRaw: 'NA',
       requestCommandDescription: 'Allowed minimum interval = 00:10:00',
       response: r'$09,list of general parameters#',
       responseDescription: 'NA',
@@ -468,7 +578,7 @@ class GeneralUserSelfTestDebugBloc
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
           'Para1-> APN name,Para2-> 0 for Vodafone, 1 for other sim Para3-> ( 1 - sim1 APN , 2 – sim2 APN) (APN string – Only chars entered by user, maximum 31 char long. )',
-      response: r'$11,List of all general system parameters ,#',
+      response: r'$11,list of general parameters#',
       responseDescription: '',
       isActive: true,
     ),
@@ -1336,6 +1446,11 @@ class GeneralUserSelfTestDebugBloc
             message: '',
             isSuccessMessage: false,
             clearParameterizedCommandPrompt: true,
+            clearSetAllGeneralParametersPrompt: true,
+            clearTransmissionTimePrompt: true,
+            clearTransmissionIntervalPrompt: true,
+            clearMeasurementIntervalPrompt: true,
+            clearSetApnPrompt: true,
           ),
         );
       },
@@ -1358,6 +1473,11 @@ class GeneralUserSelfTestDebugBloc
                 : '',
             isSuccessMessage: false,
             clearParameterizedCommandPrompt: true,
+            clearSetAllGeneralParametersPrompt: true,
+            clearTransmissionTimePrompt: true,
+            clearTransmissionIntervalPrompt: true,
+            clearMeasurementIntervalPrompt: true,
+            clearSetApnPrompt: true,
           ),
         );
       },
@@ -1392,8 +1512,12 @@ class GeneralUserSelfTestDebugBloc
       return;
     }
 
-    if (cmd.id == _setStationIdCommandId) {
+    if (cmd.requestCommand.trim().startsWith('?06,')) {
       await _onOpenSetStationIdPrompt(cmd, index, emit);
+      return;
+    }
+    if (cmd.requestCommand.trim().startsWith('?07,')) {
+      await _onOpenSetStationNamePrompt(cmd, index, emit);
       return;
     }
     if (cmd.id == _transmitterTestCommandId) {
@@ -1413,8 +1537,25 @@ class GeneralUserSelfTestDebugBloc
       await _onOpenCheckStatusPrompt(cmd, index, emit);
       return;
     }
-    if (cmd.id == _measurementStartTimeCommandId) {
+    if (cmd.requestCommand.trim().startsWith('?08,')) {
+      _onOpenTransmissionTimePrompt(cmd, emit);
+      return;
+    }
+    if (cmd.requestCommand.trim().startsWith('?61,')) {
       await _onOpenMeasurementStartTimePrompt(cmd, index, emit);
+      return;
+    }
+    if (cmd.requestCommand.trim().startsWith('?09,')) {
+      await _onOpenTransmissionIntervalPrompt(cmd, index, emit);
+      return;
+    }
+    if (cmd.requestCommand.trim().startsWith('?10,') ||
+        cmd.id == _setMeasurementIntervalCommandId) {
+      await _onOpenMeasurementIntervalPrompt(cmd, index, emit);
+      return;
+    }
+    if (cmd.id == _setApnCommandId) {
+      await _onOpenSetApnPrompt(cmd, index, emit);
       return;
     }
     if (cmd.id == _transmitterFrequencyCommandId) {
@@ -1427,6 +1568,35 @@ class GeneralUserSelfTestDebugBloc
     }
     if (cmd.id == _radioSondeTransmitterIdCommandId) {
       await _onOpenRadioSondeTransmitterIdPrompt(cmd, index, emit);
+      return;
+    }
+    if (cmd.id == _setAllGeneralSystemParametersCommandId) {
+      await _onOpenSetAllGeneralParametersPrompt(cmd, index, emit);
+      return;
+    }
+    if (_setAllServerCommandIds.contains(cmd.id)) {
+      await _onOpenSetAllServerParametersPrompt(cmd, index, emit);
+      return;
+    }
+    if (_restoreAllServerCommandIds.contains(cmd.id)) {
+      emit(
+        state.copyWith(
+          status: GeneralUserSelfTestDebugStatus.loaded,
+          clearRunningCommandIndex: true,
+          restoreServerParametersPrompt: SelfTestRestoreServerParametersPrompt(
+            commandId: cmd.id,
+            testName: cmd.testName,
+            catalogHelpText: cmd.requestCommandDescription,
+          ),
+          clearLastSnapshot: true,
+          message: '',
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
+    if (_getAllServerCommandIds.contains(cmd.id)) {
+      await _onRunGetAllServerParameters(cmd, index, emit);
       return;
     }
 
@@ -1464,6 +1634,13 @@ class GeneralUserSelfTestDebugBloc
       final wait = cmd.responseWaitTimeout;
       final line = await _ble.sendDrifterAsciiCommand(cmd.requestCommand, wait);
 
+      final isGetAllGeneral = cmd.id == _getAllGeneralSystemParametersCommandId;
+      final helpText = isGetAllGeneral
+          ? _formatGeneralSystemParametersBleSummary(line)
+          : (cmd.responseDescription.trim().isEmpty
+                ? cmd.response.trim()
+                : cmd.responseDescription.trim());
+
       emit(
         state.copyWith(
           status: GeneralUserSelfTestDebugStatus.loaded,
@@ -1471,12 +1648,14 @@ class GeneralUserSelfTestDebugBloc
           lastSnapshot: SelfTestBleResponseSnapshot(
             testName: cmd.testName,
             responseLine: line,
-            helpText: cmd.responseDescription.trim().isEmpty
-                ? cmd.response.trim()
-                : cmd.responseDescription.trim(),
+            hideResponseLine: isGetAllGeneral,
+            helpText: helpText,
+            descriptionSuccess: isGetAllGeneral ? true : null,
           ),
-          message: '',
-          isSuccessMessage: false,
+          message: isGetAllGeneral
+              ? 'General system parameters read successfully.'
+              : '',
+          isSuccessMessage: isGetAllGeneral,
         ),
       );
     } on TimeoutException catch (e) {
@@ -1569,6 +1748,61 @@ class GeneralUserSelfTestDebugBloc
     }
   }
 
+  Future<void> _onOpenSetStationNamePrompt(
+    DrifterBuoyCommandModel cmd,
+    int index,
+    Emitter<GeneralUserSelfTestDebugState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        status: GeneralUserSelfTestDebugStatus.running,
+        runningCommandIndex: index,
+        message: '',
+        isSuccessMessage: false,
+        clearLastSnapshot: true,
+      ),
+    );
+
+    String? prefetchWarning;
+    var initialName = '';
+
+    try {
+      final line = await _ble.sendDrifterAsciiCommand(
+        _fetchStationIdCommand,
+        cmd.responseWaitTimeout,
+      );
+      final parsed = _extractStationNameFromGeneralParameters(line);
+      if (parsed != null) {
+        initialName = parsed;
+      } else {
+        prefetchWarning =
+            'Could not parse current station name from the device. Enter the new name manually.';
+      }
+    } on TimeoutException catch (e) {
+      AppLogger.e('Prefetch station name timeout', error: e);
+      prefetchWarning =
+          'Timed out reading current parameters. Enter the station name manually.';
+    } catch (e, st) {
+      AppLogger.e('Prefetch station name error', error: e, stackTrace: st);
+      prefetchWarning =
+          'Could not read current station name. Enter the new name manually.';
+    }
+
+    emit(
+      state.copyWith(
+        status: GeneralUserSelfTestDebugStatus.loaded,
+        clearRunningCommandIndex: true,
+        stationNamePrompt: SelfTestStationNamePrompt(
+          currentStationName: initialName,
+          prefetchWarning: prefetchWarning,
+        ),
+        clearLastSnapshot: true,
+        message: '',
+        isSuccessMessage: false,
+      ),
+    );
+  }
+
   Future<void> _onSubmitGeneralUserSetStationId(
     SubmitGeneralUserSetStationId event,
     Emitter<GeneralUserSelfTestDebugState> emit,
@@ -1596,7 +1830,7 @@ class GeneralUserSelfTestDebugBloc
     }
 
     final runningIndex = state.commands.indexWhere(
-      (c) => c.id == _setStationIdCommandId,
+      (c) => c.requestCommand.trim().startsWith('?06,'),
     );
     final wait = runningIndex >= 0
         ? state.commands[runningIndex].responseWaitTimeout
@@ -1672,6 +1906,337 @@ class GeneralUserSelfTestDebugBloc
         ),
       );
     }
+  }
+
+  Future<void> _onSubmitGeneralUserSetStationName(
+    SubmitGeneralUserSetStationName event,
+    Emitter<GeneralUserSelfTestDebugState> emit,
+  ) async {
+    if (_ble.connectedRemoteId == null) {
+      emit(
+        state.copyWith(
+          message:
+              'No buoy connected. Pair from Setup and connect over Bluetooth first.',
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
+
+    final rawName = event.stationName.trim();
+    if (rawName.isEmpty) {
+      emit(
+        state.copyWith(
+          message: 'Station name is required.',
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
+    if (rawName.contains(',')) {
+      emit(
+        state.copyWith(
+          message: 'Station name cannot contain a comma.',
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
+
+    final paddedName = _padBleGeneralParameterField(
+      rawName,
+      16,
+      'Station name',
+    );
+
+    final runningIndex = state.commands.indexWhere(
+      (c) => c.requestCommand.trim().startsWith('?07,'),
+    );
+    final wait = runningIndex >= 0
+        ? state.commands[runningIndex].responseWaitTimeout
+        : const Duration(seconds: 60);
+
+    final model = runningIndex >= 0 ? state.commands[runningIndex] : null;
+
+    emit(
+      state.copyWith(
+        status: GeneralUserSelfTestDebugStatus.running,
+        runningCommandIndex: runningIndex >= 0 ? runningIndex : null,
+        message: '',
+        isSuccessMessage: false,
+      ),
+    );
+
+    try {
+      final line = await _ble.sendDrifterAsciiCommand(
+        '?07,$paddedName,#',
+        wait,
+      );
+      final updatedName = _extractStationNameFromGeneralParameters(line);
+      if (updatedName == null) {
+        emit(
+          state.copyWith(
+            status: GeneralUserSelfTestDebugStatus.loaded,
+            clearRunningCommandIndex: true,
+            message: 'Could not verify updated station name from response.',
+            isSuccessMessage: false,
+          ),
+        );
+        return;
+      }
+
+      if (updatedName.toUpperCase() != rawName.toUpperCase()) {
+        emit(
+          state.copyWith(
+            status: GeneralUserSelfTestDebugStatus.loaded,
+            clearRunningCommandIndex: true,
+            message:
+                'Update may have failed. Device returned station name: $updatedName',
+            isSuccessMessage: false,
+          ),
+        );
+        return;
+      }
+
+      emit(
+        state.copyWith(
+          status: GeneralUserSelfTestDebugStatus.loaded,
+          clearRunningCommandIndex: true,
+          clearStationNamePrompt: true,
+          message: 'Station name updated successfully.',
+          isSuccessMessage: true,
+          lastSnapshot: model != null
+              ? SelfTestBleResponseSnapshot(
+                  testName: model.testName,
+                  responseLine: line,
+                  hideResponseLine: true,
+                  helpText: _formatGeneralSystemParametersBleSummary(line),
+                  descriptionSuccess: true,
+                )
+              : null,
+        ),
+      );
+    } on TimeoutException catch (e) {
+      AppLogger.e('Set station name timeout', error: e);
+      emit(
+        state.copyWith(
+          status: GeneralUserSelfTestDebugStatus.loaded,
+          clearRunningCommandIndex: true,
+          message: 'Timed out while updating station name.',
+          isSuccessMessage: false,
+        ),
+      );
+    } catch (e, st) {
+      AppLogger.e('Set station name error', error: e, stackTrace: st);
+      emit(
+        state.copyWith(
+          status: GeneralUserSelfTestDebugStatus.loaded,
+          clearRunningCommandIndex: true,
+          message: e.toString(),
+          isSuccessMessage: false,
+        ),
+      );
+    }
+  }
+
+  void _onOpenTransmissionTimePrompt(
+    DrifterBuoyCommandModel cmd,
+    Emitter<GeneralUserSelfTestDebugState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        status: GeneralUserSelfTestDebugStatus.loaded,
+        clearRunningCommandIndex: true,
+        transmissionTimePrompt: SelfTestTransmissionTimePrompt(
+          testName: cmd.testName,
+        ),
+        clearLastSnapshot: true,
+        message: '',
+        isSuccessMessage: false,
+      ),
+    );
+  }
+
+  Future<void> _onOpenTransmissionIntervalPrompt(
+    DrifterBuoyCommandModel cmd,
+    int index,
+    Emitter<GeneralUserSelfTestDebugState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        status: GeneralUserSelfTestDebugStatus.running,
+        runningCommandIndex: index,
+        message: '',
+        isSuccessMessage: false,
+        clearLastSnapshot: true,
+      ),
+    );
+
+    var initialTx = '';
+    String? prefetchWarning;
+
+    try {
+      final line = await _ble.sendDrifterAsciiCommand(
+        _fetchStationIdCommand,
+        cmd.responseWaitTimeout,
+      );
+      final parsed = _extractTxIntervalFromGeneralParameters(line);
+      if (parsed != null) {
+        initialTx = parsed;
+      } else {
+        prefetchWarning =
+            'Could not parse Tx interval from device response. Enter manually (minimum 00:10:00).';
+      }
+    } on TimeoutException catch (e) {
+      AppLogger.e('Prefetch Tx interval timeout', error: e);
+      prefetchWarning =
+          'Timed out reading parameters (?04). Enter Tx interval manually (minimum 00:10:00).';
+    } catch (e, st) {
+      AppLogger.e('Prefetch Tx interval error', error: e, stackTrace: st);
+      prefetchWarning =
+          'Could not read current Tx interval. Enter manually (minimum 00:10:00).';
+    }
+
+    emit(
+      state.copyWith(
+        status: GeneralUserSelfTestDebugStatus.loaded,
+        clearRunningCommandIndex: true,
+        transmissionIntervalPrompt: SelfTestTransmissionIntervalPrompt(
+          testName: cmd.testName,
+          currentTxInterval: initialTx,
+          prefetchWarning: prefetchWarning,
+          catalogHelpText: cmd.requestCommandDescription,
+        ),
+        clearLastSnapshot: true,
+        message: '',
+        isSuccessMessage: false,
+      ),
+    );
+  }
+
+  Future<void> _onOpenMeasurementIntervalPrompt(
+    DrifterBuoyCommandModel cmd,
+    int index,
+    Emitter<GeneralUserSelfTestDebugState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        status: GeneralUserSelfTestDebugStatus.running,
+        runningCommandIndex: index,
+        message: '',
+        isSuccessMessage: false,
+        clearLastSnapshot: true,
+      ),
+    );
+
+    var initialMi = '';
+    String? prefetchWarning;
+
+    try {
+      final line = await _ble.sendDrifterAsciiCommand(
+        _fetchStationIdCommand,
+        cmd.responseWaitTimeout,
+      );
+      final parsedMi = _extractMeasurementIntervalFromGeneralParameters(line);
+      if (parsedMi != null) {
+        initialMi = parsedMi;
+      }
+      if (parsedMi == null) {
+        prefetchWarning =
+            'Could not parse measurement interval from device response. Choose a value from the catalog list.';
+      }
+    } on TimeoutException catch (e) {
+      AppLogger.e('Prefetch measurement interval timeout', error: e);
+      prefetchWarning =
+          'Timed out reading parameters (?04). Choose measurement interval from the list.';
+    } catch (e, st) {
+      AppLogger.e(
+        'Prefetch measurement interval error',
+        error: e,
+        stackTrace: st,
+      );
+      prefetchWarning =
+          'Could not read current parameters. Choose measurement interval from the catalog list.';
+    }
+
+    emit(
+      state.copyWith(
+        status: GeneralUserSelfTestDebugStatus.loaded,
+        clearRunningCommandIndex: true,
+        measurementIntervalPrompt: SelfTestMeasurementIntervalPrompt(
+          testName: cmd.testName,
+          currentMeasurementInterval: initialMi,
+          allowedMeasurementIntervals: List<String>.from(
+            _allowedMeasurementIntervalHms,
+          ),
+          prefetchWarning: prefetchWarning,
+          catalogHelpText: cmd.requestCommandDescription,
+        ),
+        clearLastSnapshot: true,
+        message: '',
+        isSuccessMessage: false,
+      ),
+    );
+  }
+
+  Future<void> _onOpenSetApnPrompt(
+    DrifterBuoyCommandModel cmd,
+    int index,
+    Emitter<GeneralUserSelfTestDebugState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        status: GeneralUserSelfTestDebugStatus.running,
+        runningCommandIndex: index,
+        message: '',
+        isSuccessMessage: false,
+        clearLastSnapshot: true,
+      ),
+    );
+
+    var sim1 = '';
+    var sim2 = '';
+    String? prefetchWarning;
+
+    try {
+      final line = await _ble.sendDrifterAsciiCommand(
+        _fetchStationIdCommand,
+        cmd.responseWaitTimeout,
+      );
+      final fields = _parseGeneralSystemParametersFields(line);
+      if (fields == null || _isGeneralParametersPlaceholderPayload(fields)) {
+        prefetchWarning =
+            'Could not read current APN values from the device (?04). Enter APN manually.';
+      } else {
+        sim1 = _extractPrimaryApnFromGeneralParameters(line)?.trim() ?? '';
+        sim2 = _extractSecondaryApnFromGeneralParameters(line)?.trim() ?? '';
+      }
+    } on TimeoutException catch (e) {
+      AppLogger.e('Prefetch APN timeout', error: e);
+      prefetchWarning =
+          'Timed out reading parameters (?04). Enter APN manually.';
+    } catch (e, st) {
+      AppLogger.e('Prefetch APN error', error: e, stackTrace: st);
+      prefetchWarning =
+          'Could not read current APN values. Enter APN manually.';
+    }
+
+    emit(
+      state.copyWith(
+        status: GeneralUserSelfTestDebugStatus.loaded,
+        clearRunningCommandIndex: true,
+        setApnPrompt: SelfTestSetApnPrompt(
+          testName: cmd.testName,
+          initialSim1Apn: sim1,
+          initialSim2Apn: sim2,
+          prefetchWarning: prefetchWarning,
+          catalogHelpText: cmd.requestCommandDescription,
+        ),
+        clearLastSnapshot: true,
+        message: '',
+        isSuccessMessage: false,
+      ),
+    );
   }
 
   Future<void> _onOpenMeasurementStartTimePrompt(
@@ -1774,7 +2339,7 @@ class GeneralUserSelfTestDebugBloc
     }
 
     final runningIndex = state.commands.indexWhere(
-      (c) => c.id == _measurementStartTimeCommandId,
+      (c) => c.requestCommand.trim().startsWith('?61,'),
     );
     final wait = runningIndex >= 0
         ? state.commands[runningIndex].responseWaitTimeout
@@ -1838,6 +2403,438 @@ class GeneralUserSelfTestDebugBloc
       );
     } catch (e, st) {
       AppLogger.e('Set measurement start time error', error: e, stackTrace: st);
+      emit(
+        state.copyWith(
+          status: GeneralUserSelfTestDebugStatus.loaded,
+          clearRunningCommandIndex: true,
+          message: e.toString(),
+          isSuccessMessage: false,
+        ),
+      );
+    }
+  }
+
+  Future<void> _onSubmitGeneralUserSetTransmissionTime(
+    SubmitGeneralUserSetTransmissionTime event,
+    Emitter<GeneralUserSelfTestDebugState> emit,
+  ) async {
+    if (_ble.connectedRemoteId == null) {
+      emit(
+        state.copyWith(
+          message:
+              'No buoy connected. Pair from Setup and connect over Bluetooth first.',
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
+
+    final nextTime = _normalizeTime(event.timeValue);
+    if (nextTime == null) {
+      emit(
+        state.copyWith(
+          message: 'Time must be in HH:MM:SS format.',
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
+
+    final runningIndex = state.commands.indexWhere(
+      (c) => c.requestCommand.trim().startsWith('?08,'),
+    );
+    final wait = runningIndex >= 0
+        ? state.commands[runningIndex].responseWaitTimeout
+        : const Duration(seconds: 60);
+
+    emit(
+      state.copyWith(
+        status: GeneralUserSelfTestDebugStatus.running,
+        runningCommandIndex: runningIndex >= 0 ? runningIndex : null,
+        message: '',
+        isSuccessMessage: false,
+      ),
+    );
+
+    try {
+      final line = await _ble.sendDrifterAsciiCommand('?08,$nextTime,#', wait);
+      final updatedTime = _extractMeasurementStartTime(line);
+      if (updatedTime == null) {
+        emit(
+          state.copyWith(
+            status: GeneralUserSelfTestDebugStatus.loaded,
+            clearRunningCommandIndex: true,
+            message: 'Could not verify transmission time from device response.',
+            isSuccessMessage: false,
+          ),
+        );
+        return;
+      }
+
+      if (updatedTime != nextTime) {
+        emit(
+          state.copyWith(
+            status: GeneralUserSelfTestDebugStatus.loaded,
+            clearRunningCommandIndex: true,
+            message:
+                'Update may have failed. Device returned time: $updatedTime',
+            isSuccessMessage: false,
+          ),
+        );
+        return;
+      }
+
+      emit(
+        state.copyWith(
+          status: GeneralUserSelfTestDebugStatus.loaded,
+          clearRunningCommandIndex: true,
+          clearTransmissionTimePrompt: true,
+          message: 'Transmission time updated successfully.',
+          isSuccessMessage: true,
+        ),
+      );
+    } on TimeoutException catch (e) {
+      AppLogger.e('Set transmission time timeout', error: e);
+      emit(
+        state.copyWith(
+          status: GeneralUserSelfTestDebugStatus.loaded,
+          clearRunningCommandIndex: true,
+          message: 'Timed out while updating transmission time.',
+          isSuccessMessage: false,
+        ),
+      );
+    } catch (e, st) {
+      AppLogger.e('Set transmission time error', error: e, stackTrace: st);
+      emit(
+        state.copyWith(
+          status: GeneralUserSelfTestDebugStatus.loaded,
+          clearRunningCommandIndex: true,
+          message: e.toString(),
+          isSuccessMessage: false,
+        ),
+      );
+    }
+  }
+
+  Future<void> _onSubmitGeneralUserSetTransmissionInterval(
+    SubmitGeneralUserSetTransmissionInterval event,
+    Emitter<GeneralUserSelfTestDebugState> emit,
+  ) async {
+    if (_ble.connectedRemoteId == null) {
+      emit(
+        state.copyWith(
+          message:
+              'No buoy connected. Pair from Setup and connect over Bluetooth first.',
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
+
+    final nextTime = _normalizeTime(event.timeValue);
+    if (nextTime == null) {
+      emit(
+        state.copyWith(
+          message: 'Time must be in HH:MM:SS format.',
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
+
+    const minTxSecs = 10 * 60;
+    if (!_isHmsAtLeastSeconds(nextTime, minTxSecs)) {
+      emit(
+        state.copyWith(
+          message:
+              'Transmission interval must be at least 00:10:00 (catalog minimum).',
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
+
+    final runningIndex = state.commands.indexWhere(
+      (c) => c.requestCommand.trim().startsWith('?09,'),
+    );
+    final wait = runningIndex >= 0
+        ? state.commands[runningIndex].responseWaitTimeout
+        : const Duration(seconds: 60);
+
+    final model = runningIndex >= 0 ? state.commands[runningIndex] : null;
+
+    emit(
+      state.copyWith(
+        status: GeneralUserSelfTestDebugStatus.running,
+        runningCommandIndex: runningIndex >= 0 ? runningIndex : null,
+        message: '',
+        isSuccessMessage: false,
+      ),
+    );
+
+    try {
+      final line = await _ble.sendDrifterAsciiCommand('?09,$nextTime,#', wait);
+      final updatedTx = _extractTxIntervalFromGeneralParameters(line);
+      if (updatedTx == null) {
+        emit(
+          state.copyWith(
+            status: GeneralUserSelfTestDebugStatus.loaded,
+            clearRunningCommandIndex: true,
+            message:
+                'Could not verify transmission interval from device response.',
+            isSuccessMessage: false,
+          ),
+        );
+        return;
+      }
+
+      if (updatedTx != nextTime) {
+        emit(
+          state.copyWith(
+            status: GeneralUserSelfTestDebugStatus.loaded,
+            clearRunningCommandIndex: true,
+            message:
+                'Update may have failed. Device returned Tx interval: $updatedTx',
+            isSuccessMessage: false,
+          ),
+        );
+        return;
+      }
+
+      emit(
+        state.copyWith(
+          status: GeneralUserSelfTestDebugStatus.loaded,
+          clearRunningCommandIndex: true,
+          clearTransmissionIntervalPrompt: true,
+          message: 'Transmission interval updated successfully.',
+          isSuccessMessage: true,
+          lastSnapshot: model != null
+              ? SelfTestBleResponseSnapshot(
+                  testName: model.testName,
+                  responseLine: line,
+                  hideResponseLine: true,
+                  helpText: _formatGeneralSystemParametersBleSummary(line),
+                  descriptionSuccess: true,
+                )
+              : null,
+        ),
+      );
+    } on TimeoutException catch (e) {
+      AppLogger.e('Set transmission interval timeout', error: e);
+      emit(
+        state.copyWith(
+          status: GeneralUserSelfTestDebugStatus.loaded,
+          clearRunningCommandIndex: true,
+          message: 'Timed out while updating transmission interval.',
+          isSuccessMessage: false,
+        ),
+      );
+    } catch (e, st) {
+      AppLogger.e('Set transmission interval error', error: e, stackTrace: st);
+      emit(
+        state.copyWith(
+          status: GeneralUserSelfTestDebugStatus.loaded,
+          clearRunningCommandIndex: true,
+          message: e.toString(),
+          isSuccessMessage: false,
+        ),
+      );
+    }
+  }
+
+  Future<void> _onSubmitGeneralUserSetMeasurementInterval(
+    SubmitGeneralUserSetMeasurementInterval event,
+    Emitter<GeneralUserSelfTestDebugState> emit,
+  ) async {
+    if (_ble.connectedRemoteId == null) {
+      emit(
+        state.copyWith(
+          message:
+              'No buoy connected. Pair from Setup and connect over Bluetooth first.',
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
+
+    final mi = _normalizeTime(event.measurementInterval.trim());
+    if (mi == null || !_allowedMeasurementIntervalHms.contains(mi)) {
+      emit(
+        state.copyWith(
+          message:
+              'Measurement interval must be one of the catalog HH:MM:SS values.',
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
+
+    final runningIndex = state.commands.indexWhere(
+      (c) => c.id == _setMeasurementIntervalCommandId,
+    );
+    final wait = runningIndex >= 0
+        ? state.commands[runningIndex].responseWaitTimeout
+        : const Duration(seconds: 60);
+
+    final model = runningIndex >= 0 ? state.commands[runningIndex] : null;
+
+    emit(
+      state.copyWith(
+        status: GeneralUserSelfTestDebugStatus.running,
+        runningCommandIndex: runningIndex >= 0 ? runningIndex : null,
+        message: '',
+        isSuccessMessage: false,
+      ),
+    );
+
+    try {
+      final line = await _ble.sendDrifterAsciiCommand('?10,$mi,#', wait);
+      final updatedMi = _extractMeasurementIntervalFromGeneralParameters(line);
+      if (updatedMi == null) {
+        emit(
+          state.copyWith(
+            status: GeneralUserSelfTestDebugStatus.loaded,
+            clearRunningCommandIndex: true,
+            message:
+                'Could not verify measurement interval from device response.',
+            isSuccessMessage: false,
+          ),
+        );
+        return;
+      }
+
+      if (updatedMi != mi) {
+        emit(
+          state.copyWith(
+            status: GeneralUserSelfTestDebugStatus.loaded,
+            clearRunningCommandIndex: true,
+            message:
+                'Update may have failed. Device returned measurement interval: $updatedMi',
+            isSuccessMessage: false,
+          ),
+        );
+        return;
+      }
+
+      emit(
+        state.copyWith(
+          status: GeneralUserSelfTestDebugStatus.loaded,
+          clearRunningCommandIndex: true,
+          clearMeasurementIntervalPrompt: true,
+          message: 'Measurement interval updated successfully.',
+          isSuccessMessage: true,
+          lastSnapshot: model != null
+              ? SelfTestBleResponseSnapshot(
+                  testName: model.testName,
+                  responseLine: line,
+                  hideResponseLine: true,
+                  helpText: _formatGeneralSystemParametersBleSummary(line),
+                  descriptionSuccess: true,
+                )
+              : null,
+        ),
+      );
+    } on TimeoutException catch (e) {
+      AppLogger.e('Set measurement interval timeout', error: e);
+      emit(
+        state.copyWith(
+          status: GeneralUserSelfTestDebugStatus.loaded,
+          clearRunningCommandIndex: true,
+          message: 'Timed out while updating measurement interval.',
+          isSuccessMessage: false,
+        ),
+      );
+    } catch (e, st) {
+      AppLogger.e('Set measurement interval error', error: e, stackTrace: st);
+      emit(
+        state.copyWith(
+          status: GeneralUserSelfTestDebugStatus.loaded,
+          clearRunningCommandIndex: true,
+          message: e.toString(),
+          isSuccessMessage: false,
+        ),
+      );
+    }
+  }
+
+  Future<void> _onSubmitGeneralUserSetApn(
+    SubmitGeneralUserSetApn event,
+    Emitter<GeneralUserSelfTestDebugState> emit,
+  ) async {
+    if (_ble.connectedRemoteId == null) {
+      emit(
+        state.copyWith(
+          message:
+              'No buoy connected. Pair from Setup and connect over Bluetooth first.',
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
+
+    late final String bleLine;
+    try {
+      bleLine = _buildSetApnBleCommand(
+        apn: event.apnName,
+        vodafoneOrOther: event.vodafoneOrOther,
+        simSlot: event.simSlot,
+      );
+    } catch (e) {
+      emit(state.copyWith(message: e.toString(), isSuccessMessage: false));
+      return;
+    }
+
+    final runningIndex = state.commands.indexWhere(
+      (c) => c.id == _setApnCommandId,
+    );
+    final wait = runningIndex >= 0
+        ? state.commands[runningIndex].responseWaitTimeout
+        : const Duration(seconds: 60);
+    final model = runningIndex >= 0 ? state.commands[runningIndex] : null;
+
+    emit(
+      state.copyWith(
+        status: GeneralUserSelfTestDebugStatus.running,
+        runningCommandIndex: runningIndex >= 0 ? runningIndex : null,
+        message: '',
+        isSuccessMessage: false,
+      ),
+    );
+
+    try {
+      final responseLine = await _ble.sendDrifterAsciiCommand(bleLine, wait);
+      final summary = _summarizeSetAllGeneralParametersResponse(responseLine);
+      emit(
+        state.copyWith(
+          status: GeneralUserSelfTestDebugStatus.loaded,
+          clearRunningCommandIndex: true,
+          clearSetApnPrompt: true,
+          message: 'APN updated successfully.',
+          isSuccessMessage: true,
+          lastSnapshot: model != null
+              ? SelfTestBleResponseSnapshot(
+                  testName: model.testName,
+                  responseLine: responseLine,
+                  hideResponseLine: true,
+                  helpText: summary,
+                  descriptionSuccess: true,
+                )
+              : null,
+        ),
+      );
+    } on TimeoutException catch (e) {
+      AppLogger.e('Set APN timeout', error: e);
+      emit(
+        state.copyWith(
+          status: GeneralUserSelfTestDebugStatus.loaded,
+          clearRunningCommandIndex: true,
+          message:
+              'Timed out waiting for a response ending with # (${model?.testName ?? 'Set APN'}).',
+          isSuccessMessage: false,
+        ),
+      );
+    } catch (e, st) {
+      AppLogger.e('Set APN error', error: e, stackTrace: st);
       emit(
         state.copyWith(
           status: GeneralUserSelfTestDebugStatus.loaded,
@@ -2415,11 +3412,46 @@ class GeneralUserSelfTestDebugBloc
     emit(state.copyWith(clearStationIdPrompt: true));
   }
 
+  void _onClearGeneralUserSetStationNamePrompt(
+    ClearGeneralUserSetStationNamePrompt event,
+    Emitter<GeneralUserSelfTestDebugState> emit,
+  ) {
+    emit(state.copyWith(clearStationNamePrompt: true));
+  }
+
   void _onClearGeneralUserMeasurementStartTimePrompt(
     ClearGeneralUserMeasurementStartTimePrompt event,
     Emitter<GeneralUserSelfTestDebugState> emit,
   ) {
     emit(state.copyWith(clearMeasurementTimePrompt: true));
+  }
+
+  void _onClearGeneralUserTransmissionTimePrompt(
+    ClearGeneralUserTransmissionTimePrompt event,
+    Emitter<GeneralUserSelfTestDebugState> emit,
+  ) {
+    emit(state.copyWith(clearTransmissionTimePrompt: true));
+  }
+
+  void _onClearGeneralUserTransmissionIntervalPrompt(
+    ClearGeneralUserTransmissionIntervalPrompt event,
+    Emitter<GeneralUserSelfTestDebugState> emit,
+  ) {
+    emit(state.copyWith(clearTransmissionIntervalPrompt: true));
+  }
+
+  void _onClearGeneralUserMeasurementIntervalPrompt(
+    ClearGeneralUserMeasurementIntervalPrompt event,
+    Emitter<GeneralUserSelfTestDebugState> emit,
+  ) {
+    emit(state.copyWith(clearMeasurementIntervalPrompt: true));
+  }
+
+  void _onClearGeneralUserSetApnPrompt(
+    ClearGeneralUserSetApnPrompt event,
+    Emitter<GeneralUserSelfTestDebugState> emit,
+  ) {
+    emit(state.copyWith(clearSetApnPrompt: true));
   }
 
   void _onClearGeneralUserTransmitterFrequencyPrompt(
@@ -2636,7 +3668,122 @@ class GeneralUserSelfTestDebugBloc
     emit(state.copyWith(clearCheckStatusPrompt: true));
   }
 
+  String? _extractStationNameFromGeneralParameters(String responseLine) {
+    final fields = _parseGeneralSystemParametersFields(responseLine);
+    if (fields == null ||
+        fields.length < 2 ||
+        _isGeneralParametersPlaceholderPayload(fields)) {
+      return null;
+    }
+    final name = fields[1].trim();
+    if (name.isEmpty || name.toLowerCase().contains('list of general')) {
+      return null;
+    }
+    return name;
+  }
+
+  String? _extractTxIntervalFromGeneralParameters(String responseLine) {
+    final fields = _parseGeneralSystemParametersFields(responseLine);
+    if (fields == null ||
+        fields.length < 3 ||
+        _isGeneralParametersPlaceholderPayload(fields)) {
+      return null;
+    }
+    final raw = fields[2].trim();
+    if (raw.isEmpty || raw.toLowerCase().contains('list of general')) {
+      return null;
+    }
+    return _normalizeTime(raw);
+  }
+
+  String? _extractMeasurementIntervalFromGeneralParameters(
+    String responseLine,
+  ) {
+    final fields = _parseGeneralSystemParametersFields(responseLine);
+    if (fields == null ||
+        fields.length < 4 ||
+        _isGeneralParametersPlaceholderPayload(fields)) {
+      return null;
+    }
+    final raw = fields[3].trim();
+    if (raw.isEmpty || raw.toLowerCase().contains('list of general')) {
+      return null;
+    }
+    return _normalizeTime(raw);
+  }
+
+  String? _extractPrimaryApnFromGeneralParameters(String responseLine) {
+    final fields = _parseGeneralSystemParametersFields(responseLine);
+    if (fields == null ||
+        fields.length < 5 ||
+        _isGeneralParametersPlaceholderPayload(fields)) {
+      return null;
+    }
+    final raw = fields[4].trim();
+    if (raw.toLowerCase().contains('list of general')) {
+      return null;
+    }
+    return raw;
+  }
+
+  String? _extractSecondaryApnFromGeneralParameters(String responseLine) {
+    final fields = _parseGeneralSystemParametersFields(responseLine);
+    if (fields == null ||
+        fields.length < 6 ||
+        _isGeneralParametersPlaceholderPayload(fields)) {
+      return null;
+    }
+    final raw = fields[5].trim();
+    if (raw.toLowerCase().contains('list of general')) {
+      return null;
+    }
+    return raw;
+  }
+
+  static String _buildSetApnBleCommand({
+    required String apn,
+    required int vodafoneOrOther,
+    required int simSlot,
+  }) {
+    if (vodafoneOrOther != 0 && vodafoneOrOther != 1) {
+      throw ArgumentError('Para 2 must be 0 (Vodafone) or 1 (other SIM).');
+    }
+    if (simSlot != 1 && simSlot != 2) {
+      throw ArgumentError('Para 3 must be 1 (SIM1) or 2 (SIM2).');
+    }
+    final trimmed = apn.trim();
+    if (trimmed.isEmpty) {
+      throw ArgumentError('APN is required.');
+    }
+    if (trimmed.length > 31) {
+      throw ArgumentError('APN must be at most 31 characters.');
+    }
+    if (trimmed.contains(',')) {
+      throw ArgumentError('APN cannot contain a comma.');
+    }
+    return '?11,$trimmed,$vodafoneOrOther,$simSlot,#';
+  }
+
+  bool _isHmsAtLeastSeconds(String normalizedHms, int minTotalSeconds) {
+    final m = RegExp(r'^(\d{2}):(\d{2}):(\d{2})$').firstMatch(normalizedHms);
+    if (m == null) {
+      return false;
+    }
+    final h = int.parse(m.group(1)!);
+    final mm = int.parse(m.group(2)!);
+    final s = int.parse(m.group(3)!);
+    final total = h * 3600 + mm * 60 + s;
+    return total >= minTotalSeconds;
+  }
+
   String? _extractStationId(String responseLine) {
+    final fields = _parseGeneralSystemParametersFields(responseLine);
+    if (fields != null && fields.isNotEmpty) {
+      final id = fields.first.trim();
+      if (id.isNotEmpty && !id.toLowerCase().contains('list of general')) {
+        return id.length >= 8 ? id.substring(0, 8) : id;
+      }
+    }
     final cleaned = responseLine.trim();
     if (cleaned.isEmpty) {
       return null;
@@ -2656,6 +3803,73 @@ class GeneralUserSelfTestDebugBloc
       return null;
     }
     return candidate.length >= 8 ? candidate.substring(0, 8) : candidate;
+  }
+
+  /// Comma-separated payload after `$04` / `$06` / etc. opcode (11 parameter fields).
+  static const List<String> _generalSystemParameterLabels = [
+    'Station id',
+    'Station name',
+    'Tx interval',
+    'Measurement interval',
+    'APN',
+    'APN (secondary)',
+    'Fast SMS check',
+    'Admin cell no. 1',
+    'Admin cell no. 2',
+    'Sensor power on time',
+    'Measurement start time',
+  ];
+
+  static List<String>? _parseGeneralSystemParametersFields(String rawLine) {
+    final trimmed = rawLine.trim();
+    if (trimmed.isEmpty) {
+      return null;
+    }
+    final noHash = trimmed.endsWith('#')
+        ? trimmed.substring(0, trimmed.length - 1)
+        : trimmed;
+    final parts = noHash.split(',').map((e) => e.trim()).toList();
+    if (parts.isEmpty) {
+      return null;
+    }
+    final start = (parts.first.startsWith(r'$') || parts.first.startsWith('?'))
+        ? 1
+        : 0;
+    if (start >= parts.length) {
+      return null;
+    }
+    return parts.sublist(start);
+  }
+
+  /// Formats `$04,...#` as `Station id = …`, `Station name = …`, etc.
+  static String _formatGeneralSystemParametersBleSummary(String rawLine) {
+    final trimmed = rawLine.trim();
+    if (trimmed.isEmpty) {
+      return 'No response text was received.';
+    }
+    final fields = _parseGeneralSystemParametersFields(rawLine);
+    if (fields == null || fields.isEmpty) {
+      return 'Could not parse general system parameters.\n\n'
+          'Raw response:\n$trimmed';
+    }
+    if (fields.length == 1 &&
+        fields.first.toLowerCase().contains('list of general')) {
+      return 'The device did not return parameter values.\n\n'
+          'Raw response:\n$trimmed';
+    }
+    String valueAt(int index) {
+      if (index >= fields.length) {
+        return '—';
+      }
+      final v = fields[index].trim();
+      return v.isEmpty ? '—' : v;
+    }
+
+    final lines = <String>['General system parameters:', ''];
+    for (var i = 0; i < _generalSystemParameterLabels.length; i++) {
+      lines.add('${_generalSystemParameterLabels[i]} = ${valueAt(i)}');
+    }
+    return lines.join('\n');
   }
 
   String? _extractMeasurementStartTime(String responseLine) {
@@ -2861,6 +4075,480 @@ class GeneralUserSelfTestDebugBloc
     emit(state.copyWith(message: '', isSuccessMessage: false));
   }
 
+  Future<void> _onOpenSetAllGeneralParametersPrompt(
+    DrifterBuoyCommandModel cmd,
+    int index,
+    Emitter<GeneralUserSelfTestDebugState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        status: GeneralUserSelfTestDebugStatus.running,
+        runningCommandIndex: index,
+        message: '',
+        isSuccessMessage: false,
+        clearLastSnapshot: true,
+        clearSetAllGeneralParametersPrompt: true,
+      ),
+    );
+
+    var draft = const SelfTestSetAllGeneralParametersDraft();
+    String? prefetchWarning;
+
+    try {
+      final getModel =
+          _staticCommandsById[_getAllGeneralSystemParametersCommandId];
+      final wait = getModel?.responseWaitTimeout ?? cmd.responseWaitTimeout;
+      final line = await _ble.sendDrifterAsciiCommand(
+        _fetchStationIdCommand,
+        wait,
+      );
+      final fields = _parseGeneralSystemParametersFields(line);
+      if (fields != null &&
+          fields.length >= 11 &&
+          !_isGeneralParametersPlaceholderPayload(fields)) {
+        draft = SelfTestSetAllGeneralParametersDraft(
+          stationId: fields[0].trim(),
+          stationName: fields[1].trim(),
+          txInterval: fields[2].trim(),
+          measurementInterval: fields[3].trim(),
+          apn: fields[4].trim(),
+          fastSmsCheck: fields[6].trim(),
+          adminCell1: fields[7].trim(),
+          adminCell2: fields[8].trim(),
+          measurementStartTime: fields[10].trim(),
+        );
+      } else {
+        prefetchWarning =
+            'Could not read current values from the device. Enter all fields manually.';
+      }
+    } on TimeoutException catch (e) {
+      AppLogger.e('Prefetch general parameters timeout', error: e);
+      prefetchWarning =
+          'Timed out reading current parameters. Enter all fields manually.';
+    } catch (e, st) {
+      AppLogger.e(
+        'Prefetch general parameters error',
+        error: e,
+        stackTrace: st,
+      );
+      prefetchWarning =
+          'Could not read current parameters. Enter all fields manually.';
+    }
+
+    emit(
+      state.copyWith(
+        status: GeneralUserSelfTestDebugStatus.loaded,
+        clearRunningCommandIndex: true,
+        setAllGeneralParametersPrompt: SelfTestSetAllGeneralParametersPrompt(
+          commandId: cmd.id,
+          testName: cmd.testName,
+          initial: draft,
+          prefetchWarning: prefetchWarning,
+          catalogHelpText: cmd.requestCommandDescription,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _runSetAllGeneralParameters(
+    Emitter<GeneralUserSelfTestDebugState> emit, {
+    required String stationId,
+    required String stationName,
+    required String txInterval,
+    required String measurementInterval,
+    required String apn,
+    required String fastSmsCheck,
+    required String adminCell1,
+    required String adminCell2,
+    required String measurementStartTime,
+  }) async {
+    if (_ble.connectedRemoteId == null) {
+      emit(
+        state.copyWith(
+          message:
+              'No buoy connected. Pair from Setup and connect over Bluetooth first.',
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
+
+    final model = _staticCommandsById[_setAllGeneralSystemParametersCommandId];
+    if (model == null) {
+      emit(
+        state.copyWith(
+          message: 'Set all general parameters command is not configured.',
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
+
+    late final String bleLine;
+    try {
+      bleLine = _buildSetAllGeneralSystemParametersBleCommand(
+        stationId: stationId,
+        stationName: stationName,
+        txInterval: txInterval,
+        measurementInterval: measurementInterval,
+        apn: apn,
+        fastSmsCheck: fastSmsCheck,
+        adminCell1: adminCell1,
+        adminCell2: adminCell2,
+        measurementStartTime: measurementStartTime,
+      );
+    } on ArgumentError catch (e) {
+      emit(
+        state.copyWith(
+          message: e.message?.toString() ?? e.toString(),
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
+
+    final runningIndex = state.commands.indexWhere(
+      (c) => c.id == _setAllGeneralSystemParametersCommandId,
+    );
+    final wait = model.responseWaitTimeout;
+
+    emit(
+      state.copyWith(
+        status: GeneralUserSelfTestDebugStatus.running,
+        runningCommandIndex: runningIndex >= 0 ? runningIndex : null,
+        message: '',
+        isSuccessMessage: false,
+      ),
+    );
+
+    try {
+      final responseLine = await _ble.sendDrifterAsciiCommand(bleLine, wait);
+      final summary = _summarizeSetAllGeneralParametersResponse(responseLine);
+      emit(
+        state.copyWith(
+          status: GeneralUserSelfTestDebugStatus.loaded,
+          clearRunningCommandIndex: true,
+          clearSetAllGeneralParametersPrompt: true,
+          message: 'General system parameters updated successfully.',
+          isSuccessMessage: true,
+          lastSnapshot: SelfTestBleResponseSnapshot(
+            testName: model.testName,
+            responseLine: responseLine,
+            hideResponseLine: true,
+            helpText: summary,
+            descriptionSuccess: true,
+          ),
+        ),
+      );
+    } on TimeoutException catch (e) {
+      AppLogger.e('Set all general parameters timeout', error: e);
+      emit(
+        state.copyWith(
+          status: GeneralUserSelfTestDebugStatus.loaded,
+          clearRunningCommandIndex: true,
+          message:
+              'Timed out waiting for a response ending with # (${model.testName}).',
+          isSuccessMessage: false,
+        ),
+      );
+    } catch (e, st) {
+      AppLogger.e('Set all general parameters error', error: e, stackTrace: st);
+      emit(
+        state.copyWith(
+          status: GeneralUserSelfTestDebugStatus.loaded,
+          clearRunningCommandIndex: true,
+          message: e.toString(),
+          isSuccessMessage: false,
+        ),
+      );
+    }
+  }
+
+  Future<void> _onOpenSetAllServerParametersPrompt(
+    DrifterBuoyCommandModel cmd,
+    int index,
+    Emitter<GeneralUserSelfTestDebugState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        status: GeneralUserSelfTestDebugStatus.running,
+        runningCommandIndex: index,
+        message: '',
+        isSuccessMessage: false,
+        clearLastSnapshot: true,
+        clearSetAllServerParametersPrompt: true,
+      ),
+    );
+
+    var draft = const SelfTestSetAllServerParametersDraft();
+    String? prefetchWarning;
+    final getId = _setAllToGetServerCommandId[cmd.id];
+
+    if (getId != null) {
+      final getModel = _staticCommandsById[getId];
+      if (getModel != null) {
+        try {
+          final line = await _ble.sendDrifterAsciiCommand(
+            getModel.requestCommand,
+            getModel.responseWaitTimeout,
+          );
+          final fields = _parseServerSettingsFields(line);
+          if (fields != null && fields.length >= 8) {
+            final r = int.tryParse(fields[7]) ?? 0;
+            draft = SelfTestSetAllServerParametersDraft(
+              stationId: fields[0],
+              ftpAddress: fields[1],
+              ftpPort: fields[2],
+              ftpPath: fields[3],
+              ftpUsername: fields[4],
+              ftpPassword: fields[5],
+              cellNo: fields[6],
+              txRedundancy: (r == 1) ? 1 : 0,
+            );
+          } else {
+            prefetchWarning =
+                'Could not read current server values from device. Enter all fields manually.';
+          }
+        } on TimeoutException catch (e) {
+          AppLogger.e('Prefetch set-all-server timeout', error: e);
+          prefetchWarning =
+              'Timed out reading current server values. Enter all fields manually.';
+        } catch (e, st) {
+          AppLogger.e(
+            'Prefetch set-all-server error',
+            error: e,
+            stackTrace: st,
+          );
+          prefetchWarning =
+              'Could not read current server values. Enter all fields manually.';
+        }
+      }
+    }
+
+    emit(
+      state.copyWith(
+        status: GeneralUserSelfTestDebugStatus.loaded,
+        clearRunningCommandIndex: true,
+        setAllServerParametersPrompt: SelfTestSetAllServerParametersPrompt(
+          commandId: cmd.id,
+          testName: cmd.testName,
+          initial: draft,
+          prefetchWarning: prefetchWarning,
+          catalogHelpText: cmd.requestCommandDescription,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _runSetAllServerParameters(
+    Emitter<GeneralUserSelfTestDebugState> emit, {
+    required String setCommandId,
+    required String stationId,
+    required String ftpAddress,
+    required String ftpPort,
+    required String ftpPath,
+    required String ftpUsername,
+    required String ftpPassword,
+    required String cellNo,
+    required String txRedundancy,
+  }) async {
+    if (_ble.connectedRemoteId == null) {
+      emit(
+        state.copyWith(
+          message:
+              'No buoy connected. Pair from Setup and connect over Bluetooth first.',
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
+
+    final model = _staticCommandsById[setCommandId];
+    if (model == null) {
+      emit(
+        state.copyWith(
+          message: 'Set all server parameters command is not configured.',
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
+
+    late final String bleLine;
+    try {
+      bleLine = _buildSetAllServerParametersBleCommand(
+        model: model,
+        stationId: stationId,
+        ftpAddress: ftpAddress,
+        ftpPort: ftpPort,
+        ftpPath: ftpPath,
+        ftpUsername: ftpUsername,
+        ftpPassword: ftpPassword,
+        cellNo: cellNo,
+        txRedundancy: txRedundancy,
+      );
+    } on ArgumentError catch (e) {
+      emit(
+        state.copyWith(
+          message: e.message?.toString() ?? e.toString(),
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
+
+    final runningIndex = state.commands.indexWhere((c) => c.id == setCommandId);
+    final wait = model.responseWaitTimeout;
+
+    emit(
+      state.copyWith(
+        status: GeneralUserSelfTestDebugStatus.running,
+        runningCommandIndex: runningIndex >= 0 ? runningIndex : null,
+        message: '',
+        isSuccessMessage: false,
+      ),
+    );
+
+    try {
+      final responseLine = await _ble.sendDrifterAsciiCommand(bleLine, wait);
+      final summary = _formatParameterizedServerBleSummary(responseLine);
+      emit(
+        state.copyWith(
+          status: GeneralUserSelfTestDebugStatus.loaded,
+          clearRunningCommandIndex: true,
+          clearSetAllServerParametersPrompt: true,
+          message: '${model.testName} updated successfully.',
+          isSuccessMessage: true,
+          lastSnapshot: SelfTestBleResponseSnapshot(
+            testName: model.testName,
+            responseLine: responseLine,
+            hideResponseLine: true,
+            helpText: summary,
+            descriptionSuccess: true,
+          ),
+        ),
+      );
+    } on TimeoutException catch (e) {
+      AppLogger.e('Set all server parameters timeout', error: e);
+      emit(
+        state.copyWith(
+          status: GeneralUserSelfTestDebugStatus.loaded,
+          clearRunningCommandIndex: true,
+          message:
+              'Timed out waiting for a response ending with # (${model.testName}).',
+          isSuccessMessage: false,
+        ),
+      );
+    } catch (e, st) {
+      AppLogger.e('Set all server parameters error', error: e, stackTrace: st);
+      emit(
+        state.copyWith(
+          status: GeneralUserSelfTestDebugStatus.loaded,
+          clearRunningCommandIndex: true,
+          message: e.toString(),
+          isSuccessMessage: false,
+        ),
+      );
+    }
+  }
+
+  static bool _isGeneralParametersPlaceholderPayload(List<String> fields) {
+    if (fields.length == 1) {
+      final s = fields.first.toLowerCase();
+      return s.contains('list of general') || s.contains('list of all');
+    }
+    return false;
+  }
+
+  String _buildSetAllGeneralSystemParametersBleCommand({
+    required String stationId,
+    required String stationName,
+    required String txInterval,
+    required String measurementInterval,
+    required String apn,
+    required String fastSmsCheck,
+    required String adminCell1,
+    required String adminCell2,
+    required String measurementStartTime,
+  }) {
+    void rejectComma(String label, String value) {
+      if (value.contains(',')) {
+        throw ArgumentError('$label cannot contain a comma.');
+      }
+    }
+
+    rejectComma('Station id', stationId);
+    rejectComma('Station name', stationName);
+    rejectComma('Tx interval', txInterval);
+    rejectComma('Measurement interval', measurementInterval);
+    rejectComma('APN', apn);
+    rejectComma('Fast SMS check', fastSmsCheck);
+    rejectComma('Admin cell 1', adminCell1);
+    rejectComma('Admin cell 2', adminCell2);
+    rejectComma('Measurement start time', measurementStartTime);
+
+    final sid = _padBleGeneralParameterField(stationId, 8, 'Station id');
+    final name = _padBleGeneralParameterField(stationName, 16, 'Station name');
+    final tx = _normalizeTime(txInterval.trim());
+    final mi = _normalizeTime(measurementInterval.trim());
+    if (tx == null) {
+      throw ArgumentError('Tx interval must be HH:MM:SS (24-hour).');
+    }
+    if (mi == null) {
+      throw ArgumentError('Measurement interval must be HH:MM:SS (24-hour).');
+    }
+    final apnField = _padBleGeneralParameterField(apn, 31, 'APN');
+
+    final sms = fastSmsCheck.trim();
+    if (sms != '0' && sms != '1') {
+      throw ArgumentError('Fast SMS check must be 0 or 1.');
+    }
+
+    final a1 = _normalizeSecondarySmsCell(adminCell1);
+    final a2 = _normalizeSecondarySmsCell(adminCell2);
+    if (a1 == null || a2 == null) {
+      throw ArgumentError(
+        'Admin cell numbers must be 10 digits or +91 followed by 10 digits.',
+      );
+    }
+
+    final start = _normalizeTime(measurementStartTime.trim());
+    if (start == null) {
+      throw ArgumentError('Measurement start time must be HH:MM:SS (24-hour).');
+    }
+
+    return '?05,$sid,$name,$tx,$mi,$apnField,$sms,$a1,$a2,$start,#';
+  }
+
+  static String _padBleGeneralParameterField(
+    String raw,
+    int maxLen,
+    String label,
+  ) {
+    final t = raw.trim();
+    if (t.isEmpty) {
+      throw ArgumentError('$label is required.');
+    }
+    if (t.length > maxLen) {
+      return t.substring(0, maxLen);
+    }
+    return t.padRight(maxLen, ' ');
+  }
+
+  static String _summarizeSetAllGeneralParametersResponse(String rawLine) {
+    final fields = _parseGeneralSystemParametersFields(rawLine);
+    if (fields != null &&
+        fields.length >= 11 &&
+        !_isGeneralParametersPlaceholderPayload(fields)) {
+      return _formatGeneralSystemParametersBleSummary(rawLine);
+    }
+    final trimmed = rawLine.trim();
+    if (trimmed.isEmpty) {
+      return 'Parameters were sent. No response text was received.';
+    }
+    return 'Parameters were sent.\n\nRaw response:\n$trimmed';
+  }
+
   void _onNotifyBlePeripheralDisconnected(
     NotifyBlePeripheralDisconnected event,
     Emitter<GeneralUserSelfTestDebugState> emit,
@@ -2878,6 +4566,14 @@ class GeneralUserSelfTestDebugBloc
         clearTransmitterTestPrompt: true,
         clearCheckStatusPrompt: true,
         clearParameterizedCommandPrompt: true,
+        clearSetAllGeneralParametersPrompt: true,
+        clearSetAllServerParametersPrompt: true,
+        clearRestoreServerParametersPrompt: true,
+        clearStationNamePrompt: true,
+        clearTransmissionTimePrompt: true,
+        clearTransmissionIntervalPrompt: true,
+        clearMeasurementIntervalPrompt: true,
+        clearSetApnPrompt: true,
         message: '',
         isSuccessMessage: false,
       ),
@@ -2889,6 +4585,19 @@ class GeneralUserSelfTestDebugBloc
     SubmitGeneralUserParameterizedCommand event,
     Emitter<GeneralUserSelfTestDebugState> emit,
   ) async {
+    final commandId = event.commandId.trim();
+
+    if (commandId == _setAllGeneralSystemParametersCommandId &&
+        event.value == setAllGeneralParametersClearPromptMarker) {
+      emit(state.copyWith(clearSetAllGeneralParametersPrompt: true));
+      return;
+    }
+    if (_setAllServerCommandIds.contains(commandId) &&
+        event.value == setAllServerParametersClearPromptMarker) {
+      emit(state.copyWith(clearSetAllServerParametersPrompt: true));
+      return;
+    }
+
     if (_ble.connectedRemoteId == null) {
       emit(
         state.copyWith(
@@ -2900,7 +4609,75 @@ class GeneralUserSelfTestDebugBloc
       return;
     }
 
-    final commandId = event.commandId.trim();
+    if (commandId == _setAllGeneralSystemParametersCommandId &&
+        event.value.startsWith(setAllGeneralParametersPayloadPrefix)) {
+      final jsonPayload = event.value.substring(
+        setAllGeneralParametersPayloadPrefix.length,
+      );
+      try {
+        final raw = jsonDecode(jsonPayload);
+        if (raw is! Map) {
+          throw const FormatException('expected JSON object');
+        }
+        final map = Map<String, dynamic>.from(raw);
+        String field(String k) => map[k]?.toString() ?? '';
+        await _runSetAllGeneralParameters(
+          emit,
+          stationId: field('stationId'),
+          stationName: field('stationName'),
+          txInterval: field('txInterval'),
+          measurementInterval: field('measurementInterval'),
+          apn: field('apn'),
+          fastSmsCheck: field('fastSmsCheck'),
+          adminCell1: field('adminCell1'),
+          adminCell2: field('adminCell2'),
+          measurementStartTime: field('measurementStartTime'),
+        );
+      } on FormatException catch (e) {
+        emit(
+          state.copyWith(
+            message: 'Invalid set-all-general payload: ${e.message}.',
+            isSuccessMessage: false,
+          ),
+        );
+      }
+      return;
+    }
+    if (_setAllServerCommandIds.contains(commandId) &&
+        event.value.startsWith(setAllServerParametersPayloadPrefix)) {
+      final jsonPayload = event.value.substring(
+        setAllServerParametersPayloadPrefix.length,
+      );
+      try {
+        final raw = jsonDecode(jsonPayload);
+        if (raw is! Map) {
+          throw const FormatException('expected JSON object');
+        }
+        final map = Map<String, dynamic>.from(raw);
+        String field(String k) => map[k]?.toString() ?? '';
+        await _runSetAllServerParameters(
+          emit,
+          setCommandId: commandId,
+          stationId: field('stationId'),
+          ftpAddress: field('ftpAddress'),
+          ftpPort: field('ftpPort'),
+          ftpPath: field('ftpPath'),
+          ftpUsername: field('ftpUsername'),
+          ftpPassword: field('ftpPassword'),
+          cellNo: field('cellNo'),
+          txRedundancy: field('txRedundancy'),
+        );
+      } on FormatException catch (e) {
+        emit(
+          state.copyWith(
+            message: 'Invalid set-all-server payload: ${e.message}.',
+            isSuccessMessage: false,
+          ),
+        );
+      }
+      return;
+    }
+
     final kind = _parameterizedServerFieldKindByCommandId[commandId];
     final model = _staticCommandsById[commandId];
     if (kind == null || model == null) {
@@ -2940,13 +4717,18 @@ class GeneralUserSelfTestDebugBloc
 
     try {
       final responseLine = await _ble.sendDrifterAsciiCommand(bleLine, wait);
-      final summary = _formatParameterizedServerBleSummary(responseLine);
+      final isBatteryVoltage = commandId == _batteryVoltageCommandId;
+      final summary = isBatteryVoltage
+          ? _formatBatteryVoltageBleSummary(responseLine)
+          : _formatParameterizedServerBleSummary(responseLine);
       emit(
         state.copyWith(
           status: GeneralUserSelfTestDebugStatus.loaded,
           clearRunningCommandIndex: true,
           clearParameterizedCommandPrompt: true,
-          message: '${model.testName} updated successfully.',
+          message: isBatteryVoltage
+              ? 'Battery voltage read successfully.'
+              : '${model.testName} updated successfully.',
           isSuccessMessage: true,
           lastSnapshot: SelfTestBleResponseSnapshot(
             testName: model.testName,
@@ -2990,6 +4772,181 @@ class GeneralUserSelfTestDebugBloc
     Emitter<GeneralUserSelfTestDebugState> emit,
   ) {
     emit(state.copyWith(clearParameterizedCommandPrompt: true));
+  }
+
+  Future<void> _onSubmitGeneralUserRestoreServerParameters(
+    SubmitGeneralUserRestoreServerParameters event,
+    Emitter<GeneralUserSelfTestDebugState> emit,
+  ) async {
+    final commandId = event.commandId.trim();
+    final model = _staticCommandsById[commandId];
+    if (model == null || !_restoreAllServerCommandIds.contains(commandId)) {
+      emit(
+        state.copyWith(
+          message: 'Unknown restore server command.',
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
+    if (_ble.connectedRemoteId == null) {
+      emit(
+        state.copyWith(
+          message:
+              'No buoy connected. Pair from Setup and connect over Bluetooth first.',
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
+
+    final runningIndex = state.commands.indexWhere((c) => c.id == commandId);
+    emit(
+      state.copyWith(
+        status: GeneralUserSelfTestDebugStatus.running,
+        runningCommandIndex: runningIndex >= 0 ? runningIndex : null,
+        message: '',
+        isSuccessMessage: false,
+      ),
+    );
+
+    try {
+      final responseLine = await _ble.sendDrifterAsciiCommand(
+        model.requestCommand,
+        model.responseWaitTimeout,
+      );
+      final summary = _formatParameterizedServerBleSummary(responseLine);
+      emit(
+        state.copyWith(
+          status: GeneralUserSelfTestDebugStatus.loaded,
+          clearRunningCommandIndex: true,
+          clearRestoreServerParametersPrompt: true,
+          message: '${model.testName} completed successfully.',
+          isSuccessMessage: true,
+          lastSnapshot: SelfTestBleResponseSnapshot(
+            testName: model.testName,
+            responseLine: responseLine,
+            hideResponseLine: true,
+            helpText: summary,
+            descriptionSuccess: true,
+          ),
+        ),
+      );
+    } on TimeoutException catch (e) {
+      AppLogger.e('Restore server parameters timeout', error: e);
+      emit(
+        state.copyWith(
+          status: GeneralUserSelfTestDebugStatus.loaded,
+          clearRunningCommandIndex: true,
+          message:
+              'Timed out waiting for a response ending with # (${model.testName}).',
+          isSuccessMessage: false,
+        ),
+      );
+    } catch (e, st) {
+      AppLogger.e('Restore server parameters error', error: e, stackTrace: st);
+      emit(
+        state.copyWith(
+          status: GeneralUserSelfTestDebugStatus.loaded,
+          clearRunningCommandIndex: true,
+          message: e.toString(),
+          isSuccessMessage: false,
+        ),
+      );
+    }
+  }
+
+  void _onClearGeneralUserRestoreServerParametersPrompt(
+    ClearGeneralUserRestoreServerParametersPrompt event,
+    Emitter<GeneralUserSelfTestDebugState> emit,
+  ) {
+    emit(state.copyWith(clearRestoreServerParametersPrompt: true));
+  }
+
+  Future<void> _onRunGetAllServerParameters(
+    DrifterBuoyCommandModel cmd,
+    int index,
+    Emitter<GeneralUserSelfTestDebugState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        status: GeneralUserSelfTestDebugStatus.running,
+        runningCommandIndex: index,
+        message: '',
+        isSuccessMessage: false,
+        clearLastSnapshot: true,
+      ),
+    );
+    try {
+      final responseLine = await _ble.sendDrifterAsciiCommand(
+        cmd.requestCommand,
+        cmd.responseWaitTimeout,
+      );
+      final summary = _formatParameterizedServerBleSummary(responseLine);
+      emit(
+        state.copyWith(
+          status: GeneralUserSelfTestDebugStatus.loaded,
+          clearRunningCommandIndex: true,
+          message: '${cmd.testName} read successfully.',
+          isSuccessMessage: true,
+          lastSnapshot: SelfTestBleResponseSnapshot(
+            testName: cmd.testName,
+            responseLine: responseLine,
+            hideResponseLine: true,
+            helpText: summary,
+            descriptionSuccess: true,
+          ),
+        ),
+      );
+    } on TimeoutException catch (e) {
+      AppLogger.e('Get all server parameters timeout', error: e);
+      emit(
+        state.copyWith(
+          status: GeneralUserSelfTestDebugStatus.loaded,
+          clearRunningCommandIndex: true,
+          message:
+              'Timed out waiting for a response ending with # (${cmd.testName}).',
+          isSuccessMessage: false,
+        ),
+      );
+    } catch (e, st) {
+      AppLogger.e('Get all server parameters error', error: e, stackTrace: st);
+      emit(
+        state.copyWith(
+          status: GeneralUserSelfTestDebugStatus.loaded,
+          clearRunningCommandIndex: true,
+          message: e.toString(),
+          isSuccessMessage: false,
+        ),
+      );
+    }
+  }
+
+  /// Parses `$84,station id,Battery Voltage,CNT: Counts,#`.
+  static String _formatBatteryVoltageBleSummary(String rawLine) {
+    final trimmed = rawLine.trim();
+    if (trimmed.isEmpty) {
+      return 'No response text was received.';
+    }
+    final noHash = trimmed.endsWith('#')
+        ? trimmed.substring(0, trimmed.length - 1)
+        : trimmed;
+    final parts = noHash.split(',').map((e) => e.trim()).toList();
+    if (parts.length < 3 || !parts[0].startsWith(r'$84')) {
+      return 'The device responded, but the payload could not be parsed.\n\n'
+          'Raw response:\n$trimmed';
+    }
+    String dash(String s) => s.isEmpty ? '—' : s;
+    final station = parts[1];
+    final voltage = parts[2];
+    final counts = parts.length > 3 ? parts.sublist(3).join(', ') : '—';
+    return [
+      'Battery voltage: ${dash(voltage)}',
+      '',
+      'Station ID: ${dash(station)}',
+      'CNT (counts): ${dash(counts)}',
+      'Response code: ${parts[0]}',
+    ].join('\n');
   }
 
   /// Parses `$15`–`$19` / `$23`–`$29` style read-back lines:
@@ -3043,6 +5000,21 @@ class GeneralUserSelfTestDebugBloc
     ].join('\n');
   }
 
+  static List<String>? _parseServerSettingsFields(String rawLine) {
+    final trimmed = rawLine.trim();
+    if (trimmed.isEmpty) {
+      return null;
+    }
+    final noHash = trimmed.endsWith('#')
+        ? trimmed.substring(0, trimmed.length - 1)
+        : trimmed;
+    final parts = noHash.split(',').map((e) => e.trim()).toList();
+    if (parts.length < 9 || !parts.first.startsWith(r'$')) {
+      return null;
+    }
+    return parts.sublist(1, 9);
+  }
+
   /// FTP-style fields: max 20 chars; shorter values padded with trailing spaces.
   static String _padFtpFieldTo20(String raw) {
     final t = raw.trim();
@@ -3050,6 +5022,68 @@ class GeneralUserSelfTestDebugBloc
       return t.substring(0, 20);
     }
     return t.padRight(20, ' ');
+  }
+
+  static String _normalizeSetAllServerStationId(String raw) {
+    final t = raw.trim();
+    if (t.isEmpty) {
+      throw ArgumentError('Station id is required.');
+    }
+    if (t.contains(',')) {
+      throw ArgumentError('Station id cannot contain a comma.');
+    }
+    if (!RegExp(r'^[\x20-\x7E]+$').hasMatch(t)) {
+      throw ArgumentError('Station id must use printable ASCII only.');
+    }
+    if (t.length > 8) {
+      return t.substring(0, 8);
+    }
+    return t.padRight(8, ' ');
+  }
+
+  static String _normalizeSetAllServerTxRedundancy(String raw) {
+    final t = raw.trim();
+    if (t != '0' && t != '1') {
+      throw ArgumentError('TX redundancy must be 0 (disable) or 1 (enable).');
+    }
+    return t;
+  }
+
+  static String _buildSetAllServerParametersBleCommand({
+    required DrifterBuoyCommandModel model,
+    required String stationId,
+    required String ftpAddress,
+    required String ftpPort,
+    required String ftpPath,
+    required String ftpUsername,
+    required String ftpPassword,
+    required String cellNo,
+    required String txRedundancy,
+  }) {
+    final m = RegExp(r'^\?(\d+),').firstMatch(model.requestCommand.trim());
+    if (m == null) {
+      throw ArgumentError('Invalid request template for ${model.testName}.');
+    }
+    final opcode = m.group(1)!;
+    final sid = _normalizeSetAllServerStationId(stationId);
+    final addr = _padFtpFieldTo20(ftpAddress);
+    final port = _normalizePortFiveDigits(ftpPort);
+    if (port == null) {
+      throw ArgumentError(
+        'FTP port must be a number from 0 to 65535 (sent as 5 digits).',
+      );
+    }
+    final path = _padFtpFieldTo20(ftpPath);
+    final user = _padFtpFieldTo20(ftpUsername);
+    final pass = _padFtpFieldTo20(ftpPassword);
+    final cell = _normalizeSecondarySmsCell(cellNo);
+    if (cell == null) {
+      throw ArgumentError(
+        'Cell number must be 10 digits or +91 followed by 10 digits.',
+      );
+    }
+    final redundancy = _normalizeSetAllServerTxRedundancy(txRedundancy);
+    return '?$opcode,$sid,$addr,$port,$path,$user,$pass,$cell,$redundancy,#';
   }
 
   static String? _normalizePortFiveDigits(String raw) {
@@ -3073,6 +5107,56 @@ class GeneralUserSelfTestDebugBloc
       return null;
     }
     return '+91$s';
+  }
+
+  /// `?84,xx,#` — xx is 00–11 (two digits).
+  static String? _normalizeBatteryVoltageIndex(String raw) {
+    final t = raw.trim();
+    if (t.isEmpty) {
+      return null;
+    }
+    final v = int.tryParse(t);
+    if (v == null || v < 0 || v > 11) {
+      return null;
+    }
+    return v.toString().padLeft(2, '0');
+  }
+
+  /// Printable ASCII without comma; appends one trailing space when shorter than
+  /// [appendTrailingSpaceWhenLenLt] (catalog rule for RTC / HTTP website fields).
+  static String _asciiPrintableNoCommaWithTrailingSpaceRule(
+    String raw, {
+    required int maxLen,
+    required int appendTrailingSpaceWhenLenLt,
+  }) {
+    final t = raw.trim();
+    if (t.isEmpty) {
+      throw ArgumentError('Enter a value.');
+    }
+    if (t.contains(',')) {
+      throw ArgumentError('Value cannot contain a comma.');
+    }
+    if (!RegExp(r'^[\x20-\x7E]+$').hasMatch(t)) {
+      throw ArgumentError('Use printable ASCII only.');
+    }
+    var out = t.length > maxLen ? t.substring(0, maxLen) : t;
+    if (out.length < appendTrailingSpaceWhenLenLt && out.length < maxLen) {
+      out = '$out ';
+    }
+    return out;
+  }
+
+  static Map<String, dynamic> _parseIndexedHttpJsonPayload(String userJson) {
+    dynamic raw;
+    try {
+      raw = jsonDecode(userJson.trim());
+    } catch (_) {
+      throw ArgumentError('Invalid HTTP server payload.');
+    }
+    if (raw is! Map) {
+      throw ArgumentError('Invalid HTTP server payload.');
+    }
+    return Map<String, dynamic>.from(raw);
   }
 
   static String _buildParameterizedServerBleCommand(
@@ -3115,6 +5199,85 @@ class GeneralUserSelfTestDebugBloc
           );
         }
         return '?$opcode,$v,#';
+      case SelfTestParameterizedCommandFieldKind.rtcHttpWebsite128:
+        final encoded = _asciiPrintableNoCommaWithTrailingSpaceRule(
+          userValue,
+          maxLen: 128,
+          appendTrailingSpaceWhenLenLt: 40,
+        );
+        return '?$opcode,$encoded,#';
+      case SelfTestParameterizedCommandFieldKind.rtcHttpKey15:
+        final encoded = _asciiPrintableNoCommaWithTrailingSpaceRule(
+          userValue,
+          maxLen: 15,
+          appendTrailingSpaceWhenLenLt: 40,
+        );
+        return '?$opcode,$encoded,#';
+      case SelfTestParameterizedCommandFieldKind.primaryHttpWebsiteIndex128:
+        final map = _parseIndexedHttpJsonPayload(userValue);
+        final nRaw = map['n'];
+        final ni = nRaw is int ? nRaw : int.tryParse(nRaw?.toString() ?? '');
+        if (ni == null || ni < 0 || ni > 9) {
+          throw ArgumentError('HTTP server number (N) must be from 0 to 9.');
+        }
+        final url = map['v']?.toString() ?? '';
+        final encoded = _asciiPrintableNoCommaWithTrailingSpaceRule(
+          url,
+          maxLen: 128,
+          appendTrailingSpaceWhenLenLt: 128,
+        );
+        return '?$opcode,$ni,$encoded,#';
+      case SelfTestParameterizedCommandFieldKind
+          .secondaryHttpWebsiteIndex0to3And128:
+        final map = _parseIndexedHttpJsonPayload(userValue);
+        final nRaw = map['n'];
+        final ni = nRaw is int ? nRaw : int.tryParse(nRaw?.toString() ?? '');
+        if (ni == null || ni < 0 || ni > 3) {
+          throw ArgumentError('HTTP server number (N) must be from 0 to 3.');
+        }
+        final url = map['v']?.toString() ?? '';
+        final encoded = _asciiPrintableNoCommaWithTrailingSpaceRule(
+          url,
+          maxLen: 128,
+          appendTrailingSpaceWhenLenLt: 128,
+        );
+        return '?$opcode,$ni,$encoded,#';
+      case SelfTestParameterizedCommandFieldKind
+          .thirdHttpWebsiteIndex0to3And128Trailing40:
+        final map = _parseIndexedHttpJsonPayload(userValue);
+        final nRaw = map['n'];
+        final ni = nRaw is int ? nRaw : int.tryParse(nRaw?.toString() ?? '');
+        if (ni == null || ni < 0 || ni > 3) {
+          throw ArgumentError('HTTP server number (N) must be from 0 to 3.');
+        }
+        final url = map['v']?.toString() ?? '';
+        final encoded = _asciiPrintableNoCommaWithTrailingSpaceRule(
+          url,
+          maxLen: 128,
+          appendTrailingSpaceWhenLenLt: 40,
+        );
+        return '?$opcode,$ni,$encoded,#';
+      case SelfTestParameterizedCommandFieldKind
+          .factoryHttpWebsiteIndex0to3And128:
+        final map = _parseIndexedHttpJsonPayload(userValue);
+        final nRaw = map['n'];
+        final ni = nRaw is int ? nRaw : int.tryParse(nRaw?.toString() ?? '');
+        if (ni == null || ni < 0 || ni > 3) {
+          throw ArgumentError('HTTP server number (N) must be from 0 to 3.');
+        }
+        final url = map['v']?.toString() ?? '';
+        final encoded = _asciiPrintableNoCommaWithTrailingSpaceRule(
+          url,
+          maxLen: 128,
+          appendTrailingSpaceWhenLenLt: 128,
+        );
+        return '?$opcode,$ni,$encoded,#';
+      case SelfTestParameterizedCommandFieldKind.batteryVoltageIndex00to11:
+        final index = _normalizeBatteryVoltageIndex(userValue);
+        if (index == null) {
+          throw ArgumentError('Enter an index from 00 to 11.');
+        }
+        return '?$opcode,$index,#';
     }
   }
 

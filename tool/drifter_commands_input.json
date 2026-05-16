@@ -66,10 +66,10 @@
       },
       {
         "_id": "6a04547227be228113206952",
-        "testName": "Set measurement interval & sensor warm up time",
-        "requestCommand": "?10,HH:MM:SS,XX,#",
-        "waitingPeriodSecondsRaw": "1 min",
-        "requestCommandDescription": "Allowed Measurement Intervals (HH:MM:SS):00:01:00, 00:05:00, 00:10:00, 00:15:00, 00:20:00, 00:30:00, 01:00:00, Allowed Values for Sensor Warm-up Time (XX):01, 02, 03, 04, 05, 10, 15, 20, 25, 30, 99 (99 = Always ON)",
+        "testName": "Set measurement interval",
+        "requestCommand": "?10,HH:MM:SS,#",
+        "waitingPeriodSecondsRaw": "NA",
+        "requestCommandDescription": "Allowed Measurement Intervals (HH:MM:SS):00:01:00, 00:05:00, 00:10:00, 00:15:00, 00:20:00, 00:30:00, 01:00:00",
         "response": "$10,list of general parameters#",
         "responseDescription": "IIIIIIII, NNNNNNNNNNNNNNNN,HH:MM:SS,hh:mm:ss,AAAAAAAAAAAAAAAA,HHH…,S, +91nnnnnnnnnn, +91nnnnnnnnnn,YY,HH:MM:SS (Station id, station name, Tx interval, measurement interval, APN , APN, Fast SMS check, admin cell no.1, admin cell no. 2s, sensor power on time, measurement start time) Max length = 8+1+16+1+8+1+8+1+31+1+31+1+1+1+13+1+13+1+2+1+8= 149 characters",
         "isActive": true
@@ -150,7 +150,7 @@
         "requestCommand": "?11,Para 1, para 2, para 3,#",
         "waitingPeriodSecondsRaw": "1 min",
         "requestCommandDescription": "Para1-> APN name,Para2-> 0 for Vodafone, 1 for other sim Para3-> ( 1 - sim1 APN , 2 – sim2 APN) (APN string – Only chars entered by user, maximum 31 char long. )",
-        "response": "$11,List of all general system parameters ,#",
+        "response": "$11,list of general parameters#",
         "responseDescription": "",
         "isActive": true
       },

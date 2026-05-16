@@ -42,6 +42,22 @@ class SelfTestStationIdPrompt extends Equatable {
   List<Object?> get props => [currentStationId];
 }
 
+/// `?07` — station name field is 16 characters (space-padded on send).
+class SelfTestStationNamePrompt extends Equatable {
+  const SelfTestStationNamePrompt({
+    required this.currentStationName,
+    this.prefetchWarning,
+  });
+
+  final String currentStationName;
+
+  /// Non-fatal hint when `?04` prefetch did not yield a name.
+  final String? prefetchWarning;
+
+  @override
+  List<Object?> get props => [currentStationName, prefetchWarning];
+}
+
 class SelfTestMeasurementTimePrompt extends Equatable {
   const SelfTestMeasurementTimePrompt({required this.currentTime});
 
@@ -49,6 +65,93 @@ class SelfTestMeasurementTimePrompt extends Equatable {
 
   @override
   List<Object?> get props => [currentTime];
+}
+
+/// `?08,HH:MM:SS,#` — dialog only (no `?04` prefetch); user picks time, then BLE send.
+class SelfTestTransmissionTimePrompt extends Equatable {
+  const SelfTestTransmissionTimePrompt({required this.testName});
+
+  final String testName;
+
+  @override
+  List<Object?> get props => [testName];
+}
+
+/// `?09,HH:MM:SS,#` — Tx interval from `?04,,#` (3rd field), then user confirms/edits.
+class SelfTestTransmissionIntervalPrompt extends Equatable {
+  const SelfTestTransmissionIntervalPrompt({
+    required this.testName,
+    required this.currentTxInterval,
+    this.prefetchWarning,
+    this.catalogHelpText = '',
+  });
+
+  final String testName;
+  final String currentTxInterval;
+  final String? prefetchWarning;
+  final String catalogHelpText;
+
+  @override
+  List<Object?> get props => [
+    testName,
+    currentTxInterval,
+    prefetchWarning,
+    catalogHelpText,
+  ];
+}
+
+/// `?10,HH:MM:SS,#` — measurement interval prefetched from `?04,,#`.
+class SelfTestMeasurementIntervalPrompt extends Equatable {
+  const SelfTestMeasurementIntervalPrompt({
+    required this.testName,
+    required this.currentMeasurementInterval,
+    required this.allowedMeasurementIntervals,
+    this.prefetchWarning,
+    this.catalogHelpText = '',
+  });
+
+  final String testName;
+  final String currentMeasurementInterval;
+  final List<String> allowedMeasurementIntervals;
+  final String? prefetchWarning;
+  final String catalogHelpText;
+
+  @override
+  List<Object?> get props => [
+    testName,
+    currentMeasurementInterval,
+    allowedMeasurementIntervals,
+    prefetchWarning,
+    catalogHelpText,
+  ];
+}
+
+/// `?11,<APN>,<para2>,<para3>,#` — Para1 APN (max 31), Para2 0/Vodafone vs 1/other, Para3 1/SIM1 vs 2/SIM2.
+class SelfTestSetApnPrompt extends Equatable {
+  const SelfTestSetApnPrompt({
+    required this.testName,
+    required this.initialSim1Apn,
+    required this.initialSim2Apn,
+    this.prefetchWarning,
+    this.catalogHelpText = '',
+  });
+
+  final String testName;
+
+  /// Trimmed primary / secondary APN from `?04` (parameter indices 4 and 5).
+  final String initialSim1Apn;
+  final String initialSim2Apn;
+  final String? prefetchWarning;
+  final String catalogHelpText;
+
+  @override
+  List<Object?> get props => [
+    testName,
+    initialSim1Apn,
+    initialSim2Apn,
+    prefetchWarning,
+    catalogHelpText,
+  ];
 }
 
 class SelfTestTransmitterFrequencyPrompt extends Equatable {
@@ -116,6 +219,27 @@ enum SelfTestParameterizedCommandFieldKind {
 
   /// `0` = GSM and GPRS, `1` = GSM if GPRS fail.
   txRedundancy01,
+
+  /// Battery voltage query index `00`–`11` for `?84,xx,#`.
+  batteryVoltageIndex00to11,
+
+  /// RTC HTTP website — trailing space appended when length is under 40 (catalog).
+  rtcHttpWebsite128,
+
+  /// RTC HTTP key — max 15 chars; trailing space when length is under 40 (catalog).
+  rtcHttpKey15,
+
+  /// Primary HTTP — server index N (0–9) plus website (max 128 chars).
+  primaryHttpWebsiteIndex128,
+
+  /// Secondary HTTP — server index N (0–3) plus website (max 128 chars).
+  secondaryHttpWebsiteIndex0to3And128,
+
+  /// Third HTTP (`?30`) — N (0–3) plus website (max 128); trailing space when length &lt; 40 (catalog).
+  thirdHttpWebsiteIndex0to3And128Trailing40,
+
+  /// Factory HTTP (`?38`) — N (0–3) plus website (max 128); trailing space when length &lt; 128 (catalog).
+  factoryHttpWebsiteIndex0to3And128,
 }
 
 /// Prompt for server/FTP/SMS commands that embed user input in `?NN,payload,#`.
@@ -135,12 +259,152 @@ class SelfTestParameterizedCommandPrompt extends Equatable {
   final String requestHelpText;
 
   @override
+  List<Object?> get props => [commandId, testName, fieldKind, requestHelpText];
+}
+
+/// Values shown in the **Set all general system parameters** (`?05`) form.
+class SelfTestSetAllGeneralParametersDraft extends Equatable {
+  const SelfTestSetAllGeneralParametersDraft({
+    this.stationId = '',
+    this.stationName = '',
+    this.txInterval = '',
+    this.measurementInterval = '',
+    this.apn = '',
+    this.fastSmsCheck = '',
+    this.adminCell1 = '',
+    this.adminCell2 = '',
+    this.measurementStartTime = '',
+  });
+
+  final String stationId;
+  final String stationName;
+  final String txInterval;
+  final String measurementInterval;
+  final String apn;
+  final String fastSmsCheck;
+  final String adminCell1;
+  final String adminCell2;
+  final String measurementStartTime;
+
+  @override
+  List<Object?> get props => [
+    stationId,
+    stationName,
+    txInterval,
+    measurementInterval,
+    apn,
+    fastSmsCheck,
+    adminCell1,
+    adminCell2,
+    measurementStartTime,
+  ];
+}
+
+/// Opens the multi-field dialog for `?05,<nine fields>,#`.
+class SelfTestSetAllGeneralParametersPrompt extends Equatable {
+  const SelfTestSetAllGeneralParametersPrompt({
+    required this.commandId,
+    required this.testName,
+    required this.initial,
+    this.prefetchWarning,
+    this.catalogHelpText = '',
+  });
+
+  final String commandId;
+  final String testName;
+  final SelfTestSetAllGeneralParametersDraft initial;
+
+  /// When set (e.g. `?04` prefetch failed), show non-blocking hint above the form.
+  final String? prefetchWarning;
+
+  /// Catalog `requestCommandDescription` / example line for this row.
+  final String catalogHelpText;
+
+  @override
   List<Object?> get props => [
     commandId,
     testName,
-    fieldKind,
-    requestHelpText,
+    initial,
+    prefetchWarning,
+    catalogHelpText,
   ];
+}
+
+/// Values shown in the **Set all server FTP/HTTP parameters** (`?46`–`?49`) form.
+class SelfTestSetAllServerParametersDraft extends Equatable {
+  const SelfTestSetAllServerParametersDraft({
+    this.stationId = '',
+    this.ftpAddress = '',
+    this.ftpPort = '',
+    this.ftpPath = '',
+    this.ftpUsername = '',
+    this.ftpPassword = '',
+    this.cellNo = '',
+    this.txRedundancy = 0,
+  });
+
+  final String stationId;
+  final String ftpAddress;
+  final String ftpPort;
+  final String ftpPath;
+  final String ftpUsername;
+  final String ftpPassword;
+  final String cellNo;
+  final int txRedundancy;
+
+  @override
+  List<Object?> get props => [
+    stationId,
+    ftpAddress,
+    ftpPort,
+    ftpPath,
+    ftpUsername,
+    ftpPassword,
+    cellNo,
+    txRedundancy,
+  ];
+}
+
+/// Opens the multi-field dialog for `?46`–`?49`.
+class SelfTestSetAllServerParametersPrompt extends Equatable {
+  const SelfTestSetAllServerParametersPrompt({
+    required this.commandId,
+    required this.testName,
+    required this.initial,
+    this.prefetchWarning,
+    this.catalogHelpText = '',
+  });
+
+  final String commandId;
+  final String testName;
+  final SelfTestSetAllServerParametersDraft initial;
+  final String? prefetchWarning;
+  final String catalogHelpText;
+
+  @override
+  List<Object?> get props => [
+    commandId,
+    testName,
+    initial,
+    prefetchWarning,
+    catalogHelpText,
+  ];
+}
+
+/// Opens a confirmation dialog before restore commands `?54`–`?57`.
+class SelfTestRestoreServerParametersPrompt extends Equatable {
+  const SelfTestRestoreServerParametersPrompt({
+    required this.commandId,
+    required this.testName,
+    this.catalogHelpText = '',
+  });
+
+  final String commandId;
+  final String testName;
+  final String catalogHelpText;
+
+  @override
+  List<Object?> get props => [commandId, testName, catalogHelpText];
 }
 
 class SelfTestCheckStatusPrompt extends Equatable {
@@ -194,13 +458,21 @@ class GeneralUserSelfTestDebugState extends Equatable {
   final bool isSuccessMessage;
   final SelfTestBleResponseSnapshot? lastSnapshot;
   final SelfTestStationIdPrompt? stationIdPrompt;
+  final SelfTestStationNamePrompt? stationNamePrompt;
   final SelfTestMeasurementTimePrompt? measurementTimePrompt;
+  final SelfTestTransmissionTimePrompt? transmissionTimePrompt;
+  final SelfTestTransmissionIntervalPrompt? transmissionIntervalPrompt;
+  final SelfTestMeasurementIntervalPrompt? measurementIntervalPrompt;
+  final SelfTestSetApnPrompt? setApnPrompt;
   final SelfTestTransmitterFrequencyPrompt? transmitterFrequencyPrompt;
   final SelfTestSetAttenuationPrompt? setAttenuationPrompt;
   final SelfTestRadioSondeTransmitterIdPrompt? radioSondeTransmitterIdPrompt;
   final SelfTestTransmitterTestPrompt? transmitterTestPrompt;
   final SelfTestCheckStatusPrompt? checkStatusPrompt;
   final SelfTestParameterizedCommandPrompt? parameterizedCommandPrompt;
+  final SelfTestSetAllGeneralParametersPrompt? setAllGeneralParametersPrompt;
+  final SelfTestSetAllServerParametersPrompt? setAllServerParametersPrompt;
+  final SelfTestRestoreServerParametersPrompt? restoreServerParametersPrompt;
 
   const GeneralUserSelfTestDebugState({
     required this.status,
@@ -210,13 +482,21 @@ class GeneralUserSelfTestDebugState extends Equatable {
     required this.isSuccessMessage,
     required this.lastSnapshot,
     required this.stationIdPrompt,
+    required this.stationNamePrompt,
     required this.measurementTimePrompt,
+    required this.transmissionTimePrompt,
+    required this.transmissionIntervalPrompt,
+    required this.measurementIntervalPrompt,
+    required this.setApnPrompt,
     required this.transmitterFrequencyPrompt,
     required this.setAttenuationPrompt,
     required this.radioSondeTransmitterIdPrompt,
     required this.transmitterTestPrompt,
     required this.checkStatusPrompt,
     required this.parameterizedCommandPrompt,
+    required this.setAllGeneralParametersPrompt,
+    required this.setAllServerParametersPrompt,
+    required this.restoreServerParametersPrompt,
   });
 
   const GeneralUserSelfTestDebugState.initial()
@@ -227,13 +507,21 @@ class GeneralUserSelfTestDebugState extends Equatable {
       isSuccessMessage = false,
       lastSnapshot = null,
       stationIdPrompt = null,
+      stationNamePrompt = null,
       measurementTimePrompt = null,
+      transmissionTimePrompt = null,
+      transmissionIntervalPrompt = null,
+      measurementIntervalPrompt = null,
+      setApnPrompt = null,
       transmitterFrequencyPrompt = null,
       setAttenuationPrompt = null,
       radioSondeTransmitterIdPrompt = null,
       transmitterTestPrompt = null,
       checkStatusPrompt = null,
-      parameterizedCommandPrompt = null;
+      parameterizedCommandPrompt = null,
+      setAllGeneralParametersPrompt = null,
+      setAllServerParametersPrompt = null,
+      restoreServerParametersPrompt = null;
 
   GeneralUserSelfTestDebugState copyWith({
     GeneralUserSelfTestDebugStatus? status,
@@ -246,8 +534,18 @@ class GeneralUserSelfTestDebugState extends Equatable {
     bool clearLastSnapshot = false,
     SelfTestStationIdPrompt? stationIdPrompt,
     bool clearStationIdPrompt = false,
+    SelfTestStationNamePrompt? stationNamePrompt,
+    bool clearStationNamePrompt = false,
     SelfTestMeasurementTimePrompt? measurementTimePrompt,
     bool clearMeasurementTimePrompt = false,
+    SelfTestTransmissionTimePrompt? transmissionTimePrompt,
+    bool clearTransmissionTimePrompt = false,
+    SelfTestTransmissionIntervalPrompt? transmissionIntervalPrompt,
+    bool clearTransmissionIntervalPrompt = false,
+    SelfTestMeasurementIntervalPrompt? measurementIntervalPrompt,
+    bool clearMeasurementIntervalPrompt = false,
+    SelfTestSetApnPrompt? setApnPrompt,
+    bool clearSetApnPrompt = false,
     SelfTestTransmitterFrequencyPrompt? transmitterFrequencyPrompt,
     bool clearTransmitterFrequencyPrompt = false,
     SelfTestSetAttenuationPrompt? setAttenuationPrompt,
@@ -260,6 +558,12 @@ class GeneralUserSelfTestDebugState extends Equatable {
     bool clearCheckStatusPrompt = false,
     SelfTestParameterizedCommandPrompt? parameterizedCommandPrompt,
     bool clearParameterizedCommandPrompt = false,
+    SelfTestSetAllGeneralParametersPrompt? setAllGeneralParametersPrompt,
+    bool clearSetAllGeneralParametersPrompt = false,
+    SelfTestSetAllServerParametersPrompt? setAllServerParametersPrompt,
+    bool clearSetAllServerParametersPrompt = false,
+    SelfTestRestoreServerParametersPrompt? restoreServerParametersPrompt,
+    bool clearRestoreServerParametersPrompt = false,
   }) {
     return GeneralUserSelfTestDebugState(
       status: status ?? this.status,
@@ -275,9 +579,24 @@ class GeneralUserSelfTestDebugState extends Equatable {
       stationIdPrompt: clearStationIdPrompt
           ? null
           : (stationIdPrompt ?? this.stationIdPrompt),
+      stationNamePrompt: clearStationNamePrompt
+          ? null
+          : (stationNamePrompt ?? this.stationNamePrompt),
       measurementTimePrompt: clearMeasurementTimePrompt
           ? null
           : (measurementTimePrompt ?? this.measurementTimePrompt),
+      transmissionTimePrompt: clearTransmissionTimePrompt
+          ? null
+          : (transmissionTimePrompt ?? this.transmissionTimePrompt),
+      transmissionIntervalPrompt: clearTransmissionIntervalPrompt
+          ? null
+          : (transmissionIntervalPrompt ?? this.transmissionIntervalPrompt),
+      measurementIntervalPrompt: clearMeasurementIntervalPrompt
+          ? null
+          : (measurementIntervalPrompt ?? this.measurementIntervalPrompt),
+      setApnPrompt: clearSetApnPrompt
+          ? null
+          : (setApnPrompt ?? this.setApnPrompt),
       transmitterFrequencyPrompt: clearTransmitterFrequencyPrompt
           ? null
           : (transmitterFrequencyPrompt ?? this.transmitterFrequencyPrompt),
@@ -297,6 +616,17 @@ class GeneralUserSelfTestDebugState extends Equatable {
       parameterizedCommandPrompt: clearParameterizedCommandPrompt
           ? null
           : (parameterizedCommandPrompt ?? this.parameterizedCommandPrompt),
+      setAllGeneralParametersPrompt: clearSetAllGeneralParametersPrompt
+          ? null
+          : (setAllGeneralParametersPrompt ??
+                this.setAllGeneralParametersPrompt),
+      setAllServerParametersPrompt: clearSetAllServerParametersPrompt
+          ? null
+          : (setAllServerParametersPrompt ?? this.setAllServerParametersPrompt),
+      restoreServerParametersPrompt: clearRestoreServerParametersPrompt
+          ? null
+          : (restoreServerParametersPrompt ??
+                this.restoreServerParametersPrompt),
     );
   }
 
@@ -309,12 +639,20 @@ class GeneralUserSelfTestDebugState extends Equatable {
     isSuccessMessage,
     lastSnapshot,
     stationIdPrompt,
+    stationNamePrompt,
     measurementTimePrompt,
+    transmissionTimePrompt,
+    transmissionIntervalPrompt,
+    measurementIntervalPrompt,
+    setApnPrompt,
     transmitterFrequencyPrompt,
     setAttenuationPrompt,
     radioSondeTransmitterIdPrompt,
     transmitterTestPrompt,
     checkStatusPrompt,
     parameterizedCommandPrompt,
+    setAllGeneralParametersPrompt,
+    setAllServerParametersPrompt,
+    restoreServerParametersPrompt,
   ];
 }

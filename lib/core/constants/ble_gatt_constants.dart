@@ -22,4 +22,7 @@ class DrifterBleGatt {
 
   /// ATT payload limit per write (20 bytes typical at default MTU 23).
   static const int maxPayloadBytesPerWrite = 20;
+
+  /// Pause between chunked writes so UART-style peripherals can absorb each frame.
+  static const Duration delayBetweenChunkWrites = Duration(milliseconds: 15);
 }

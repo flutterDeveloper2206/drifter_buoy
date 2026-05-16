@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'dart:math' show min;
 
 import 'package:device_info_plus/device_info_plus.dart';
@@ -9,7 +10,7 @@ import 'package:drifter_buoy/core/constants/ble_gatt_constants.dart';
 import 'package:drifter_buoy/core/utils/app_logger.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_flushbar.dart';
 import 'package:flutter/foundation.dart'
-    show TargetPlatform, debugPrint, defaultTargetPlatform, kIsWeb;
+    show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -40,7 +41,9 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
   @override
   Future<void> ensureReadyForScan() async {
     if (kIsWeb) {
-      throw UnsupportedError('Bluetooth LE is not supported on web in this app.');
+      throw UnsupportedError(
+        'Bluetooth LE is not supported on web in this app.',
+      );
     }
     if (!await FlutterBluePlus.isSupported) {
       throw StateError('Bluetooth is not supported on this device.');
@@ -80,7 +83,9 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
       final scan = await Permission.bluetoothScan.request();
       final connect = await Permission.bluetoothConnect.request();
       if (!scan.isGranted || !connect.isGranted) {
-        throw StateError('Bluetooth permissions are required to scan and connect.');
+        throw StateError(
+          'Bluetooth permissions are required to scan and connect.',
+        );
       }
     } else {
       final location = await Permission.locationWhenInUse.request();
@@ -225,6 +230,7 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
     );
     await _drifterNotifyChar!.setNotifyValue(true);
   }
+
   void _onDrifterNotifyChunk(List<int> bytes) {
     if (bytes.isEmpty) {
       return;
@@ -285,8 +291,11 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
   static void _logBleIo(String direction, String payload) {
     final safe = payload.replaceAll('\r', '\\r').replaceAll('\n', '\\n');
     final msg = '[DrifterBLE][$direction] $safe';
-    AppLogger.d(msg);
-    debugPrint(msg);
+    // Avoid debugPrint — it throttles/truncates long BLE lines. Full payloads for debugging:
+    AppLogger.i(msg);
+    // ignore: avoid_print — full BLE lines; debugPrint throttles/truncates.
+    print(msg);
+    developer.log(msg, name: 'DrifterBLE');
   }
 
   Future<void> _writeDrifterChunked(String ascii) async {
@@ -296,16 +305,27 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
     }
     final bytes = utf8.encode(ascii);
     final chunkSize = DrifterBleGatt.maxPayloadBytesPerWrite;
+    final useWithoutResp =
+        !write.properties.write && write.properties.writeWithoutResponse;
+    final totalChunks = (bytes.length + chunkSize - 1) ~/ chunkSize;
+    var index = 0;
     for (var i = 0; i < bytes.length; i += chunkSize) {
+      index++;
       final end = min(i + chunkSize, bytes.length);
       final chunk = bytes.sublist(i, end);
-      final useWithoutResp = !write.properties.write &&
-          write.properties.writeWithoutResponse;
+      final preview = utf8.decode(chunk, allowMalformed: true);
+      _logBleIo(
+        'SEND_CHUNK',
+        '[$index/$totalChunks] (${chunk.length} byte) $preview',
+      );
       await write.write(
         chunk,
         withoutResponse: useWithoutResp,
         allowLongWrite: false,
       );
+      if (end < bytes.length) {
+        await Future<void>.delayed(DrifterBleGatt.delayBetweenChunkWrites);
+      }
     }
   }
 
@@ -316,11 +336,8 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
     _drifterWriteChar = null;
     _drifterNotifyChar = null;
     _drifterRxBuffer.clear();
-    if (_drifterLineCompleter != null &&
-        !_drifterLineCompleter!.isCompleted) {
-      _drifterLineCompleter!.completeError(
-        StateError('Connection closed'),
-      );
+    if (_drifterLineCompleter != null && !_drifterLineCompleter!.isCompleted) {
+      _drifterLineCompleter!.completeError(StateError('Connection closed'));
     }
     _drifterLineCompleter = null;
   }
@@ -330,14 +347,17 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
     for (final sr in raw) {
       final id = sr.device.remoteId.str;
       final name = _displayName(sr);
-      final candidate = BleScanResult(remoteId: id, displayName: name, rssi: sr.rssi);
+      final candidate = BleScanResult(
+        remoteId: id,
+        displayName: name,
+        rssi: sr.rssi,
+      );
       final existing = best[id];
       if (existing == null || candidate.rssi > existing.rssi) {
         best[id] = candidate;
       }
     }
-    final list = best.values.toList()
-      ..sort((a, b) => b.rssi.compareTo(a.rssi));
+    final list = best.values.toList()..sort((a, b) => b.rssi.compareTo(a.rssi));
     return list;
   }
 
@@ -359,7 +379,8 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
     BluetoothCharacteristic?,
     BluetoothCharacteristic?,
     _DrifterResolutionMode,
-  ) _resolveDrifterCharacteristics(BluetoothDevice device) {
+  )
+  _resolveDrifterCharacteristics(BluetoothDevice device) {
     BluetoothCharacteristic? explicitWrite;
     BluetoothCharacteristic? explicitNotify;
 
@@ -384,10 +405,12 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
     }
 
     for (final s in device.servicesList) {
-      final writes =
-          s.characteristics.where(_characteristicIsWritable).toList();
-      final notifies =
-          s.characteristics.where(_characteristicIsNotifiable).toList();
+      final writes = s.characteristics
+          .where(_characteristicIsWritable)
+          .toList();
+      final notifies = s.characteristics
+          .where(_characteristicIsNotifiable)
+          .toList();
       if (writes.isEmpty || notifies.isEmpty) {
         continue;
       }
@@ -432,7 +455,10 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
     return p.notify || p.indicate;
   }
 
-  static bool _sameCharacteristic(BluetoothCharacteristic a, BluetoothCharacteristic b) {
+  static bool _sameCharacteristic(
+    BluetoothCharacteristic a,
+    BluetoothCharacteristic b,
+  ) {
     return a.uuid == b.uuid && a.instanceId == b.instanceId;
   }
 
