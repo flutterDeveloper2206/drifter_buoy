@@ -308,10 +308,7 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
         !write.properties.write && write.properties.writeWithoutResponse;
 
     if (ascii.length <= maxChars) {
-      _logBleIo(
-        'SEND',
-        'single BLE write (${ascii.length} chars) | $ascii',
-      );
+      _logBleIo('SEND', 'single BLE write (${ascii.length} chars) | $ascii');
       await _writeBleChunk(write, ascii, useWithoutResp: useWithoutResp);
       return;
     }
@@ -330,7 +327,7 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
       _logBleIo(
         'SEND_CHUNK',
         'BLE write $index/$totalChunks | chars[$i-${end - 1}] '
-        '(${chunkText.length} chars) | $chunkText',
+            '(${chunkText.length} chars) | $chunkText',
       );
       await _writeBleChunk(write, chunkText, useWithoutResp: useWithoutResp);
       if (end < ascii.length) {
