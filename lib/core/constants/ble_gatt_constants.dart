@@ -28,5 +28,12 @@ class DrifterBleGatt {
   static const int maxPayloadBytesPerWrite = maxCharactersPerChunk;
 
   /// Pause between chunked writes so UART-style peripherals can absorb each frame.
-  static const Duration delayBetweenChunkWrites = Duration(milliseconds: 15);
+  static const int defaultChunkWriteDelayMs = 3000;
+
+  static const Duration defaultDelayBetweenChunkWrites = Duration(
+    milliseconds: defaultChunkWriteDelayMs,
+  );
+
+  /// Default response wait when a catalog command has no explicit period.
+  static const int defaultCommandResponseTimeoutSec = 60;
 }

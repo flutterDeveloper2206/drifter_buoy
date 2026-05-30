@@ -306,21 +306,6 @@ class ClearGeneralUserRestoreDefaultParametersPrompt
   const ClearGeneralUserRestoreDefaultParametersPrompt();
 }
 
-class SubmitGeneralUserSetAllGeneralParameters
-    extends GeneralUserSelfTestDebugEvent {
-  const SubmitGeneralUserSetAllGeneralParameters(this.draft);
-
-  final SelfTestSetAllGeneralParametersDraft draft;
-
-  @override
-  List<Object> get props => [draft];
-}
-
-class ClearGeneralUserSetAllGeneralParametersPrompt
-    extends GeneralUserSelfTestDebugEvent {
-  const ClearGeneralUserSetAllGeneralParametersPrompt();
-}
-
 class SubmitGeneralUserSetSensorAllParameters
     extends GeneralUserSelfTestDebugEvent {
   const SubmitGeneralUserSetSensorAllParameters(this.draft);
@@ -349,4 +334,19 @@ class SubmitGeneralUserSetSensorsParameters
 class ClearGeneralUserSetSensorsParametersPrompt
     extends GeneralUserSelfTestDebugEvent {
   const ClearGeneralUserSetSensorsParametersPrompt();
+}
+
+class SubmitGeneralUserSetIndividualSensorParameter
+    extends GeneralUserSelfTestDebugEvent {
+  const SubmitGeneralUserSetIndividualSensorParameter(this.draft);
+
+  final SelfTestSetIndividualSensorParameterDraft draft;
+
+  @override
+  List<Object> get props => [draft];
+}
+
+class ClearGeneralUserSetIndividualSensorParameterPrompt
+    extends GeneralUserSelfTestDebugEvent {
+  const ClearGeneralUserSetIndividualSensorParameterPrompt();
 }

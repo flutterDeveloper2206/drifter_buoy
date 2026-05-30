@@ -1,4 +1,6 @@
 import 'package:drifter_buoy/core/bluetooth/ble_connection_service.dart';
+import 'package:drifter_buoy/core/bluetooth/ble_drifter_runtime_settings.dart';
+import 'package:drifter_buoy/core/constants/ble_gatt_constants.dart';
 import 'package:drifter_buoy/core/utils/app_logger.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_detail/general_user_setup_detail_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_detail/general_user_setup_detail_state.dart';
@@ -6,9 +8,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 class GeneralUserSetupDetailBloc
     extends Bloc<GeneralUserSetupDetailEvent, GeneralUserSetupDetailState> {
-  GeneralUserSetupDetailBloc({required BleConnectionService ble})
-    : _ble = ble,
-      super(const GeneralUserSetupDetailState.initial()) {
+  GeneralUserSetupDetailBloc({
+    required BleConnectionService ble,
+    required BleDrifterRuntimeSettings bleSettings,
+  }) : _ble = ble,
+       _bleSettings = bleSettings,
+       super(const GeneralUserSetupDetailState.initial()) {
     on<LoadGeneralUserSetupDetail>(_onLoadGeneralUserSetupDetail);
     on<ToggleGeneralUserEnableConfiguration>(
       _onToggleGeneralUserEnableConfiguration,
@@ -16,9 +21,12 @@ class GeneralUserSetupDetailBloc
     on<ClearBluetoothSetup>(_onClearBluetoothSetup);
     on<SyncBluetoothDisconnected>(_onSyncBluetoothDisconnected);
     on<SelectBluetoothDevice>(_onSelectBluetoothDevice);
+    on<SaveBleTimingSettings>(_onSaveBleTimingSettings);
+    on<ClearBleTimingSettingsMessage>(_onClearBleTimingSettingsMessage);
   }
 
   final BleConnectionService _ble;
+  final BleDrifterRuntimeSettings _bleSettings;
 
   Future<void> _onLoadGeneralUserSetupDetail(
     LoadGeneralUserSetupDetail event,
@@ -41,15 +49,64 @@ class GeneralUserSetupDetailBloc
         memoryStatus: '0 Records',
         message: '',
         contextBuoyId: contextBuoyId,
+        chunkWriteDelayMs: DrifterBleGatt.defaultChunkWriteDelayMs,
+        commandResponseTimeoutSec:
+            DrifterBleGatt.defaultCommandResponseTimeoutSec,
       ),
     );
+
+    await _bleSettings.load();
 
     await Future<void>.delayed(const Duration(milliseconds: 160));
     emit(
       state.copyWith(
         status: GeneralUserSetupDetailStatus.loaded,
+        chunkWriteDelayMs: _bleSettings.chunkWriteDelayMs,
+        commandResponseTimeoutSec: _bleSettings.commandResponseTimeoutSec,
       ),
     );
+  }
+
+  Future<void> _onSaveBleTimingSettings(
+    SaveBleTimingSettings event,
+    Emitter<GeneralUserSetupDetailState> emit,
+  ) async {
+    try {
+      await _bleSettings.save(
+        chunkWriteDelayMs: event.chunkWriteDelayMs,
+        commandResponseTimeoutSec: event.commandResponseTimeoutSec,
+      );
+      emit(
+        state.copyWith(
+          chunkWriteDelayMs: _bleSettings.chunkWriteDelayMs,
+          commandResponseTimeoutSec: _bleSettings.commandResponseTimeoutSec,
+          bleSettingsMessage: 'BLE timing settings saved.',
+          bleSettingsMessageIsSuccess: true,
+        ),
+      );
+    } on ArgumentError catch (e) {
+      emit(
+        state.copyWith(
+          bleSettingsMessage: e.message?.toString() ?? e.toString(),
+          bleSettingsMessageIsSuccess: false,
+        ),
+      );
+    } catch (e, st) {
+      AppLogger.e('Save BLE timing settings failed', error: e, stackTrace: st);
+      emit(
+        state.copyWith(
+          bleSettingsMessage: 'Could not save BLE timing settings.',
+          bleSettingsMessageIsSuccess: false,
+        ),
+      );
+    }
+  }
+
+  void _onClearBleTimingSettingsMessage(
+    ClearBleTimingSettingsMessage event,
+    Emitter<GeneralUserSetupDetailState> emit,
+  ) {
+    emit(state.copyWith(clearBleSettingsMessage: true));
   }
 
   void _onToggleGeneralUserEnableConfiguration(

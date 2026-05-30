@@ -10,6 +10,12 @@ class AppConstants {
   static const Duration connectTimeout = Duration(seconds: 15);
   static const Duration receiveTimeout = Duration(seconds: 15);
 
+  /// Large command catalog payloads can exceed the default receive timeout.
+  static const Duration drifterCommandsCatalogReceiveTimeout =
+      Duration(seconds: 120);
+
+  static const int drifterCommandsCatalogMaxAttempts = 3;
+
   static const String genericErrorMessage =
       'Something went wrong. Please try again.';
 }

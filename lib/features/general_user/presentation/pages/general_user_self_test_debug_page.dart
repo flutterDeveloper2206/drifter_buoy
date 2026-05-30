@@ -398,6 +398,7 @@ class _GeneralUserSelfTestDebugPageState
   bool _isParameterizedCommandDialogOpen = false;
   bool _isSetSensorAllParametersDialogOpen = false;
   bool _isSetSensorsParametersDialogOpen = false;
+  bool _isSetIndividualSensorParameterDialogOpen = false;
   bool _isSetAllGeneralParametersDialogOpen = false;
   bool _isSetAllServerParametersDialogOpen = false;
   bool _isRestoreDefaultParametersDialogOpen = false;
@@ -468,9 +469,9 @@ class _GeneralUserSelfTestDebugPageState
                       ).textTheme.compactSectionTitle(const Color(0xFF1D2329)),
                     ),
                     const SizedBox(height: 8),
-                    SelectableText(
-                      snap.helpText,
-                      style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                    _BleKeyValueSummary(
+                      text: snap.helpText,
+                      valueStyle: Theme.of(ctx).textTheme.bodySmall?.copyWith(
                         color: descriptionColor,
                         fontWeight: snap.descriptionSuccess == null
                             ? FontWeight.normal
@@ -1883,6 +1884,41 @@ class _GeneralUserSelfTestDebugPageState
     });
   }
 
+  Future<void> _showSetIndividualSensorParameterDialog(
+    BuildContext context,
+    SelfTestSetIndividualSensorParameterPrompt prompt,
+  ) async {
+    if (_isSetIndividualSensorParameterDialogOpen) {
+      return;
+    }
+    _isSetIndividualSensorParameterDialogOpen = true;
+    try {
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) {
+          return BlocProvider<GeneralUserSelfTestDebugBloc>.value(
+            value: context.read<GeneralUserSelfTestDebugBloc>(),
+            child: _SetIndividualSensorParameterDialog(prompt: prompt),
+          );
+        },
+      );
+    } finally {
+      _isSetIndividualSensorParameterDialogOpen = false;
+    }
+    if (!context.mounted) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!context.mounted) {
+        return;
+      }
+      context.read<GeneralUserSelfTestDebugBloc>().add(
+        const ClearGeneralUserSetIndividualSensorParameterPrompt(),
+      );
+    });
+  }
+
   Future<void> _showSetAllGeneralParametersDialog(
     BuildContext context,
     SelfTestSetAllGeneralParametersPrompt prompt,
@@ -1913,7 +1949,11 @@ class _GeneralUserSelfTestDebugPageState
         return;
       }
       context.read<GeneralUserSelfTestDebugBloc>().add(
-        const ClearGeneralUserSetAllGeneralParametersPrompt(),
+        SubmitGeneralUserParameterizedCommand(
+          commandId: prompt.commandId,
+          value: GeneralUserSelfTestDebugBloc
+              .setAllGeneralParametersClearPromptMarker,
+        ),
       );
     });
   }
@@ -2442,6 +2482,23 @@ class _GeneralUserSelfTestDebugPageState
                   GeneralUserSelfTestDebugState
                 >(
                   listenWhen: (p, c) =>
+                      c.setIndividualSensorParameterPrompt != null &&
+                      c.setIndividualSensorParameterPrompt !=
+                          p.setIndividualSensorParameterPrompt,
+                  listener: (context, state) {
+                    final prompt = state.setIndividualSensorParameterPrompt;
+                    if (prompt == null ||
+                        _isSetIndividualSensorParameterDialogOpen) {
+                      return;
+                    }
+                    _showSetIndividualSensorParameterDialog(context, prompt);
+                  },
+                ),
+                BlocListener<
+                  GeneralUserSelfTestDebugBloc,
+                  GeneralUserSelfTestDebugState
+                >(
+                  listenWhen: (p, c) =>
                       c.setAllGeneralParametersPrompt != null &&
                       c.setAllGeneralParametersPrompt !=
                           p.setAllGeneralParametersPrompt,
@@ -2897,6 +2954,78 @@ class _AdminSmsCellAlertDialogState extends State<_AdminSmsCellAlertDialog> {
           },
           child: const Text('Update'),
         ),
+      ],
+    );
+  }
+}
+
+/// Renders `Key: Value` summary lines as aligned rows (BLE response popups).
+class _BleKeyValueSummary extends StatelessWidget {
+  const _BleKeyValueSummary({
+    required this.text,
+    this.valueStyle,
+  });
+
+  final String text;
+  final TextStyle? valueStyle;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final keyStyle = theme.textTheme.bodySmall?.copyWith(
+      color: const Color(0xFF5C6368),
+      fontWeight: FontWeight.w600,
+    );
+    final valueStyleResolved =
+        valueStyle ??
+        theme.textTheme.bodySmall?.copyWith(color: const Color(0xFF2A2F34));
+
+    String? heading;
+    final entries = <MapEntry<String, String>>[];
+    for (final rawLine in text.split('\n')) {
+      final line = rawLine.trim();
+      if (line.isEmpty) {
+        continue;
+      }
+      final colon = line.indexOf(': ');
+      if (colon > 0) {
+        entries.add(
+          MapEntry(line.substring(0, colon), line.substring(colon + 2)),
+        );
+      } else if (entries.isEmpty) {
+        heading = line;
+      }
+    }
+
+    if (entries.isEmpty) {
+      return SelectableText(text, style: valueStyleResolved);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (heading != null) ...[
+          SelectableText(heading, style: valueStyleResolved),
+          const SizedBox(height: 12),
+        ],
+        for (var i = 0; i < entries.length; i++) ...[
+          if (i > 0) const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 132,
+                child: SelectableText('${entries[i].key}:', style: keyStyle),
+              ),
+              Expanded(
+                child: SelectableText(
+                  entries[i].value,
+                  style: valueStyleResolved,
+                ),
+              ),
+            ],
+          ),
+        ],
       ],
     );
   }
@@ -4029,20 +4158,18 @@ class _SetAllGeneralParametersDialogState
               return;
             }
             final bloc = context.read<GeneralUserSelfTestDebugBloc>();
-            final draft = SelfTestSetAllGeneralParametersDraft(
-              stationId: _stationId.text,
-              stationName: _stationName.text,
-              txInterval: _txInterval.text,
-              measurementInterval: _measurementInterval.text,
-              apn: _apn.text,
-              fastSmsCheck: _fastSms.text,
-              adminCell1: _adminCell1.text,
-              adminCell2: _adminCell2.text,
-              measurementStartTime: _measurementStartTime.text,
-            );
+            final commandId = widget.prompt.commandId;
+            final payload =
+                '${GeneralUserSelfTestDebugBloc.setAllGeneralParametersPayloadPrefix}'
+                '${jsonEncode(<String, String>{'stationId': _stationId.text, 'stationName': _stationName.text, 'txInterval': _txInterval.text, 'measurementInterval': _measurementInterval.text, 'apn': _apn.text, 'fastSmsCheck': _fastSms.text, 'adminCell1': _adminCell1.text, 'adminCell2': _adminCell2.text, 'measurementStartTime': _measurementStartTime.text})}';
             Navigator.of(context).pop();
             _runAfterDialogRouteClosed(() {
-              bloc.add(SubmitGeneralUserSetAllGeneralParameters(draft));
+              bloc.add(
+                SubmitGeneralUserParameterizedCommand(
+                  commandId: commandId,
+                  value: payload,
+                ),
+              );
             });
           },
           child: const Text('Send'),
@@ -5030,6 +5157,146 @@ class _SetSensorsParametersDialogState
             Navigator.of(context).pop();
             _runAfterDialogRouteClosed(() {
               bloc.add(SubmitGeneralUserSetSensorsParameters(draft));
+            });
+          },
+          child: const Text('Send'),
+        ),
+      ],
+    );
+  }
+}
+
+const String _setIndividualSensorParameterParaHelp =
+    'Sheet 1 (GET ?81): 1=F.G, 2=Factory off, 3=senG, 4=S.off, 5=Resolution, '
+    '6=Sen Min, 7=Sens Max, 8=Averag Scheme, 9=Vactor, 10=Start time, '
+    '11=Interval, 12=Total sample, 13=Mode, 14=Tx.G, 15=Tx.O. '
+    'Sheet 2 (GET ?83): 1=Unit, 2=SenSelStatus, 3=BaudRate, … (23 fields).';
+
+class _SetIndividualSensorParameterDialog extends StatefulWidget {
+  const _SetIndividualSensorParameterDialog({required this.prompt});
+
+  final SelfTestSetIndividualSensorParameterPrompt prompt;
+
+  @override
+  State<_SetIndividualSensorParameterDialog> createState() =>
+      _SetIndividualSensorParameterDialogState();
+}
+
+class _SetIndividualSensorParameterDialogState
+    extends State<_SetIndividualSensorParameterDialog> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  late final TextEditingController _sensorNo;
+  late final TextEditingController _paraNo;
+  late final TextEditingController _value;
+
+  @override
+  void initState() {
+    super.initState();
+    _sensorNo = TextEditingController(text: widget.prompt.initial.sensorNo);
+    _paraNo = TextEditingController(text: widget.prompt.initial.paraNo);
+    _value = TextEditingController(text: widget.prompt.initial.value);
+  }
+
+  @override
+  void dispose() {
+    _sensorNo.dispose();
+    _paraNo.dispose();
+    _value.dispose();
+    super.dispose();
+  }
+
+  String? _validateSensorNo(String? raw) {
+    final t = raw?.trim() ?? '';
+    if (t.isEmpty) {
+      return 'Sensor no is required.';
+    }
+    final v = int.tryParse(t);
+    if (v == null || v < 0 || v > 99) {
+      return 'Sensor no must be 00–99.';
+    }
+    return null;
+  }
+
+  String? _validateParaNo(String? raw) {
+    final t = raw?.trim() ?? '';
+    if (t.isEmpty) {
+      return 'Para no is required.';
+    }
+    final v = int.tryParse(t);
+    if (v == null || v < 1 || v > 23) {
+      return 'Para no must be 1–23.';
+    }
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final catalogHelp = widget.prompt.catalogHelpText.trim();
+    return AlertDialog(
+      title: Text(widget.prompt.testName),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (catalogHelp.isNotEmpty && catalogHelp.toUpperCase() != 'NA')
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    catalogHelp,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: const Color(0xFF70757A),
+                    ),
+                  ),
+                ),
+              _buildSelfTestSensorSetInputField(
+                controller: _sensorNo,
+                label: 'Sensor no',
+                hint: '01',
+                helper: 'Two digits, 00–99',
+                keyboardType: TextInputType.number,
+                validator: _validateSensorNo,
+              ),
+              _buildSelfTestSensorSetInputField(
+                controller: _paraNo,
+                label: 'Para no',
+                hint: '1',
+                helper: _setIndividualSensorParameterParaHelp,
+                keyboardType: TextInputType.number,
+                validator: _validateParaNo,
+              ),
+              _buildSelfTestSensorSetInputField(
+                controller: _value,
+                label: 'Value',
+                hint: '+00001.00000',
+                helper: 'Example: ?86,01,1,+00001.00000,#',
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () {
+            FocusScope.of(context).unfocus();
+            if (!(_formKey.currentState?.validate() ?? false)) {
+              return;
+            }
+            final bloc = context.read<GeneralUserSelfTestDebugBloc>();
+            final draft = SelfTestSetIndividualSensorParameterDraft(
+              sensorNo: _sensorNo.text,
+              paraNo: _paraNo.text,
+              value: _value.text,
+            );
+            Navigator.of(context).pop();
+            _runAfterDialogRouteClosed(() {
+              bloc.add(SubmitGeneralUserSetIndividualSensorParameter(draft));
             });
           },
           child: const Text('Send'),

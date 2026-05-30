@@ -676,6 +676,38 @@ class SelfTestSetSensorsParametersPrompt extends Equatable {
   List<Object?> get props => [testName, initial, catalogHelpText];
 }
 
+/// Field values for **Set individual sensor parameter** (`?86`).
+class SelfTestSetIndividualSensorParameterDraft extends Equatable {
+  const SelfTestSetIndividualSensorParameterDraft({
+    this.sensorNo = '',
+    this.paraNo = '',
+    this.value = '',
+  });
+
+  final String sensorNo;
+  final String paraNo;
+  final String value;
+
+  @override
+  List<Object?> get props => [sensorNo, paraNo, value];
+}
+
+/// Opens the dialog for `?86` (Sensor Para Set).
+class SelfTestSetIndividualSensorParameterPrompt extends Equatable {
+  const SelfTestSetIndividualSensorParameterPrompt({
+    required this.testName,
+    required this.initial,
+    this.catalogHelpText = '',
+  });
+
+  final String testName;
+  final SelfTestSetIndividualSensorParameterDraft initial;
+  final String catalogHelpText;
+
+  @override
+  List<Object?> get props => [testName, initial, catalogHelpText];
+}
+
 class SelfTestCheckStatusPrompt extends Equatable {
   const SelfTestCheckStatusPrompt({
     required this.peripheralStatus,
@@ -747,6 +779,8 @@ class GeneralUserSelfTestDebugState extends Equatable {
   final SelfTestRestoreServerParametersPrompt? restoreServerParametersPrompt;
   final SelfTestSetSensorAllParametersPrompt? setSensorAllParametersPrompt;
   final SelfTestSetSensorsParametersPrompt? setSensorsParametersPrompt;
+  final SelfTestSetIndividualSensorParameterPrompt?
+      setIndividualSensorParameterPrompt;
 
   const GeneralUserSelfTestDebugState({
     required this.status,
@@ -776,6 +810,7 @@ class GeneralUserSelfTestDebugState extends Equatable {
     required this.restoreServerParametersPrompt,
     required this.setSensorAllParametersPrompt,
     required this.setSensorsParametersPrompt,
+    required this.setIndividualSensorParameterPrompt,
   });
 
   const GeneralUserSelfTestDebugState.initial()
@@ -805,7 +840,8 @@ class GeneralUserSelfTestDebugState extends Equatable {
       restoreDefaultParametersPrompt = null,
       restoreServerParametersPrompt = null,
       setSensorAllParametersPrompt = null,
-      setSensorsParametersPrompt = null;
+      setSensorsParametersPrompt = null,
+      setIndividualSensorParameterPrompt = null;
 
   GeneralUserSelfTestDebugState copyWith({
     GeneralUserSelfTestDebugStatus? status,
@@ -858,6 +894,9 @@ class GeneralUserSelfTestDebugState extends Equatable {
     bool clearSetSensorAllParametersPrompt = false,
     SelfTestSetSensorsParametersPrompt? setSensorsParametersPrompt,
     bool clearSetSensorsParametersPrompt = false,
+    SelfTestSetIndividualSensorParameterPrompt?
+        setIndividualSensorParameterPrompt,
+    bool clearSetIndividualSensorParameterPrompt = false,
   }) {
     return GeneralUserSelfTestDebugState(
       status: status ?? this.status,
@@ -937,6 +976,11 @@ class GeneralUserSelfTestDebugState extends Equatable {
       setSensorsParametersPrompt: clearSetSensorsParametersPrompt
           ? null
           : (setSensorsParametersPrompt ?? this.setSensorsParametersPrompt),
+      setIndividualSensorParameterPrompt:
+          clearSetIndividualSensorParameterPrompt
+              ? null
+              : (setIndividualSensorParameterPrompt ??
+                    this.setIndividualSensorParameterPrompt),
     );
   }
 
@@ -969,5 +1013,6 @@ class GeneralUserSelfTestDebugState extends Equatable {
     restoreServerParametersPrompt,
     setSensorAllParametersPrompt,
     setSensorsParametersPrompt,
+    setIndividualSensorParameterPrompt,
   ];
 }

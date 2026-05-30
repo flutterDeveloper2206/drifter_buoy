@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:dartz_plus/dartz_plus.dart';
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 import 'package:drifter_buoy/core/constants/app_constants.dart';
 import 'package:drifter_buoy/core/error/exception_manager.dart';
 import 'package:drifter_buoy/core/error/failure.dart';
@@ -31,17 +33,36 @@ class ApiService {
         AuthInterceptor(authSessionStore: authSessionStore),
       );
     }
+
+    _configureHttpClient();
+  }
+
+  void _configureHttpClient() {
+    final adapter = _dio.httpClientAdapter;
+    if (adapter is IOHttpClientAdapter) {
+      adapter.createHttpClient = () {
+        final client = HttpClient();
+        client.connectionTimeout = const Duration(seconds: 30);
+        // Default idle timeout is 15s — slow catalog responses can be cut off mid-stream.
+        client.idleTimeout = AppConstants.drifterCommandsCatalogReceiveTimeout;
+        return client;
+      };
+    }
   }
 
   ResultFuture<T> get<T>(
     String path, {
     Map<String, dynamic>? queryParameters,
+    Duration? connectTimeout,
+    Duration? receiveTimeout,
     required T Function(dynamic data) parser,
   }) {
     return _request<T>(
       method: HttpMethod.get,
       path: path,
       queryParameters: queryParameters,
+      connectTimeout: connectTimeout,
+      receiveTimeout: receiveTimeout,
       parser: parser,
     );
   }
@@ -50,6 +71,8 @@ class ApiService {
     String path, {
     dynamic data,
     Map<String, dynamic>? queryParameters,
+    Duration? connectTimeout,
+    Duration? receiveTimeout,
     required T Function(dynamic data) parser,
   }) {
     return _request<T>(
@@ -57,6 +80,8 @@ class ApiService {
       path: path,
       data: data,
       queryParameters: queryParameters,
+      connectTimeout: connectTimeout,
+      receiveTimeout: receiveTimeout,
       parser: parser,
     );
   }
@@ -96,9 +121,17 @@ class ApiService {
     required String path,
     dynamic data,
     Map<String, dynamic>? queryParameters,
+    Duration? connectTimeout,
+    Duration? receiveTimeout,
     required T Function(dynamic data) parser,
   }) async {
     final requestUrl = path;
+    final options = (connectTimeout != null || receiveTimeout != null)
+        ? Options(
+            connectTimeout: connectTimeout,
+            receiveTimeout: receiveTimeout,
+          )
+        : null;
     AppLogger.d(
       'API REQUEST\nURL: $requestUrl\nHEADER: ${_safeHeaders(_dio.options.headers)}\nREQUEST PERAMS: ${_formatRequestParams(data)}',
     );
@@ -110,12 +143,14 @@ class ApiService {
           response = await _dio.get<dynamic>(
             path,
             queryParameters: queryParameters,
+            options: options,
           );
         case HttpMethod.post:
           response = await _dio.post<dynamic>(
             path,
             data: data,
             queryParameters: queryParameters,
+            options: options,
           );
       }
 

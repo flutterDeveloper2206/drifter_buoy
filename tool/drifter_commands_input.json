@@ -8,10 +8,10 @@
         "_id": "6a04547227be22811320699c",
         "testName": "Manual RTC Update",
         "requestCommand": "?95,,#",
-        "waitingPeriodSecondsRaw": "NA",
-        "requestCommandDescription": "Triggers manual RTC update on the device.",
+        "waitingPeriodSecondsRaw": "5 min",
+        "requestCommandDescription": "Triggers manual RTC update. Sends ?95,,# and waits up to 5 minutes.",
         "response": "$95,Factory St-ID, GPS Update Status, DD/MM/YY HH:MM, RTC Update status, #",
-        "responseDescription": "Factory station ID, GPS status, last RTC date/time, RTC update status (0 = success).",
+        "responseDescription": "Last RTC date/time (99/99/99 99:99 if not updated). RTC update status: 0 = success.",
         "isActive": true
       },
       {
@@ -728,10 +728,10 @@
         "_id": "6a04547227be22811320698f",
         "testName": "Sim Card Test",
         "requestCommand": "?77,1,#",
-        "waitingPeriodSecondsRaw": "1 min",
-        "requestCommandDescription": "",
+        "waitingPeriodSecondsRaw": "5 min",
+        "requestCommandDescription": "Runs SIM card and modem check. Sends ?77,1,# and waits up to 5 minutes.",
         "response": "$77,Station ID, 0, -067, 0, -072, EC200UCNAAR03A14M08,#",
-        "responseDescription": "SIM1_slot_status – 0: Success,1: Failure, Signal_strength_SIM1: -067, SIM2_slot_status - 0: Success,1: Failure, Signal_strength_SIM2: -072 ,Modem Firmware Ver: EC200UCNAAR03A14M08",
+        "responseDescription": "SIM1 slot status (0=Success, 1=Failure), signal strength SIM1, SIM2 slot status, signal strength SIM2, modem firmware version.",
         "isActive": true
       },
       {
@@ -768,10 +768,20 @@
         "_id": "6a04547227be228113206993",
         "testName": "SET sensors parameters",
         "requestCommand": "?82,(sensor no,unit,SenSelStatus,BaudRate,ReqLen,Start Char,Fp,Lp,Resp Len,RelayNo,PeriodicSmpl,DerievedPara,RequestString,Sensor name,id, model,rstcnt,datum,dec_len,frac_len,max_threshold,min_threshold)",
-        "waitingPeriodSecondsRaw": "NA",
+        "waitingPeriodSecondsRaw": "2 min",
         "requestCommandDescription": "NA",
         "response": "$82,Station ID, sensor no,unit,SenSelStatus,BaudRate,ReqLen,Start Char,Fp,Lp,Resp Len,RelayNo,PeriodicSmpl,DerievedPara,RequestString,Sensor name,id, model,rstcnt,datum,dec_len,frac_len,max_threshold,min_threshold, #",
         "responseDescription": "NA",
+        "isActive": true
+      },
+      {
+        "_id": "6a1abe62ce359a68acca43ab",
+        "testName": "Sensor Para Set",
+        "requestCommand": "?86,SensorNo,ParaNo,Value,#",
+        "waitingPeriodSecondsRaw": "NA",
+        "requestCommandDescription": "Set one sensor parameter. Examples: ?86,01,1,+00001.00000,#",
+        "response": "$86,…#",
+        "responseDescription": "Read-back in GET ?81 (16 fields) or GET ?83 (23 fields) format.",
         "isActive": true
       },
       {
@@ -787,9 +797,9 @@
       {
         "_id": "6a04547227be228113206995",
         "testName": "Battery Voltage",
-        "requestCommand": "?84,xx,#",
-        "waitingPeriodSecondsRaw": "1 min",
-        "requestCommandDescription": "Where xx is between 00 to 11.",
+        "requestCommand": "?84,00,#",
+        "waitingPeriodSecondsRaw": "5 min",
+        "requestCommandDescription": "Reads battery voltage using ?84,00,#. Waits up to 5 minutes.",
         "response": "$84,station id ,Battery Voltage, CNT: Counts,#",
         "responseDescription": "NA",
         "isActive": true
@@ -798,8 +808,8 @@
         "_id": "6a04547227be228113206997",
         "testName": "GPRS RSSI",
         "requestCommand": "?89,,#",
-        "waitingPeriodSecondsRaw": "1 min",
-        "requestCommandDescription": "",
+        "waitingPeriodSecondsRaw": "5 min",
+        "requestCommandDescription": "Reads GPRS signal strength. Sends ?89,,# and waits up to 5 minutes.",
         "response": "$89,Factory Stationid,RSSI,#",
         "responseDescription": "NA",
         "isActive": true
@@ -838,10 +848,20 @@
         "_id": "6a04547227be228113206999",
         "testName": "manual FTP",
         "requestCommand": "?92,,#",
-        "waitingPeriodSecondsRaw": "1 min",
-        "requestCommandDescription": "$92,Factory station id,0",
-        "response": "$92,00000000,0,#",
+        "waitingPeriodSecondsRaw": "5 min",
+        "requestCommandDescription": "Triggers manual FTP upload. Sends ?92,,# and waits up to 5 minutes.",
+        "response": "$92,Factory station id,0,#",
         "responseDescription": "0 indicates task is completed.",
+        "isActive": true
+      },
+      {
+        "_id": "6a04547227be22811320699b",
+        "testName": "Modem Test",
+        "requestCommand": "?94,,#",
+        "waitingPeriodSecondsRaw": "5 min",
+        "requestCommandDescription": "Runs modem test. Sends ?94,,# and waits up to 5 minutes.",
+        "response": "$94,00000000,1,#",
+        "responseDescription": "NA",
         "isActive": true
       }
     ]

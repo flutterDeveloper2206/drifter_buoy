@@ -4,6 +4,7 @@ import 'dart:developer' as developer;
 import 'dart:math' show min;
 
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:drifter_buoy/core/bluetooth/ble_drifter_runtime_settings.dart';
 import 'package:drifter_buoy/core/bluetooth/ble_connection_service.dart';
 import 'package:drifter_buoy/core/bluetooth/ble_scan_result.dart';
 import 'package:drifter_buoy/core/constants/ble_gatt_constants.dart';
@@ -16,6 +17,11 @@ import 'package:permission_handler/permission_handler.dart';
 
 /// Central-role BLE using [FlutterBluePlus]. For-profit apps may require a commercial FBP license.
 class FlutterBluePlusBleConnectionService implements BleConnectionService {
+  FlutterBluePlusBleConnectionService({
+    BleDrifterRuntimeSettings? runtimeSettings,
+  }) : _runtimeSettings = runtimeSettings ?? BleDrifterRuntimeSettings();
+
+  final BleDrifterRuntimeSettings _runtimeSettings;
   String? _connectedRemoteId;
   final StreamController<String> _disconnectedRemoteIdsController =
       StreamController<String>.broadcast();
@@ -271,13 +277,14 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
     }
 
     try {
+      final wait = _runtimeSettings.effectiveResponseTimeout(responseTimeout);
       final responseLine = await completer.future.timeout(
-        responseTimeout,
+        wait,
         onTimeout: () {
           _drifterLineCompleter = null;
           throw TimeoutException(
-            'No response ending with # within ${responseTimeout.inSeconds}s',
-            responseTimeout,
+            'No response ending with # within ${wait.inSeconds}s',
+            wait,
           );
         },
       );
@@ -331,7 +338,7 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
       );
       await _writeBleChunk(write, chunkText, useWithoutResp: useWithoutResp);
       if (end < ascii.length) {
-        await Future<void>.delayed(DrifterBleGatt.delayBetweenChunkWrites);
+        await Future<void>.delayed(_runtimeSettings.chunkWriteDelay);
       }
     }
 
