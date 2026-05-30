@@ -28,8 +28,8 @@ abstract class BleConnectionService {
   /// Discover UART-like service, enable notify on the inbound characteristic.
   Future<void> prepareDrifterCommandChannel();
 
-  /// Writes [command] in small chunks (max 20 bytes each), then waits for one ASCII line
-  /// ending with `#` within [responseTimeout].
+  /// Writes [command] in **20-character** chunks (spaces preserved), then waits for
+  /// one ASCII line ending with `#` within [responseTimeout].
   Future<String> sendDrifterAsciiCommand(
     String command,
     Duration responseTimeout,

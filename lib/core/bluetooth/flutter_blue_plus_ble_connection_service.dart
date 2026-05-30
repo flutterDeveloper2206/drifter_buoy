@@ -262,7 +262,7 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
     _drifterRxBuffer.clear();
     _drifterLineCompleter = Completer<String>();
 
-    _logBleIo('SEND', cmd);
+    _logBleIo('SEND_CMD', 'total ${cmd.length} chars | $cmd');
     await _writeDrifterChunked(cmd);
 
     final completer = _drifterLineCompleter;
@@ -303,30 +303,70 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
     if (write == null) {
       throw StateError('Write characteristic not ready.');
     }
-    final bytes = utf8.encode(ascii);
-    final chunkSize = DrifterBleGatt.maxPayloadBytesPerWrite;
+    const maxChars = DrifterBleGatt.maxCharactersPerChunk;
     final useWithoutResp =
         !write.properties.write && write.properties.writeWithoutResponse;
-    final totalChunks = (bytes.length + chunkSize - 1) ~/ chunkSize;
+
+    if (ascii.length <= maxChars) {
+      _logBleIo(
+        'SEND',
+        'single BLE write (${ascii.length} chars) | $ascii',
+      );
+      await _writeBleChunk(write, ascii, useWithoutResp: useWithoutResp);
+      return;
+    }
+
+    final totalChunks = (ascii.length + maxChars - 1) ~/ maxChars;
+    _logBleIo(
+      'SEND_CHUNKS',
+      'splitting ${ascii.length} chars into $totalChunks writes of $maxChars chars each',
+    );
+
     var index = 0;
-    for (var i = 0; i < bytes.length; i += chunkSize) {
+    for (var i = 0; i < ascii.length; i += maxChars) {
       index++;
-      final end = min(i + chunkSize, bytes.length);
-      final chunk = bytes.sublist(i, end);
-      final preview = utf8.decode(chunk, allowMalformed: true);
+      final end = min(i + maxChars, ascii.length);
+      final chunkText = ascii.substring(i, end);
       _logBleIo(
         'SEND_CHUNK',
-        '[$index/$totalChunks] (${chunk.length} byte) $preview',
+        'BLE write $index/$totalChunks | chars[$i-${end - 1}] '
+        '(${chunkText.length} chars) | $chunkText',
       );
-      await write.write(
-        chunk,
-        withoutResponse: useWithoutResp,
-        allowLongWrite: false,
-      );
-      if (end < bytes.length) {
+      await _writeBleChunk(write, chunkText, useWithoutResp: useWithoutResp);
+      if (end < ascii.length) {
         await Future<void>.delayed(DrifterBleGatt.delayBetweenChunkWrites);
       }
     }
+
+    _logBleIo(
+      'SEND_CHUNKS_DONE',
+      'completed $totalChunks BLE write(s), ${ascii.length} chars total',
+    );
+  }
+
+  Future<void> _writeBleChunk(
+    BluetoothCharacteristic write,
+    String chunkText, {
+    required bool useWithoutResp,
+  }) async {
+    if (chunkText.length > DrifterBleGatt.maxCharactersPerChunk) {
+      throw ArgumentError(
+        'Chunk length ${chunkText.length} exceeds '
+        '${DrifterBleGatt.maxCharactersPerChunk} characters.',
+      );
+    }
+    final chunkBytes = utf8.encode(chunkText);
+    if (chunkBytes.length > DrifterBleGatt.maxPayloadBytesPerWrite) {
+      throw ArgumentError(
+        'Chunk UTF-8 length ${chunkBytes.length} exceeds '
+        '${DrifterBleGatt.maxPayloadBytesPerWrite} bytes.',
+      );
+    }
+    await write.write(
+      chunkBytes,
+      withoutResponse: useWithoutResp,
+      allowLongWrite: false,
+    );
   }
 
   @override

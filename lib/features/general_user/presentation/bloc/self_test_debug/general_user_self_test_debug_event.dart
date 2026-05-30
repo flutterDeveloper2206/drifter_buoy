@@ -1,3 +1,4 @@
+import 'package:drifter_buoy/features/general_user/presentation/bloc/self_test_debug/general_user_self_test_debug_state.dart';
 import 'package:equatable/equatable.dart';
 
 abstract class GeneralUserSelfTestDebugEvent extends Equatable {
@@ -138,6 +139,37 @@ class ClearGeneralUserSetApnPrompt extends GeneralUserSelfTestDebugEvent {
   const ClearGeneralUserSetApnPrompt();
 }
 
+class SubmitGeneralUserFastSmsCheck extends GeneralUserSelfTestDebugEvent {
+  const SubmitGeneralUserFastSmsCheck({required this.enabled});
+
+  /// `true` → `?58,1,#` (enable); `false` → `?58,0,#` (disable).
+  final bool enabled;
+
+  @override
+  List<Object> get props => [enabled];
+}
+
+class ClearGeneralUserFastSmsCheckPrompt extends GeneralUserSelfTestDebugEvent {
+  const ClearGeneralUserFastSmsCheckPrompt();
+}
+
+class SubmitGeneralUserAdminSmsCell extends GeneralUserSelfTestDebugEvent {
+  const SubmitGeneralUserAdminSmsCell({
+    required this.commandId,
+    required this.mobileNumber,
+  });
+
+  final String commandId;
+  final String mobileNumber;
+
+  @override
+  List<Object> get props => [commandId, mobileNumber];
+}
+
+class ClearGeneralUserAdminSmsCellPrompt extends GeneralUserSelfTestDebugEvent {
+  const ClearGeneralUserAdminSmsCellPrompt();
+}
+
 class SubmitGeneralUserTransmitterFrequency
     extends GeneralUserSelfTestDebugEvent {
   const SubmitGeneralUserTransmitterFrequency({
@@ -226,13 +258,17 @@ class SubmitGeneralUserParameterizedCommand
   const SubmitGeneralUserParameterizedCommand({
     required this.commandId,
     required this.value,
+    this.requestCommand = '',
   });
 
   final String commandId;
   final String value;
 
+  /// Matches [SelfTestParameterizedCommandPrompt.requestCommand] when ids collide.
+  final String requestCommand;
+
   @override
-  List<Object> get props => [commandId, value];
+  List<Object> get props => [commandId, value, requestCommand];
 }
 
 class ClearGeneralUserParameterizedCommandPrompt
@@ -253,4 +289,64 @@ class SubmitGeneralUserRestoreServerParameters
 class ClearGeneralUserRestoreServerParametersPrompt
     extends GeneralUserSelfTestDebugEvent {
   const ClearGeneralUserRestoreServerParametersPrompt();
+}
+
+class SubmitGeneralUserRestoreDefaultParameters
+    extends GeneralUserSelfTestDebugEvent {
+  const SubmitGeneralUserRestoreDefaultParameters({required this.commandId});
+
+  final String commandId;
+
+  @override
+  List<Object> get props => [commandId];
+}
+
+class ClearGeneralUserRestoreDefaultParametersPrompt
+    extends GeneralUserSelfTestDebugEvent {
+  const ClearGeneralUserRestoreDefaultParametersPrompt();
+}
+
+class SubmitGeneralUserSetAllGeneralParameters
+    extends GeneralUserSelfTestDebugEvent {
+  const SubmitGeneralUserSetAllGeneralParameters(this.draft);
+
+  final SelfTestSetAllGeneralParametersDraft draft;
+
+  @override
+  List<Object> get props => [draft];
+}
+
+class ClearGeneralUserSetAllGeneralParametersPrompt
+    extends GeneralUserSelfTestDebugEvent {
+  const ClearGeneralUserSetAllGeneralParametersPrompt();
+}
+
+class SubmitGeneralUserSetSensorAllParameters
+    extends GeneralUserSelfTestDebugEvent {
+  const SubmitGeneralUserSetSensorAllParameters(this.draft);
+
+  final SelfTestSetSensorAllParametersDraft draft;
+
+  @override
+  List<Object> get props => [draft];
+}
+
+class ClearGeneralUserSetSensorAllParametersPrompt
+    extends GeneralUserSelfTestDebugEvent {
+  const ClearGeneralUserSetSensorAllParametersPrompt();
+}
+
+class SubmitGeneralUserSetSensorsParameters
+    extends GeneralUserSelfTestDebugEvent {
+  const SubmitGeneralUserSetSensorsParameters(this.draft);
+
+  final SelfTestSetSensorsParametersDraft draft;
+
+  @override
+  List<Object> get props => [draft];
+}
+
+class ClearGeneralUserSetSensorsParametersPrompt
+    extends GeneralUserSelfTestDebugEvent {
+  const ClearGeneralUserSetSensorsParametersPrompt();
 }
