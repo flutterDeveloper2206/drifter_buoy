@@ -9,17 +9,31 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 class DrifterBleGatt {
   DrifterBleGatt._();
 
-  static final Guid serviceUuid =
-      Guid('6E400001-B5A3-F393-E0A9-E50E24DCCA9E');
+  static final Guid serviceUuid = Guid('6E400001-B5A3-F393-E0A9-E50E24DCCA9E');
 
   /// Central writes outbound ASCII commands here (Nordic UART **RX** characteristic).
-  static final Guid writeCharacteristicUuid =
-      Guid('6E400002-B5A3-F393-E0A9-E50E24DCCA9E');
+  static final Guid writeCharacteristicUuid = Guid(
+    '6E400002-B5A3-F393-E0A9-E50E24DCCA9E',
+  );
 
   /// Central subscribes for inbound data here (Nordic UART **TX** characteristic).
-  static final Guid notifyCharacteristicUuid =
-      Guid('6E400003-B5A3-F393-E0A9-E50E24DCCA9E');
+  static final Guid notifyCharacteristicUuid = Guid(
+    '6E400003-B5A3-F393-E0A9-E50E24DCCA9E',
+  );
 
-  /// ATT payload limit per write (20 bytes typical at default MTU 23).
-  static const int maxPayloadBytesPerWrite = 20;
+  /// Drifter buoy accepts outbound commands in **20-character** ASCII frames per write.
+  static const int maxCharactersPerChunk = 20;
+
+  /// Same as [maxCharactersPerChunk] for ATT payload limit at default MTU 23.
+  static const int maxPayloadBytesPerWrite = maxCharactersPerChunk;
+
+  /// Pause between chunked writes so UART-style peripherals can absorb each frame.
+  static const int defaultChunkWriteDelayMs = 3000;
+
+  static const Duration defaultDelayBetweenChunkWrites = Duration(
+    milliseconds: defaultChunkWriteDelayMs,
+  );
+
+  /// Default response wait when a catalog command has no explicit period.
+  static const int defaultCommandResponseTimeoutSec = 60;
 }

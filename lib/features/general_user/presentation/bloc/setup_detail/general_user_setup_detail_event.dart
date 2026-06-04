@@ -41,3 +41,20 @@ class SelectBluetoothDevice extends GeneralUserSetupDetailEvent {
   @override
   List<Object?> get props => [displayName, bluetoothId];
 }
+
+class SaveBleTimingSettings extends GeneralUserSetupDetailEvent {
+  const SaveBleTimingSettings({
+    required this.chunkWriteDelayMs,
+    required this.commandResponseTimeoutSec,
+  });
+
+  final int chunkWriteDelayMs;
+  final int commandResponseTimeoutSec;
+
+  @override
+  List<Object?> get props => [chunkWriteDelayMs, commandResponseTimeoutSec];
+}
+
+class ClearBleTimingSettingsMessage extends GeneralUserSetupDetailEvent {
+  const ClearBleTimingSettingsMessage();
+}

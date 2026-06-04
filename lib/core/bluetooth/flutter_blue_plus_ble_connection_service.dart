@@ -1,20 +1,27 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'dart:math' show min;
 
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:drifter_buoy/core/bluetooth/ble_drifter_runtime_settings.dart';
 import 'package:drifter_buoy/core/bluetooth/ble_connection_service.dart';
 import 'package:drifter_buoy/core/bluetooth/ble_scan_result.dart';
 import 'package:drifter_buoy/core/constants/ble_gatt_constants.dart';
 import 'package:drifter_buoy/core/utils/app_logger.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_flushbar.dart';
 import 'package:flutter/foundation.dart'
-    show TargetPlatform, debugPrint, defaultTargetPlatform, kIsWeb;
+    show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 /// Central-role BLE using [FlutterBluePlus]. For-profit apps may require a commercial FBP license.
 class FlutterBluePlusBleConnectionService implements BleConnectionService {
+  FlutterBluePlusBleConnectionService({
+    BleDrifterRuntimeSettings? runtimeSettings,
+  }) : _runtimeSettings = runtimeSettings ?? BleDrifterRuntimeSettings();
+
+  final BleDrifterRuntimeSettings _runtimeSettings;
   String? _connectedRemoteId;
   final StreamController<String> _disconnectedRemoteIdsController =
       StreamController<String>.broadcast();
@@ -40,7 +47,9 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
   @override
   Future<void> ensureReadyForScan() async {
     if (kIsWeb) {
-      throw UnsupportedError('Bluetooth LE is not supported on web in this app.');
+      throw UnsupportedError(
+        'Bluetooth LE is not supported on web in this app.',
+      );
     }
     if (!await FlutterBluePlus.isSupported) {
       throw StateError('Bluetooth is not supported on this device.');
@@ -80,7 +89,9 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
       final scan = await Permission.bluetoothScan.request();
       final connect = await Permission.bluetoothConnect.request();
       if (!scan.isGranted || !connect.isGranted) {
-        throw StateError('Bluetooth permissions are required to scan and connect.');
+        throw StateError(
+          'Bluetooth permissions are required to scan and connect.',
+        );
       }
     } else {
       final location = await Permission.locationWhenInUse.request();
@@ -225,6 +236,7 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
     );
     await _drifterNotifyChar!.setNotifyValue(true);
   }
+
   void _onDrifterNotifyChunk(List<int> bytes) {
     if (bytes.isEmpty) {
       return;
@@ -256,7 +268,7 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
     _drifterRxBuffer.clear();
     _drifterLineCompleter = Completer<String>();
 
-    _logBleIo('SEND', cmd);
+    _logBleIo('SEND_CMD', 'total ${cmd.length} chars | $cmd');
     await _writeDrifterChunked(cmd);
 
     final completer = _drifterLineCompleter;
@@ -265,13 +277,14 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
     }
 
     try {
+      final wait = _runtimeSettings.effectiveResponseTimeout(responseTimeout);
       final responseLine = await completer.future.timeout(
-        responseTimeout,
+        wait,
         onTimeout: () {
           _drifterLineCompleter = null;
           throw TimeoutException(
-            'No response ending with # within ${responseTimeout.inSeconds}s',
-            responseTimeout,
+            'No response ending with # within ${wait.inSeconds}s',
+            wait,
           );
         },
       );
@@ -285,8 +298,11 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
   static void _logBleIo(String direction, String payload) {
     final safe = payload.replaceAll('\r', '\\r').replaceAll('\n', '\\n');
     final msg = '[DrifterBLE][$direction] $safe';
-    AppLogger.d(msg);
-    debugPrint(msg);
+    // Avoid debugPrint — it throttles/truncates long BLE lines. Full payloads for debugging:
+    AppLogger.i(msg);
+    // ignore: avoid_print — full BLE lines; debugPrint throttles/truncates.
+    print(msg);
+    developer.log(msg, name: 'DrifterBLE');
   }
 
   Future<void> _writeDrifterChunked(String ascii) async {
@@ -294,19 +310,67 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
     if (write == null) {
       throw StateError('Write characteristic not ready.');
     }
-    final bytes = utf8.encode(ascii);
-    final chunkSize = DrifterBleGatt.maxPayloadBytesPerWrite;
-    for (var i = 0; i < bytes.length; i += chunkSize) {
-      final end = min(i + chunkSize, bytes.length);
-      final chunk = bytes.sublist(i, end);
-      final useWithoutResp = !write.properties.write &&
-          write.properties.writeWithoutResponse;
-      await write.write(
-        chunk,
-        withoutResponse: useWithoutResp,
-        allowLongWrite: false,
+    const maxChars = DrifterBleGatt.maxCharactersPerChunk;
+    final useWithoutResp =
+        !write.properties.write && write.properties.writeWithoutResponse;
+
+    if (ascii.length <= maxChars) {
+      _logBleIo('SEND', 'single BLE write (${ascii.length} chars) | $ascii');
+      await _writeBleChunk(write, ascii, useWithoutResp: useWithoutResp);
+      return;
+    }
+
+    final totalChunks = (ascii.length + maxChars - 1) ~/ maxChars;
+    _logBleIo(
+      'SEND_CHUNKS',
+      'splitting ${ascii.length} chars into $totalChunks writes of $maxChars chars each',
+    );
+
+    var index = 0;
+    for (var i = 0; i < ascii.length; i += maxChars) {
+      index++;
+      final end = min(i + maxChars, ascii.length);
+      final chunkText = ascii.substring(i, end);
+      _logBleIo(
+        'SEND_CHUNK',
+        'BLE write $index/$totalChunks | chars[$i-${end - 1}] '
+            '(${chunkText.length} chars) | $chunkText',
+      );
+      await _writeBleChunk(write, chunkText, useWithoutResp: useWithoutResp);
+      if (end < ascii.length) {
+        await Future<void>.delayed(_runtimeSettings.chunkWriteDelay);
+      }
+    }
+
+    _logBleIo(
+      'SEND_CHUNKS_DONE',
+      'completed $totalChunks BLE write(s), ${ascii.length} chars total',
+    );
+  }
+
+  Future<void> _writeBleChunk(
+    BluetoothCharacteristic write,
+    String chunkText, {
+    required bool useWithoutResp,
+  }) async {
+    if (chunkText.length > DrifterBleGatt.maxCharactersPerChunk) {
+      throw ArgumentError(
+        'Chunk length ${chunkText.length} exceeds '
+        '${DrifterBleGatt.maxCharactersPerChunk} characters.',
       );
     }
+    final chunkBytes = utf8.encode(chunkText);
+    if (chunkBytes.length > DrifterBleGatt.maxPayloadBytesPerWrite) {
+      throw ArgumentError(
+        'Chunk UTF-8 length ${chunkBytes.length} exceeds '
+        '${DrifterBleGatt.maxPayloadBytesPerWrite} bytes.',
+      );
+    }
+    await write.write(
+      chunkBytes,
+      withoutResponse: useWithoutResp,
+      allowLongWrite: false,
+    );
   }
 
   @override
@@ -316,11 +380,8 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
     _drifterWriteChar = null;
     _drifterNotifyChar = null;
     _drifterRxBuffer.clear();
-    if (_drifterLineCompleter != null &&
-        !_drifterLineCompleter!.isCompleted) {
-      _drifterLineCompleter!.completeError(
-        StateError('Connection closed'),
-      );
+    if (_drifterLineCompleter != null && !_drifterLineCompleter!.isCompleted) {
+      _drifterLineCompleter!.completeError(StateError('Connection closed'));
     }
     _drifterLineCompleter = null;
   }
@@ -330,14 +391,17 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
     for (final sr in raw) {
       final id = sr.device.remoteId.str;
       final name = _displayName(sr);
-      final candidate = BleScanResult(remoteId: id, displayName: name, rssi: sr.rssi);
+      final candidate = BleScanResult(
+        remoteId: id,
+        displayName: name,
+        rssi: sr.rssi,
+      );
       final existing = best[id];
       if (existing == null || candidate.rssi > existing.rssi) {
         best[id] = candidate;
       }
     }
-    final list = best.values.toList()
-      ..sort((a, b) => b.rssi.compareTo(a.rssi));
+    final list = best.values.toList()..sort((a, b) => b.rssi.compareTo(a.rssi));
     return list;
   }
 
@@ -359,7 +423,8 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
     BluetoothCharacteristic?,
     BluetoothCharacteristic?,
     _DrifterResolutionMode,
-  ) _resolveDrifterCharacteristics(BluetoothDevice device) {
+  )
+  _resolveDrifterCharacteristics(BluetoothDevice device) {
     BluetoothCharacteristic? explicitWrite;
     BluetoothCharacteristic? explicitNotify;
 
@@ -384,10 +449,12 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
     }
 
     for (final s in device.servicesList) {
-      final writes =
-          s.characteristics.where(_characteristicIsWritable).toList();
-      final notifies =
-          s.characteristics.where(_characteristicIsNotifiable).toList();
+      final writes = s.characteristics
+          .where(_characteristicIsWritable)
+          .toList();
+      final notifies = s.characteristics
+          .where(_characteristicIsNotifiable)
+          .toList();
       if (writes.isEmpty || notifies.isEmpty) {
         continue;
       }
@@ -432,7 +499,10 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
     return p.notify || p.indicate;
   }
 
-  static bool _sameCharacteristic(BluetoothCharacteristic a, BluetoothCharacteristic b) {
+  static bool _sameCharacteristic(
+    BluetoothCharacteristic a,
+    BluetoothCharacteristic b,
+  ) {
     return a.uuid == b.uuid && a.instanceId == b.instanceId;
   }
 

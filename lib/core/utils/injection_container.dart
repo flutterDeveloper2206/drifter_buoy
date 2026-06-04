@@ -1,3 +1,4 @@
+import 'package:drifter_buoy/core/bluetooth/ble_drifter_runtime_settings.dart';
 import 'package:drifter_buoy/core/bluetooth/ble_connection_service.dart';
 import 'package:drifter_buoy/core/bluetooth/flutter_blue_plus_ble_connection_service.dart';
 import 'package:drifter_buoy/core/constants/app_constants.dart';
@@ -96,9 +97,17 @@ Future<void> initDependencies() async {
     );
   }
 
+  if (!sl.isRegistered<BleDrifterRuntimeSettings>()) {
+    sl.registerLazySingleton<BleDrifterRuntimeSettings>(
+      () => BleDrifterRuntimeSettings(),
+    );
+  }
+
   if (!sl.isRegistered<BleConnectionService>()) {
     sl.registerLazySingleton<BleConnectionService>(
-      () => FlutterBluePlusBleConnectionService(),
+      () => FlutterBluePlusBleConnectionService(
+        runtimeSettings: sl<BleDrifterRuntimeSettings>(),
+      ),
     );
   }
 
@@ -502,7 +511,10 @@ Future<void> initDependencies() async {
 
   if (!sl.isRegistered<GeneralUserSetupDetailBloc>()) {
     sl.registerFactory<GeneralUserSetupDetailBloc>(
-      () => GeneralUserSetupDetailBloc(ble: sl<BleConnectionService>()),
+      () => GeneralUserSetupDetailBloc(
+        ble: sl<BleConnectionService>(),
+        bleSettings: sl<BleDrifterRuntimeSettings>(),
+      ),
     );
   }
 
@@ -518,4 +530,6 @@ Future<void> initDependencies() async {
       ),
     );
   }
+
+  await sl<BleDrifterRuntimeSettings>().load();
 }

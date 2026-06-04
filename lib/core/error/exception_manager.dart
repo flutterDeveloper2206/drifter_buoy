@@ -42,10 +42,25 @@ class ExceptionManager {
       case DioExceptionType.cancel:
       case DioExceptionType.badCertificate:
       case DioExceptionType.unknown:
+        if (_isTransientConnectionError(exception)) {
+          return const NetworkFailure(
+            'Connection lost while loading data. Please try again.',
+          );
+        }
         return UnknownFailure(
           exception.message ?? AppConstants.genericErrorMessage,
         );
     }
+  }
+
+  static bool _isTransientConnectionError(DioException exception) {
+    final message = (exception.message ?? '').toLowerCase();
+    final errorText = exception.error?.toString().toLowerCase() ?? '';
+    final combined = '$message $errorText';
+    return combined.contains('connection closed') ||
+        combined.contains('connection reset') ||
+        combined.contains('broken pipe') ||
+        combined.contains('socketexception');
   }
 
   static Failure _mapAppException(AppException exception) {

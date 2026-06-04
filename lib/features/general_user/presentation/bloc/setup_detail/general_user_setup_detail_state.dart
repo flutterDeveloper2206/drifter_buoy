@@ -1,3 +1,4 @@
+import 'package:drifter_buoy/core/constants/ble_gatt_constants.dart';
 import 'package:equatable/equatable.dart';
 
 enum GeneralUserSetupDetailStatus { initial, loading, loaded, error }
@@ -13,6 +14,10 @@ class GeneralUserSetupDetailState extends Equatable {
   final String memoryStatus;
   final String message;
   final String? contextBuoyId;
+  final int chunkWriteDelayMs;
+  final int commandResponseTimeoutSec;
+  final String bleSettingsMessage;
+  final bool bleSettingsMessageIsSuccess;
 
   const GeneralUserSetupDetailState({
     required this.status,
@@ -25,6 +30,10 @@ class GeneralUserSetupDetailState extends Equatable {
     required this.memoryStatus,
     required this.message,
     required this.contextBuoyId,
+    required this.chunkWriteDelayMs,
+    required this.commandResponseTimeoutSec,
+    this.bleSettingsMessage = '',
+    this.bleSettingsMessageIsSuccess = false,
   });
 
   const GeneralUserSetupDetailState.initial()
@@ -37,7 +46,12 @@ class GeneralUserSetupDetailState extends Equatable {
       connectionStatus = 'Disconnected',
       memoryStatus = '0 Records',
       message = '',
-      contextBuoyId = null;
+      contextBuoyId = null,
+      chunkWriteDelayMs = DrifterBleGatt.defaultChunkWriteDelayMs,
+      commandResponseTimeoutSec =
+          DrifterBleGatt.defaultCommandResponseTimeoutSec,
+      bleSettingsMessage = '',
+      bleSettingsMessageIsSuccess = false;
 
   GeneralUserSetupDetailState copyWith({
     GeneralUserSetupDetailStatus? status,
@@ -51,6 +65,11 @@ class GeneralUserSetupDetailState extends Equatable {
     String? memoryStatus,
     String? message,
     String? contextBuoyId,
+    int? chunkWriteDelayMs,
+    int? commandResponseTimeoutSec,
+    String? bleSettingsMessage,
+    bool? bleSettingsMessageIsSuccess,
+    bool clearBleSettingsMessage = false,
   }) {
     return GeneralUserSetupDetailState(
       status: status ?? this.status,
@@ -65,6 +84,14 @@ class GeneralUserSetupDetailState extends Equatable {
       memoryStatus: memoryStatus ?? this.memoryStatus,
       message: message ?? this.message,
       contextBuoyId: contextBuoyId ?? this.contextBuoyId,
+      chunkWriteDelayMs: chunkWriteDelayMs ?? this.chunkWriteDelayMs,
+      commandResponseTimeoutSec:
+          commandResponseTimeoutSec ?? this.commandResponseTimeoutSec,
+      bleSettingsMessage: clearBleSettingsMessage
+          ? ''
+          : (bleSettingsMessage ?? this.bleSettingsMessage),
+      bleSettingsMessageIsSuccess:
+          bleSettingsMessageIsSuccess ?? this.bleSettingsMessageIsSuccess,
     );
   }
 
@@ -80,5 +107,9 @@ class GeneralUserSetupDetailState extends Equatable {
     memoryStatus,
     message,
     contextBuoyId,
+    chunkWriteDelayMs,
+    commandResponseTimeoutSec,
+    bleSettingsMessage,
+    bleSettingsMessageIsSuccess,
   ];
 }
