@@ -863,6 +863,16 @@
         "response": "$94,00000000,1,#",
         "responseDescription": "NA",
         "isActive": true
+      },
+      {
+        "_id": "6a2d222437aa7731734f8d9f",
+        "testName": "UHFSonde_TxIn_Time",
+        "requestCommand": "?99,N,HH:MM:SS,#",
+        "waitingPeriodSecondsRaw": "NA",
+        "requestCommandDescription": "N = 1 — UHF Transmission Start Time. N = 2 — UHF Interval Time. N = 3 — Sonde Transmission Start Time. N = 4 — Sonde Interval Time. Get with ?99,0,,,#.",
+        "response": "$99,station id,HH:MM:SS,HH:MM:SS,HH:MM:SS,HH:MM:SS,#",
+        "responseDescription": "Station ID, UHF Transmission Start Time, UHF Transmission Interval Time, Sonde Transmission Start Time, Sonde Transmission Interval Time.",
+        "isActive": true
       }
     ]
   },

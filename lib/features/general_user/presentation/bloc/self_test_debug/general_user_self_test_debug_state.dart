@@ -240,6 +240,35 @@ class SelfTestRadioSondeTransmitterIdPrompt extends Equatable {
   List<Object?> get props => [currentTransmitterId];
 }
 
+/// `?99,N,HH:MM:SS,#` — UHF / Sonde transmission times (N 1–4).
+class SelfTestUhfSondeTxInTimePrompt extends Equatable {
+  const SelfTestUhfSondeTxInTimePrompt({
+    required this.testName,
+    required this.uhfStartTime,
+    required this.uhfIntervalTime,
+    required this.sondeStartTime,
+    required this.sondeIntervalTime,
+    this.prefetchWarning,
+  });
+
+  final String testName;
+  final String uhfStartTime;
+  final String uhfIntervalTime;
+  final String sondeStartTime;
+  final String sondeIntervalTime;
+  final String? prefetchWarning;
+
+  @override
+  List<Object?> get props => [
+    testName,
+    uhfStartTime,
+    uhfIntervalTime,
+    sondeStartTime,
+    sondeIntervalTime,
+    prefetchWarning,
+  ];
+}
+
 class SelfTestTransmitterTestPrompt extends Equatable {
   const SelfTestTransmitterTestPrompt({
     this.plainCarrierOn = false,
@@ -768,6 +797,7 @@ class GeneralUserSelfTestDebugState extends Equatable {
   final SelfTestTransmitterFrequencyPrompt? transmitterFrequencyPrompt;
   final SelfTestSetAttenuationPrompt? setAttenuationPrompt;
   final SelfTestRadioSondeTransmitterIdPrompt? radioSondeTransmitterIdPrompt;
+  final SelfTestUhfSondeTxInTimePrompt? uhfSondeTxInTimePrompt;
   final SelfTestTransmitterTestPrompt? transmitterTestPrompt;
   final SelfTestCheckStatusPrompt? checkStatusPrompt;
   final SelfTestParameterizedCommandPrompt? parameterizedCommandPrompt;
@@ -799,6 +829,7 @@ class GeneralUserSelfTestDebugState extends Equatable {
     required this.transmitterFrequencyPrompt,
     required this.setAttenuationPrompt,
     required this.radioSondeTransmitterIdPrompt,
+    required this.uhfSondeTxInTimePrompt,
     required this.transmitterTestPrompt,
     required this.checkStatusPrompt,
     required this.parameterizedCommandPrompt,
@@ -830,6 +861,7 @@ class GeneralUserSelfTestDebugState extends Equatable {
       transmitterFrequencyPrompt = null,
       setAttenuationPrompt = null,
       radioSondeTransmitterIdPrompt = null,
+      uhfSondeTxInTimePrompt = null,
       transmitterTestPrompt = null,
       checkStatusPrompt = null,
       parameterizedCommandPrompt = null,
@@ -874,6 +906,8 @@ class GeneralUserSelfTestDebugState extends Equatable {
     bool clearSetAttenuationPrompt = false,
     SelfTestRadioSondeTransmitterIdPrompt? radioSondeTransmitterIdPrompt,
     bool clearRadioSondeTransmitterIdPrompt = false,
+    SelfTestUhfSondeTxInTimePrompt? uhfSondeTxInTimePrompt,
+    bool clearUhfSondeTxInTimePrompt = false,
     SelfTestTransmitterTestPrompt? transmitterTestPrompt,
     bool clearTransmitterTestPrompt = false,
     SelfTestCheckStatusPrompt? checkStatusPrompt,
@@ -944,6 +978,9 @@ class GeneralUserSelfTestDebugState extends Equatable {
           ? null
           : (radioSondeTransmitterIdPrompt ??
                 this.radioSondeTransmitterIdPrompt),
+      uhfSondeTxInTimePrompt: clearUhfSondeTxInTimePrompt
+          ? null
+          : (uhfSondeTxInTimePrompt ?? this.uhfSondeTxInTimePrompt),
       transmitterTestPrompt: clearTransmitterTestPrompt
           ? null
           : (transmitterTestPrompt ?? this.transmitterTestPrompt),
@@ -1002,6 +1039,7 @@ class GeneralUserSelfTestDebugState extends Equatable {
     transmitterFrequencyPrompt,
     setAttenuationPrompt,
     radioSondeTransmitterIdPrompt,
+    uhfSondeTxInTimePrompt,
     transmitterTestPrompt,
     checkStatusPrompt,
     parameterizedCommandPrompt,

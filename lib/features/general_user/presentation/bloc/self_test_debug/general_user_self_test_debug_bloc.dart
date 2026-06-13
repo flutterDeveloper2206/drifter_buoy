@@ -80,6 +80,10 @@ class GeneralUserSelfTestDebugBloc
     on<ClearGeneralUserRadioSondeTransmitterIdPrompt>(
       _onClearGeneralUserRadioSondeTransmitterIdPrompt,
     );
+    on<SubmitGeneralUserUhfSondeTxInTime>(_onSubmitGeneralUserUhfSondeTxInTime);
+    on<ClearGeneralUserUhfSondeTxInTimePrompt>(
+      _onClearGeneralUserUhfSondeTxInTimePrompt,
+    );
     on<SubmitGeneralUserTransmitterTest>(_onSubmitGeneralUserTransmitterTest);
     on<ClearGeneralUserTransmitterTestPrompt>(
       _onClearGeneralUserTransmitterTestPrompt,
@@ -348,6 +352,8 @@ class GeneralUserSelfTestDebugBloc
   static const String _memoryTestCommandId = '6a04547227be228113206998';
   static const String _manualFtpCommandId = '6a04547227be228113206999';
   static const String _modemTestCommandId = '6a04547227be22811320699b';
+  static const String _uhfSondeTxInTimeCommandId =
+      '6a2d222437aa7731734f8d9f';
 
   /// BLE templates that collect one user field before [_ble.sendDrifterAsciiCommand].
   static const Map<String, SelfTestParameterizedCommandFieldKind>
@@ -1479,6 +1485,22 @@ class GeneralUserSelfTestDebugBloc
       responseDescription: 'NA',
       isActive: true,
     ),
+    DrifterBuoyCommandModel(
+      id: _uhfSondeTxInTimeCommandId,
+      testName: 'UHFSonde_TxIn_Time',
+      requestCommand: '?99,N,HH:MM:SS,#',
+      waitingPeriodSecondsRaw: 'NA',
+      requestCommandDescription:
+          'N = 1 — UHF Transmission Start Time. '
+          'N = 2 — UHF Interval Time. '
+          'N = 3 — Sonde Transmission Start Time. '
+          'N = 4 — Sonde Interval Time.',
+      response: r'$99,station id,HH:MM:SS,HH:MM:SS,HH:MM:SS,HH:MM:SS,#',
+      responseDescription:
+          'Station ID, UHF Transmission Start Time, UHF Transmission Interval Time, '
+          'Sonde Transmission Start Time, Sonde Transmission Interval Time.',
+      isActive: true,
+    ),
   ];
 
   /// Resolves static catalog text/timeouts when the API returns duplicate Mongo ids.
@@ -1766,6 +1788,10 @@ class GeneralUserSelfTestDebugBloc
     }
     if (cmd.id == _radioSondeTransmitterIdCommandId) {
       await _onOpenRadioSondeTransmitterIdPrompt(cmd, index, emit);
+      return;
+    }
+    if (cmd.id == _uhfSondeTxInTimeCommandId) {
+      _onOpenUhfSondeTxInTimePrompt(cmd, index, emit);
       return;
     }
     if (cmd.id == _setAllGeneralSystemParametersCommandId ||
@@ -3876,6 +3902,134 @@ class GeneralUserSelfTestDebugBloc
     }
   }
 
+  void _onOpenUhfSondeTxInTimePrompt(
+    DrifterBuoyCommandModel cmd,
+    int index,
+    Emitter<GeneralUserSelfTestDebugState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        status: GeneralUserSelfTestDebugStatus.loaded,
+        clearRunningCommandIndex: true,
+        uhfSondeTxInTimePrompt: SelfTestUhfSondeTxInTimePrompt(
+          testName: cmd.testName,
+          uhfStartTime: '00:00:00',
+          uhfIntervalTime: '00:00:00',
+          sondeStartTime: '00:00:00',
+          sondeIntervalTime: '00:00:00',
+        ),
+        clearLastSnapshot: true,
+        message: '',
+        isSuccessMessage: false,
+      ),
+    );
+  }
+
+  Future<void> _onSubmitGeneralUserUhfSondeTxInTime(
+    SubmitGeneralUserUhfSondeTxInTime event,
+    Emitter<GeneralUserSelfTestDebugState> emit,
+  ) async {
+    if (_ble.connectedRemoteId == null) {
+      emit(
+        state.copyWith(
+          message:
+              'No buoy connected. Pair from Setup and connect over Bluetooth first.',
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
+
+    final n = event.fieldN;
+    if (n < 1 || n > 4) {
+      emit(
+        state.copyWith(
+          message: 'Time field N must be 1, 2, 3, or 4.',
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
+
+    final time = _normalizeTime(event.timeValue);
+    if (time == null) {
+      emit(
+        state.copyWith(
+          message: 'Time must be in HH:MM:SS format.',
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
+
+    final runningIndex = state.commands.indexWhere(
+      (c) => c.id == _uhfSondeTxInTimeCommandId,
+    );
+    final model = runningIndex >= 0 ? state.commands[runningIndex] : null;
+    final wait = runningIndex >= 0
+        ? state.commands[runningIndex].responseWaitTimeout
+        : const Duration(seconds: 60);
+
+    emit(
+      state.copyWith(
+        status: GeneralUserSelfTestDebugStatus.running,
+        runningCommandIndex: runningIndex >= 0 ? runningIndex : null,
+        message: '',
+        isSuccessMessage: false,
+      ),
+    );
+
+    try {
+      final line = await _ble.sendDrifterAsciiCommand('?99,$n,$time,#', wait);
+      final parsed = _parseUhfSondeTxInTimeResponse(line);
+      final summary = _formatUhfSondeTxInTimeBleSummary(line);
+
+      emit(
+        state.copyWith(
+          status: GeneralUserSelfTestDebugStatus.loaded,
+          clearRunningCommandIndex: true,
+          clearUhfSondeTxInTimePrompt: true,
+          message: '',
+          isSuccessMessage: false,
+          lastSnapshot: SelfTestBleResponseSnapshot(
+            testName: model?.testName ?? 'UHFSonde_TxIn_Time',
+            responseLine: line,
+            hideResponseLine: true,
+            helpText: summary,
+            descriptionSuccess: parsed != null,
+          ),
+        ),
+      );
+    } on TimeoutException catch (e) {
+      AppLogger.e('Set UHF/Sonde TxIn time timeout', error: e);
+      emit(
+        state.copyWith(
+          status: GeneralUserSelfTestDebugStatus.loaded,
+          clearRunningCommandIndex: true,
+          message: 'Timed out while updating UHF/Sonde time.',
+          isSuccessMessage: false,
+        ),
+      );
+    } catch (e, st) {
+      AppLogger.e('Set UHF/Sonde TxIn time error', error: e, stackTrace: st);
+      emit(
+        state.copyWith(
+          status: GeneralUserSelfTestDebugStatus.loaded,
+          clearRunningCommandIndex: true,
+          message: e.toString(),
+          isSuccessMessage: false,
+        ),
+      );
+    }
+  }
+
+  void _onClearGeneralUserUhfSondeTxInTimePrompt(
+    ClearGeneralUserUhfSondeTxInTimePrompt event,
+    Emitter<GeneralUserSelfTestDebugState> emit,
+  ) {
+    emit(state.copyWith(clearUhfSondeTxInTimePrompt: true));
+  }
+
   void _onClearGeneralUserSetStationIdPrompt(
     ClearGeneralUserSetStationIdPrompt event,
     Emitter<GeneralUserSelfTestDebugState> emit,
@@ -4633,6 +4787,100 @@ class GeneralUserSelfTestDebugBloc
       return null;
     }
     return '${m.group(1)}:${m.group(2)}:${m.group(3)}';
+  }
+
+  static String? _normalizeHhMmSsStatic(String value) {
+    final raw = value.trim();
+    final m = RegExp(r'^(\d{2}):(\d{2}):(\d{2})$').firstMatch(raw);
+    if (m == null) {
+      return null;
+    }
+    final hh = int.parse(m.group(1)!);
+    final mm = int.parse(m.group(2)!);
+    final ss = int.parse(m.group(3)!);
+    if (hh < 0 || hh > 23 || mm < 0 || mm > 59 || ss < 0 || ss > 59) {
+      return null;
+    }
+    return '${m.group(1)}:${m.group(2)}:${m.group(3)}';
+  }
+
+  static ({
+    String responseCode,
+    String stationId,
+    String uhfStartTime,
+    String uhfIntervalTime,
+    String sondeStartTime,
+    String sondeIntervalTime,
+  })?
+  _parseUhfSondeTxInTimeResponse(String responseLine) {
+    final cleaned = responseLine.trim();
+    if (cleaned.isEmpty) {
+      return null;
+    }
+    final noHash = cleaned.endsWith('#')
+        ? cleaned.substring(0, cleaned.length - 1)
+        : cleaned;
+    final parts = noHash.split(',').map((e) => e.trim()).toList();
+    if (parts.length < 6 || !parts[0].toUpperCase().contains(r'$99')) {
+      return null;
+    }
+    final uhfStart = _normalizeHhMmSsStatic(parts[2]);
+    final uhfInterval = _normalizeHhMmSsStatic(parts[3]);
+    final sondeStart = _normalizeHhMmSsStatic(parts[4]);
+    final sondeInterval = _normalizeHhMmSsStatic(parts[5]);
+    if (uhfStart == null ||
+        uhfInterval == null ||
+        sondeStart == null ||
+        sondeInterval == null) {
+      return null;
+    }
+    return (
+      responseCode: parts[0],
+      stationId: parts[1],
+      uhfStartTime: uhfStart,
+      uhfIntervalTime: uhfInterval,
+      sondeStartTime: sondeStart,
+      sondeIntervalTime: sondeInterval,
+    );
+  }
+
+  static String _formatUhfSondeTxInTimeBleSummary(String rawLine) {
+    final trimmed = rawLine.trim();
+    if (trimmed.isEmpty) {
+      return 'No response text was received.';
+    }
+    final parsed = _parseUhfSondeTxInTimeResponse(rawLine);
+    if (parsed == null) {
+      return 'Could not parse UHF/Sonde TxIn time response.\n\n'
+          'Raw response:\n$trimmed';
+    }
+
+    return _joinLabeledBleSummary(
+      'Device response:',
+      [
+        MapEntry('Response code', parsed.responseCode),
+        MapEntry(
+          'Station ID',
+          _displaySensorParameterFieldValue(parsed.stationId),
+        ),
+        MapEntry(
+          'UHF Transmission Start Time',
+          _displaySensorParameterFieldValue(parsed.uhfStartTime),
+        ),
+        MapEntry(
+          'UHF Transmission Interval Time',
+          _displaySensorParameterFieldValue(parsed.uhfIntervalTime),
+        ),
+        MapEntry(
+          'Sonde Transmission Start Time',
+          _displaySensorParameterFieldValue(parsed.sondeStartTime),
+        ),
+        MapEntry(
+          'Sonde Transmission Interval Time',
+          _displaySensorParameterFieldValue(parsed.sondeIntervalTime),
+        ),
+      ],
+    );
   }
 
   static ({
@@ -5522,6 +5770,7 @@ class GeneralUserSelfTestDebugBloc
         clearTransmitterFrequencyPrompt: true,
         clearSetAttenuationPrompt: true,
         clearRadioSondeTransmitterIdPrompt: true,
+        clearUhfSondeTxInTimePrompt: true,
         clearTransmitterTestPrompt: true,
         clearCheckStatusPrompt: true,
         clearParameterizedCommandPrompt: true,

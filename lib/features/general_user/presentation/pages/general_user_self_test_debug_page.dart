@@ -430,6 +430,7 @@ class _GeneralUserSelfTestDebugPageState
   bool _isTransmitterFrequencyDialogOpen = false;
   bool _isSetAttenuationDialogOpen = false;
   bool _isRadioSondeTransmitterIdDialogOpen = false;
+  bool _isUhfSondeTxInTimeDialogOpen = false;
   bool _isTransmitterTestDialogOpen = false;
   bool _isCheckStatusDialogOpen = false;
   bool _isParameterizedCommandDialogOpen = false;
@@ -1574,6 +1575,162 @@ class _GeneralUserSelfTestDebugPageState
     }
   }
 
+  String _uhfSondeTxInTimeForField(
+    SelfTestUhfSondeTxInTimePrompt prompt,
+    int fieldN,
+  ) {
+    return switch (fieldN) {
+      1 => prompt.uhfStartTime,
+      2 => prompt.uhfIntervalTime,
+      3 => prompt.sondeStartTime,
+      4 => prompt.sondeIntervalTime,
+      _ => '00:00:00',
+    };
+  }
+
+  Future<void> _showUhfSondeTxInTimeDialog(
+    BuildContext context,
+    SelfTestUhfSondeTxInTimePrompt prompt,
+  ) async {
+    if (_isUhfSondeTxInTimeDialogOpen) {
+      return;
+    }
+    _isUhfSondeTxInTimeDialogOpen = true;
+    var draftN = 1;
+    var draftTime = _uhfSondeTxInTimeForField(prompt, draftN);
+    final formKey = GlobalKey<FormState>();
+
+    try {
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) {
+          return StatefulBuilder(
+            builder: (ctx, setLocalState) {
+              return AlertDialog(
+                title: Text(prompt.testName),
+                content: SingleChildScrollView(
+                  child: Form(
+                    key: formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (prompt.prefetchWarning != null) ...[
+                          Text(
+                            prompt.prefetchWarning!,
+                            style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                              color: const Color(0xFFB3261E),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                        Text(
+                          'N = 1 UHF start, 2 UHF interval, 3 Sonde start, 4 Sonde interval.',
+                          style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                            color: const Color(0xFF6A7178),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        DropdownButtonFormField<int>(
+                          initialValue: draftN,
+                          items: const [
+                            DropdownMenuItem(
+                              value: 1,
+                              child: Text('1 — UHF Transmission Start Time'),
+                            ),
+                            DropdownMenuItem(
+                              value: 2,
+                              child: Text('2 — UHF Interval Time'),
+                            ),
+                            DropdownMenuItem(
+                              value: 3,
+                              child: Text('3 — Sonde Transmission Start Time'),
+                            ),
+                            DropdownMenuItem(
+                              value: 4,
+                              child: Text('4 — Sonde Interval Time'),
+                            ),
+                          ],
+                          onChanged: (v) {
+                            setLocalState(() {
+                              draftN = v ?? 1;
+                              draftTime = _uhfSondeTxInTimeForField(
+                                prompt,
+                                draftN,
+                              );
+                            });
+                          },
+                          decoration: const InputDecoration(
+                            labelText: 'Field (N)',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          key: ValueKey<int>(draftN),
+                          initialValue: draftTime,
+                          keyboardType: TextInputType.datetime,
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
+                          validator: (v) =>
+                              _validateSelfTestHhMmSs('Time', v),
+                          onChanged: (v) => draftTime = v,
+                          decoration: const InputDecoration(
+                            labelText: 'Time (HH:MM:SS)',
+                            hintText: '00:00:00',
+                            helperText: '24-hour format',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      FocusScope.of(ctx).unfocus();
+                      Navigator.of(ctx).pop();
+                    },
+                    child: const Text('Cancel'),
+                  ),
+                  FilledButton(
+                    onPressed: () {
+                      FocusScope.of(ctx).unfocus();
+                      if (!(formKey.currentState?.validate() ?? false)) {
+                        return;
+                      }
+                      final bloc = context.read<GeneralUserSelfTestDebugBloc>();
+                      final fieldN = draftN;
+                      final time = draftTime.trim();
+                      Navigator.of(ctx).pop();
+                      _runAfterDialogRouteClosed(() {
+                        bloc.add(
+                          SubmitGeneralUserUhfSondeTxInTime(
+                            fieldN: fieldN,
+                            timeValue: time,
+                          ),
+                        );
+                      });
+                    },
+                    child: const Text('Update'),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+      if (context.mounted) {
+        context.read<GeneralUserSelfTestDebugBloc>().add(
+          const ClearGeneralUserUhfSondeTxInTimePrompt(),
+        );
+      }
+    } finally {
+      _isUhfSondeTxInTimeDialogOpen = false;
+    }
+  }
+
   Future<void> _showTransmitterTestDialog(
     BuildContext context,
     SelfTestTransmitterTestPrompt prompt,
@@ -2340,6 +2497,21 @@ class _GeneralUserSelfTestDebugPageState
                       context,
                       prompt.currentTransmitterId,
                     );
+                  },
+                ),
+                BlocListener<
+                  GeneralUserSelfTestDebugBloc,
+                  GeneralUserSelfTestDebugState
+                >(
+                  listenWhen: (p, c) =>
+                      c.uhfSondeTxInTimePrompt != null &&
+                      c.uhfSondeTxInTimePrompt != p.uhfSondeTxInTimePrompt,
+                  listener: (context, state) {
+                    final prompt = state.uhfSondeTxInTimePrompt;
+                    if (prompt == null || _isUhfSondeTxInTimeDialogOpen) {
+                      return;
+                    }
+                    _showUhfSondeTxInTimeDialog(context, prompt);
                   },
                 ),
                 BlocListener<

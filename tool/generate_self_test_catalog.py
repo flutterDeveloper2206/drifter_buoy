@@ -24,6 +24,7 @@ _VAR_OVERRIDES_BY_MONGO_ID: dict[str, str] = {
     "6a04547227be228113206989": "_transmitterFrequencyCommandId",
     "6a04547227be22811320698a": "_setAttenuationCommandId",
     "6a04547227be22811320698b": "_radioSondeTransmitterIdCommandId",
+    "6a2d222437aa7731734f8d9f": "_uhfSondeTxInTimeCommandId",
     "6a04547227be228113206957": "_primaryServerFtpAddressCommandId",
     "6a04547227be228113206958": "_primaryServerFtpPortCommandId",
     "6a04547227be228113206959": "_primaryServerFtpPathCommandId",
