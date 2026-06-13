@@ -2,9 +2,9 @@ import 'package:equatable/equatable.dart';
 
 enum GeneralUserBuoysStatus { initial, loading, loaded, error }
 
-enum GeneralUserBuoyFilter { all, active, offline, batteryLow }
+enum GeneralUserBuoyFilter { all, online, offline, batteryLow }
 
-enum GeneralUserBuoyConnectionStatus { active, offline, batteryLow }
+enum GeneralUserBuoyConnectionStatus { online, offline, batteryLow }
 
 class GeneralUserBuoyItem extends Equatable {
   final String id;

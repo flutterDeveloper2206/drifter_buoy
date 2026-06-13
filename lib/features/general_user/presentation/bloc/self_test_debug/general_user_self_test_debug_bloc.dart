@@ -338,7 +338,7 @@ class GeneralUserSelfTestDebugBloc
 
   /// Manual RTC Update (`?95,,#`) — RTC/GPS sync can take several minutes.
   static const Duration _manualRtcUpdateResponseTimeout = Duration(minutes: 5);
-  static const String _getSensorParameterCommandId = '6a04547227be228113206994';
+  static const String _getSensorParameterCommandId = '6a04547227be228113206992';
   static const String _getSensorParameter83CommandId =
       '6a04547227be228113206994';
   static const String _batteryVoltageCommandId = '6a04547227be228113206995';
@@ -443,33 +443,22 @@ class GeneralUserSelfTestDebugBloc
 
   static const String _fetchStationIdCommand = '?04,,#';
 
-  /// Catalog choices for `?10` measurement interval field (HH:MM:SS).
-  static const List<String> _allowedMeasurementIntervalHms = [
-    '00:01:00',
-    '00:05:00',
-    '00:10:00',
-    '00:15:00',
-    '00:20:00',
-    '00:30:00',
-    '01:00:00',
-  ];
-
-  /// BLE request for `?65,N,S,FFFF,#`. When **S = 0** (get), FFFF must be empty:
-  /// `?65,N,0,,#`. When **S = 1** (set), send four digit MHz fragment, e.g.
-  /// `?65,0,1,4025,#`.
+  /// BLE request for `?65,N,S,FFFFFFFFF,#`. When **S = 0** (get), frequency empty:
+  /// `?65,N,0,,#`. When **S = 1** (set), send nine digit value, e.g.
+  /// `?65,0,1,000402500,#`.
   static String _transmitterFrequencyRequestCommand({
     required int n,
     required int s,
-    String? ffffFourDigits,
+    String? frequencyNineDigits,
   }) {
     if (s == 0) {
       return '?65,$n,0,,#';
     }
-    return '?65,$n,1,${ffffFourDigits ?? ''},#';
+    return '?65,$n,1,${frequencyNineDigits ?? ''},#';
   }
 
   /// BLE request for `?67,S,xxxxx,#`. When **S = 0** (get), omit xxxxx:
-  /// `?67,0,,#`. When **S = 1** (set), send the 5-character id: `?67,1,ABCDE,#`.
+  /// `?67,0,,#`. When **S = 1** (set), send the 3-character id: `?67,1,ABC,#`.
   static String _radioSondeTransmitterIdRequestCommand({
     required int s,
     String? fiveCharId,
@@ -683,7 +672,7 @@ class GeneralUserSelfTestDebugBloc
       requestCommand: '?14,N,xxx...,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
-          'Where N represents the HTTP server number.(Max 128 characters) Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 128 char. Space char will not be part of address',
+          'N = HTTP field: 1 = URL, 2 = key, 3 = data. (Max 128 characters) Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 128 char. Space char will not be part of address',
       response: r'$14,all primary server settings#',
       responseDescription:
           'IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters',
@@ -777,7 +766,7 @@ class GeneralUserSelfTestDebugBloc
       requestCommand: '?22,N,xxx..,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
-          'N -represents server number from 0 to 3. (Max 128 characters) Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 128 char. Space char will not be part of address',
+          'N = HTTP field: 1 = URL, 2 = key, 3 = data. (Max 128 characters) Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 128 char. Space char will not be part of address',
       response: r'$22,all primary server settings#',
       responseDescription:
           'IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters',
@@ -872,7 +861,7 @@ class GeneralUserSelfTestDebugBloc
       requestCommand: '?30,N,xxx..,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
-          'N -represents server number from 0 to 3. (Max 128 characters) Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 40 char. Space char will not be part of address',
+          'N = HTTP field: 1 = URL, 2 = key, 3 = data. (Max 128 characters) Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 40 char. Space char will not be part of address',
       response: r'$30,all secondary server settings#',
       responseDescription:
           'IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters',
@@ -966,7 +955,7 @@ class GeneralUserSelfTestDebugBloc
       requestCommand: '?38,N,xxx..,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
-          'N -represents server number from 0 to 3. (Max 128 characters) Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 128 char. Space char will not be part of address',
+          'N = HTTP field: 1 = URL, 2 = key, 3 = data. (Max 128 characters) Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 128 char. Space char will not be part of address',
       response: r'$38,all factory server settings#',
       responseDescription:
           'IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters',
@@ -1248,13 +1237,18 @@ class GeneralUserSelfTestDebugBloc
     DrifterBuoyCommandModel(
       id: _transmitterFrequencyCommandId,
       testName: 'Set/Get transmitter frequency',
-      requestCommand: '?65,N,S,FFFF,#',
+      requestCommand: '?65,N,S,FFFFFFFFF,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
-          'S = 0 – to get ,1- set if S =0 no need to send FFFF. N= 0 for UHF, 1 for Radio Sonde. Freq from 402.0000 to 403.0000Mhz.FFFF - value of Frequency',
-      response: r'$65,station id ,N,S,FFFF,#',
+          'S = 0 – to get ,1- set if S =0 no need to send FFFFFFFFF. '
+          'N= 0 for UHF, 1 for Radio Sonde. Freq from 402.0000 to 403.0000Mhz. '
+          'FFFFFFFFF - value of Frequency',
+      response: r'$65,station id ,N,S,FFFFFFFFF,#',
       responseDescription:
-          'If S = 0, then only consider valid FFFF value. Value of S below: 0 - frequency set successful,1 - Checksum error,2 - frequency not set,3 -transmitter communication problem or not connected 4 - get successful,N= 0 for UHF, 1 for Radio Sonde FFFF - value of Frequency',
+          'S: 0 - frequency set successful, 1 - Checksum error, '
+          '2 - frequency not set, 3 - transmitter communication problem or not connected, '
+          '4 - get successful. N= 0 for UHF, 1 for Radio Sonde. '
+          'FFFFFFFFF - value of Frequency',
       isActive: true,
     ),
     DrifterBuoyCommandModel(
@@ -1275,10 +1269,10 @@ class GeneralUserSelfTestDebugBloc
       requestCommand: '?67,S,xxxxx,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
-          'S = 0 – get, 1- set in case of S =0 no need to send xxxxx xxxxx = station id of sonde transmitter (5 char)',
+          'S = 0 – get, 1- set in case of S =0 no need to send xxxxx xxxxx = station id of sonde transmitter (3 char)',
       response: r'$67,station id,S,xxxx,#',
       responseDescription:
-          'S = 0 – get, 1- set xxxxx = station id of sonde transmitter (5 char)',
+          'S = 0 — success, 1 — failure. xxxxx = station id of sonde transmitter (3 char)',
       isActive: true,
     ),
     DrifterBuoyCommandModel(
@@ -1360,7 +1354,9 @@ class GeneralUserSelfTestDebugBloc
       requestCommandDescription: 'NA',
       response: r'$81,List of all sensor parameters,#',
       responseDescription:
-          'Sensor no, F.G, factory off, senG, S.off, Resolution, sen Min, sens Max, Averag Scheme, vactor, start time, interval, total sample, mode, Tx.G, Tx.O',
+          'Sensor no, Channel no, F.G, factory off, senG, S.off, Resolution, '
+          'sen Min, sens Max, Averag Scheme, vactor, start time, interval, '
+          'total sample, mode, Tx.G, Tx.O',
       isActive: true,
     ),
     DrifterBuoyCommandModel(
@@ -1395,7 +1391,7 @@ class GeneralUserSelfTestDebugBloc
           'Set one sensor parameter. Send ?86,SensorNo,ParaNo,Value,#. '
           'Para 1–16 (sheet 1): F.G, Factory off, senG, S.off, Resolution, Sen Min, '
           'Sens Max, Averag Scheme, Vactor, Start time, Interval, Total sample, Mode, '
-          'Tx.G, Tx.O. Para 1–23 (sheet 2): unit, BaudRate, ReqLen, … (GET ?83 fields). '
+          'Tx.G, Tx.O. Para 00–34 (sheet 2): unit, BaudRate, ReqLen, … (GET ?83 fields). '
           'Examples: ?86,01,1,+00001.00000,# or ?86,01,2,+00000.00000,#',
       response:
           r'$86,…# (read-back in GET ?81 or GET ?83 format depending on parameter sheet)',
@@ -1735,7 +1731,7 @@ class GeneralUserSelfTestDebugBloc
       return;
     }
     if (cmd.requestCommand.trim().startsWith('?61,')) {
-      await _onOpenMeasurementStartTimePrompt(cmd, index, emit);
+      _onOpenMeasurementStartTimePrompt(cmd, emit);
       return;
     }
     if (cmd.requestCommand.trim().startsWith('?09,')) {
@@ -2235,6 +2231,7 @@ class GeneralUserSelfTestDebugBloc
     final wait = runningIndex >= 0
         ? state.commands[runningIndex].responseWaitTimeout
         : const Duration(seconds: 60);
+    final model = runningIndex >= 0 ? state.commands[runningIndex] : null;
 
     emit(
       state.copyWith(
@@ -2281,8 +2278,18 @@ class GeneralUserSelfTestDebugBloc
           status: GeneralUserSelfTestDebugStatus.loaded,
           clearRunningCommandIndex: true,
           clearStationIdPrompt: true,
-          message: 'Station id updated successfully.',
-          isSuccessMessage: true,
+          message: '',
+          isSuccessMessage: false,
+          lastSnapshot: SelfTestBleResponseSnapshot(
+            testName: model?.testName ?? 'Set Station Id',
+            responseLine: line,
+            hideResponseLine: true,
+            helpText: _formatGeneralSystemParametersBleSummary(
+              line,
+              heading: 'Station id updated:',
+            ),
+            descriptionSuccess: true,
+          ),
         ),
       );
     } on TimeoutException catch (e) {
@@ -2543,12 +2550,12 @@ class GeneralUserSelfTestDebugBloc
       }
       if (parsedMi == null) {
         prefetchWarning =
-            'Could not parse measurement interval from device response. Choose a value from the catalog list.';
+            'Could not parse measurement interval from device response. Enter HH:MM:SS manually.';
       }
     } on TimeoutException catch (e) {
       AppLogger.e('Prefetch measurement interval timeout', error: e);
       prefetchWarning =
-          'Timed out reading parameters (?04). Choose measurement interval from the list.';
+          'Timed out reading parameters (?04). Enter measurement interval as HH:MM:SS.';
     } catch (e, st) {
       AppLogger.e(
         'Prefetch measurement interval error',
@@ -2556,7 +2563,7 @@ class GeneralUserSelfTestDebugBloc
         stackTrace: st,
       );
       prefetchWarning =
-          'Could not read current parameters. Choose measurement interval from the catalog list.';
+          'Could not read current parameters. Enter measurement interval as HH:MM:SS.';
     }
 
     emit(
@@ -2566,9 +2573,6 @@ class GeneralUserSelfTestDebugBloc
         measurementIntervalPrompt: SelfTestMeasurementIntervalPrompt(
           testName: cmd.testName,
           currentMeasurementInterval: initialMi,
-          allowedMeasurementIntervals: List<String>.from(
-            _allowedMeasurementIntervalHms,
-          ),
           prefetchWarning: prefetchWarning,
           catalogHelpText: cmd.requestCommandDescription,
         ),
@@ -2639,77 +2643,22 @@ class GeneralUserSelfTestDebugBloc
     );
   }
 
-  Future<void> _onOpenMeasurementStartTimePrompt(
+  void _onOpenMeasurementStartTimePrompt(
     DrifterBuoyCommandModel cmd,
-    int index,
     Emitter<GeneralUserSelfTestDebugState> emit,
-  ) async {
+  ) {
     emit(
       state.copyWith(
-        status: GeneralUserSelfTestDebugStatus.running,
-        runningCommandIndex: index,
+        status: GeneralUserSelfTestDebugStatus.loaded,
+        clearRunningCommandIndex: true,
+        measurementTimePrompt: SelfTestMeasurementTimePrompt(
+          testName: cmd.testName,
+        ),
+        clearLastSnapshot: true,
         message: '',
         isSuccessMessage: false,
-        clearLastSnapshot: true,
       ),
     );
-
-    try {
-      final line = await _ble.sendDrifterAsciiCommand(
-        _fetchStationIdCommand,
-        cmd.responseWaitTimeout,
-      );
-      final currentTime = _extractMeasurementStartTime(line);
-      if (currentTime == null) {
-        emit(
-          state.copyWith(
-            status: GeneralUserSelfTestDebugStatus.loaded,
-            clearRunningCommandIndex: true,
-            message:
-                'Could not parse measurement start time from device response.',
-            isSuccessMessage: false,
-          ),
-        );
-        return;
-      }
-
-      emit(
-        state.copyWith(
-          status: GeneralUserSelfTestDebugStatus.loaded,
-          clearRunningCommandIndex: true,
-          measurementTimePrompt: SelfTestMeasurementTimePrompt(
-            currentTime: currentTime,
-          ),
-          clearLastSnapshot: true,
-          message: '',
-          isSuccessMessage: false,
-        ),
-      );
-    } on TimeoutException catch (e) {
-      AppLogger.e('Fetch measurement start time timeout', error: e);
-      emit(
-        state.copyWith(
-          status: GeneralUserSelfTestDebugStatus.loaded,
-          clearRunningCommandIndex: true,
-          message: 'Timed out while reading measurement start time.',
-          isSuccessMessage: false,
-        ),
-      );
-    } catch (e, st) {
-      AppLogger.e(
-        'Fetch measurement start time error',
-        error: e,
-        stackTrace: st,
-      );
-      emit(
-        state.copyWith(
-          status: GeneralUserSelfTestDebugStatus.loaded,
-          clearRunningCommandIndex: true,
-          message: e.toString(),
-          isSuccessMessage: false,
-        ),
-      );
-    }
   }
 
   Future<void> _onSubmitGeneralUserMeasurementStartTime(
@@ -2744,6 +2693,7 @@ class GeneralUserSelfTestDebugBloc
     final wait = runningIndex >= 0
         ? state.commands[runningIndex].responseWaitTimeout
         : const Duration(seconds: 60);
+    final model = runningIndex >= 0 ? state.commands[runningIndex] : null;
 
     emit(
       state.copyWith(
@@ -2787,8 +2737,18 @@ class GeneralUserSelfTestDebugBloc
           status: GeneralUserSelfTestDebugStatus.loaded,
           clearRunningCommandIndex: true,
           clearMeasurementTimePrompt: true,
-          message: 'Measurement start time updated successfully.',
-          isSuccessMessage: true,
+          message: '',
+          isSuccessMessage: false,
+          lastSnapshot: SelfTestBleResponseSnapshot(
+            testName: model?.testName ?? 'Measurement Start Time',
+            responseLine: line,
+            hideResponseLine: true,
+            helpText: _formatGeneralSystemParametersBleSummary(
+              line,
+              heading: 'Measurement start time updated:',
+            ),
+            descriptionSuccess: true,
+          ),
         ),
       );
     } on TimeoutException catch (e) {
@@ -2846,6 +2806,7 @@ class GeneralUserSelfTestDebugBloc
     final wait = runningIndex >= 0
         ? state.commands[runningIndex].responseWaitTimeout
         : const Duration(seconds: 60);
+    final model = runningIndex >= 0 ? state.commands[runningIndex] : null;
 
     emit(
       state.copyWith(
@@ -2889,8 +2850,15 @@ class GeneralUserSelfTestDebugBloc
           status: GeneralUserSelfTestDebugStatus.loaded,
           clearRunningCommandIndex: true,
           clearTransmissionTimePrompt: true,
-          message: 'Transmission time updated successfully.',
-          isSuccessMessage: true,
+          message: '',
+          isSuccessMessage: false,
+          lastSnapshot: SelfTestBleResponseSnapshot(
+            testName: model?.testName ?? 'Set Transmission Time',
+            responseLine: line,
+            hideResponseLine: true,
+            helpText: _formatSetTransmissionTimeBleSummary(line),
+            descriptionSuccess: true,
+          ),
         ),
       );
     } on TimeoutException catch (e) {
@@ -3058,11 +3026,10 @@ class GeneralUserSelfTestDebugBloc
     }
 
     final mi = _normalizeTime(event.measurementInterval.trim());
-    if (mi == null || !_allowedMeasurementIntervalHms.contains(mi)) {
+    if (mi == null) {
       emit(
         state.copyWith(
-          message:
-              'Measurement interval must be one of the catalog HH:MM:SS values.',
+          message: 'Measurement interval must be HH:MM:SS format.',
           isSuccessMessage: false,
         ),
       );
@@ -3401,13 +3368,15 @@ class GeneralUserSelfTestDebugBloc
         _transmitterFrequencyRequestCommand(n: 0, s: 0),
         cmd.responseWaitTimeout,
       );
-      final parsed = _extractTransmitterFrequency(line);
-      if (parsed == null) {
+      final parsed = _parseTransmitterFrequencyResponse(line);
+      if (parsed == null || parsed.s != '4') {
         emit(
           state.copyWith(
             status: GeneralUserSelfTestDebugStatus.loaded,
             clearRunningCommandIndex: true,
-            message: 'Could not parse transmitter frequency response.',
+            message: parsed == null
+                ? 'Could not parse transmitter frequency response.'
+                : 'Device reported get failure (S=${parsed.s}).',
             isSuccessMessage: false,
           ),
         );
@@ -3418,8 +3387,8 @@ class GeneralUserSelfTestDebugBloc
           status: GeneralUserSelfTestDebugStatus.loaded,
           clearRunningCommandIndex: true,
           transmitterFrequencyPrompt: SelfTestTransmitterFrequencyPrompt(
-            transmitterType: parsed.$1,
-            frequencyValue: parsed.$2,
+            transmitterType: parsed.n,
+            frequencyValue: parsed.frequency,
           ),
           clearLastSnapshot: true,
           message: '',
@@ -3469,11 +3438,11 @@ class GeneralUserSelfTestDebugBloc
     }
 
     final n = event.transmitterType == 1 ? 1 : 0;
-    final ffff = _normalizeFfff(event.frequencyValue);
-    if (ffff == null) {
+    final frequency = _normalizeTransmitterFrequencyDigits(event.frequencyValue);
+    if (frequency == null) {
       emit(
         state.copyWith(
-          message: 'Frequency must be a 4-digit value.',
+          message: 'Frequency must be 1 to 9 digits.',
           isSuccessMessage: false,
         ),
       );
@@ -3483,6 +3452,7 @@ class GeneralUserSelfTestDebugBloc
     final runningIndex = state.commands.indexWhere(
       (c) => c.id == _transmitterFrequencyCommandId,
     );
+    final model = runningIndex >= 0 ? state.commands[runningIndex] : null;
     final wait = runningIndex >= 0
         ? state.commands[runningIndex].responseWaitTimeout
         : const Duration(seconds: 60);
@@ -3498,56 +3468,35 @@ class GeneralUserSelfTestDebugBloc
 
     try {
       final line = await _ble.sendDrifterAsciiCommand(
-        _transmitterFrequencyRequestCommand(n: n, s: 1, ffffFourDigits: ffff),
+        _transmitterFrequencyRequestCommand(
+          n: n,
+          s: 1,
+          frequencyNineDigits: frequency,
+        ),
         wait,
       );
-      final parsed = _extractTransmitterFrequency(line);
-      if (parsed == null) {
-        emit(
-          state.copyWith(
-            status: GeneralUserSelfTestDebugStatus.loaded,
-            clearRunningCommandIndex: true,
-            message: 'Could not verify updated transmitter frequency.',
-            isSuccessMessage: false,
-          ),
-        );
-        return;
-      }
-
-      final statusCode = parsed.$3;
-      final updatedN = parsed.$1;
-      final updatedFfff = parsed.$2;
-      if (statusCode != 0) {
-        emit(
-          state.copyWith(
-            status: GeneralUserSelfTestDebugStatus.loaded,
-            clearRunningCommandIndex: true,
-            message: 'Frequency update failed. Device status code: $statusCode',
-            isSuccessMessage: false,
-          ),
-        );
-        return;
-      }
-      if (updatedN != n || updatedFfff != ffff) {
-        emit(
-          state.copyWith(
-            status: GeneralUserSelfTestDebugStatus.loaded,
-            clearRunningCommandIndex: true,
-            message:
-                'Frequency update mismatch. Device returned N=$updatedN FFFF=$updatedFfff',
-            isSuccessMessage: false,
-          ),
-        );
-        return;
-      }
+      final parsed = _parseTransmitterFrequencyResponse(line);
+      final summary = _formatTransmitterFrequencyBleSummary(line);
+      final isSuccess = parsed == null
+          ? null
+          : _isTransmitterFrequencyErrorFrequency(parsed.frequency)
+          ? null
+          : true;
 
       emit(
         state.copyWith(
           status: GeneralUserSelfTestDebugStatus.loaded,
           clearRunningCommandIndex: true,
           clearTransmitterFrequencyPrompt: true,
-          message: 'Transmitter frequency updated successfully.',
-          isSuccessMessage: true,
+          message: '',
+          isSuccessMessage: false,
+          lastSnapshot: SelfTestBleResponseSnapshot(
+            testName: model?.testName ?? 'Set/Get transmitter frequency',
+            responseLine: line,
+            hideResponseLine: true,
+            helpText: summary,
+            descriptionSuccess: isSuccess,
+          ),
         ),
       );
     } on TimeoutException catch (e) {
@@ -3671,6 +3620,7 @@ class GeneralUserSelfTestDebugBloc
     final runningIndex = state.commands.indexWhere(
       (c) => c.id == _setAttenuationCommandId,
     );
+    final model = runningIndex >= 0 ? state.commands[runningIndex] : null;
     final wait = runningIndex >= 0
         ? state.commands[runningIndex].responseWaitTimeout
         : const Duration(seconds: 60);
@@ -3686,53 +3636,28 @@ class GeneralUserSelfTestDebugBloc
 
     try {
       final line = await _ble.sendDrifterAsciiCommand('?66,$n,1,$xx,#', wait);
-      final parsed = _extractSetAttenuation(line);
-      if (parsed == null) {
-        emit(
-          state.copyWith(
-            status: GeneralUserSelfTestDebugStatus.loaded,
-            clearRunningCommandIndex: true,
-            message: 'Could not verify updated attenuation.',
-            isSuccessMessage: false,
-          ),
-        );
-        return;
-      }
-
-      final updatedN = parsed.$1;
-      final statusCode = parsed.$3;
-      final updatedXx = parsed.$2;
-      if (statusCode != 0 && statusCode != 1) {
-        emit(
-          state.copyWith(
-            status: GeneralUserSelfTestDebugStatus.loaded,
-            clearRunningCommandIndex: true,
-            message: 'Set attenuation failed. Device status code: $statusCode',
-            isSuccessMessage: false,
-          ),
-        );
-        return;
-      }
-      if (updatedN != n || updatedXx != xx) {
-        emit(
-          state.copyWith(
-            status: GeneralUserSelfTestDebugStatus.loaded,
-            clearRunningCommandIndex: true,
-            message:
-                'Attenuation update mismatch. Device returned N=$updatedN xx=$updatedXx',
-            isSuccessMessage: false,
-          ),
-        );
-        return;
-      }
+      final parsed = _parseSetAttenuationResponse(line);
+      final summary = _formatSetAttenuationBleSummary(line);
+      final isSuccess = parsed == null
+          ? null
+          : _isSetAttenuationErrorXx(parsed.xx)
+          ? null
+          : true;
 
       emit(
         state.copyWith(
           status: GeneralUserSelfTestDebugStatus.loaded,
           clearRunningCommandIndex: true,
           clearSetAttenuationPrompt: true,
-          message: 'Set attenuation updated successfully.',
-          isSuccessMessage: true,
+          message: '',
+          isSuccessMessage: false,
+          lastSnapshot: SelfTestBleResponseSnapshot(
+            testName: model?.testName ?? 'Set Attenuation',
+            responseLine: line,
+            hideResponseLine: true,
+            helpText: summary,
+            descriptionSuccess: isSuccess,
+          ),
         ),
       );
     } on TimeoutException catch (e) {
@@ -3778,6 +3703,31 @@ class GeneralUserSelfTestDebugBloc
         _radioSondeTransmitterIdRequestCommand(s: 0),
         cmd.responseWaitTimeout,
       );
+      final parsed = _parseRadioSondeTransmitterIdResponse(line);
+      if (parsed == null) {
+        emit(
+          state.copyWith(
+            status: GeneralUserSelfTestDebugStatus.loaded,
+            clearRunningCommandIndex: true,
+            message:
+                'Could not parse radio sonde transmitter id from device response.',
+            isSuccessMessage: false,
+          ),
+        );
+        return;
+      }
+      if (parsed.s != '0') {
+        emit(
+          state.copyWith(
+            status: GeneralUserSelfTestDebugStatus.loaded,
+            clearRunningCommandIndex: true,
+            message:
+                'Device reported failure while reading radio sonde transmitter id (S=${parsed.s}).',
+            isSuccessMessage: false,
+          ),
+        );
+        return;
+      }
       final id = _extractRadioSondeTransmitterId(line);
       if (id == null) {
         emit(
@@ -3847,10 +3797,10 @@ class GeneralUserSelfTestDebugBloc
     }
 
     final nextId = event.transmitterId.trim().toUpperCase();
-    if (nextId.length != 5) {
+    if (nextId.length != 3) {
       emit(
         state.copyWith(
-          message: 'Radio sonde transmitter id must be exactly 5 characters.',
+          message: 'Radio sonde transmitter id must be exactly 3 characters.',
           isSuccessMessage: false,
         ),
       );
@@ -3863,6 +3813,7 @@ class GeneralUserSelfTestDebugBloc
     final wait = runningIndex >= 0
         ? state.commands[runningIndex].responseWaitTimeout
         : const Duration(seconds: 60);
+    final model = runningIndex >= 0 ? state.commands[runningIndex] : null;
 
     emit(
       state.copyWith(
@@ -3878,39 +3829,24 @@ class GeneralUserSelfTestDebugBloc
         _radioSondeTransmitterIdRequestCommand(s: 1, fiveCharId: nextId),
         wait,
       );
-      final updatedId = _extractRadioSondeTransmitterId(line);
-      if (updatedId == null) {
-        emit(
-          state.copyWith(
-            status: GeneralUserSelfTestDebugStatus.loaded,
-            clearRunningCommandIndex: true,
-            message: 'Could not verify updated radio sonde transmitter id.',
-            isSuccessMessage: false,
-          ),
-        );
-        return;
-      }
-
-      if (updatedId.toUpperCase() != nextId) {
-        emit(
-          state.copyWith(
-            status: GeneralUserSelfTestDebugStatus.loaded,
-            clearRunningCommandIndex: true,
-            message:
-                'Update failed. Device returned radio sonde transmitter id: $updatedId',
-            isSuccessMessage: false,
-          ),
-        );
-        return;
-      }
+      final parsed = _parseRadioSondeTransmitterIdResponse(line);
+      final summary = _formatRadioSondeTransmitterIdBleSummary(line);
 
       emit(
         state.copyWith(
           status: GeneralUserSelfTestDebugStatus.loaded,
           clearRunningCommandIndex: true,
           clearRadioSondeTransmitterIdPrompt: true,
-          message: 'Radio sonde transmitter id updated successfully.',
-          isSuccessMessage: true,
+          message: '',
+          isSuccessMessage: false,
+          lastSnapshot: SelfTestBleResponseSnapshot(
+            testName:
+                model?.testName ?? 'Get station ID of Radio sonde Transmitter',
+            responseLine: line,
+            hideResponseLine: true,
+            helpText: summary,
+            descriptionSuccess: parsed != null && parsed.s == '0',
+          ),
         ),
       );
     } on TimeoutException catch (e) {
@@ -4699,51 +4635,206 @@ class GeneralUserSelfTestDebugBloc
     return '${m.group(1)}:${m.group(2)}:${m.group(3)}';
   }
 
-  (int, String, int)? _extractTransmitterFrequency(String responseLine) {
+  static ({
+    String responseCode,
+    String stationId,
+    int n,
+    String s,
+    String frequency,
+  })?
+  _parseTransmitterFrequencyResponse(String responseLine) {
     final cleaned = responseLine.trim();
     if (cleaned.isEmpty) {
       return null;
     }
-    final parts = cleaned.split(',').map((e) => e.trim()).toList();
-    if (parts.length < 5) {
+    final noHash = cleaned.endsWith('#')
+        ? cleaned.substring(0, cleaned.length - 1)
+        : cleaned;
+    final parts = noHash.split(',').map((e) => e.trim()).toList();
+    if (parts.length < 5 || !parts[0].toUpperCase().contains(r'$65')) {
       return null;
     }
     final n = int.tryParse(parts[2]);
-    final statusCode = int.tryParse(parts[3]);
-    final ffff = _normalizeFfff(parts[4]);
-    if (n == null || statusCode == null || ffff == null) {
+    final frequency = _parseTransmitterFrequencyField(parts[4]);
+    if (n == null || frequency == null) {
       return null;
     }
-    return (n, ffff, statusCode);
+    return (
+      responseCode: parts[0],
+      stationId: parts[1],
+      n: n,
+      s: parts[3],
+      frequency: frequency,
+    );
   }
 
-  String? _normalizeFfff(String value) {
+  /// Response popup for `$65,station id,N,S,FFFFFFFFF,#` after set.
+  static String _formatTransmitterFrequencyBleSummary(String rawLine) {
+    final trimmed = rawLine.trim();
+    if (trimmed.isEmpty) {
+      return 'No response text was received.';
+    }
+    final parsed = _parseTransmitterFrequencyResponse(rawLine);
+    if (parsed == null) {
+      return 'Could not parse transmitter frequency response.\n\n'
+          'Raw response:\n$trimmed';
+    }
+
+    final nLabel = switch (parsed.n) {
+      0 => '0 — UHF',
+      1 => '1 — Radio Sonde',
+      _ => '${parsed.n}',
+    };
+    final sLabel = switch (parsed.s) {
+      '0' => '0 — Frequency set successful',
+      '1' => '1 — Checksum error',
+      '2' => '2 — Frequency not set',
+      '3' => '3 — Transmitter communication problem or not connected',
+      '4' => '4 — Get successful',
+      _ => parsed.s,
+    };
+    final frequencyLabel = _isTransmitterFrequencyErrorFrequency(parsed.frequency)
+        ? 'FFFFFFFFF — Error'
+        : _displaySensorParameterFieldValue(parsed.frequency);
+
+    return _joinLabeledBleSummary(
+      'Device response:',
+      [
+        MapEntry('Response code', parsed.responseCode),
+        MapEntry(
+          'Station ID',
+          _displaySensorParameterFieldValue(parsed.stationId),
+        ),
+        MapEntry('N', nLabel),
+        MapEntry('S', sLabel),
+        MapEntry('Frequency', frequencyLabel),
+      ],
+    );
+  }
+
+  static String? _parseTransmitterFrequencyField(String raw) {
+    final upper = raw.trim().toUpperCase();
+    if (upper == 'FFFFFFFFF') {
+      return 'FFFFFFFFF';
+    }
+    return _normalizeTransmitterFrequencyDigitsStatic(raw);
+  }
+
+  static bool _isTransmitterFrequencyErrorFrequency(String frequency) =>
+      frequency.trim().toUpperCase() == 'FFFFFFFFF';
+
+  String? _normalizeTransmitterFrequencyDigits(String value) =>
+      _parseTransmitterFrequencyField(value);
+
+  static String? _normalizeTransmitterFrequencyDigitsStatic(String value) {
     final onlyDigits = value.trim().replaceAll(RegExp(r'[^0-9]'), '');
-    if (onlyDigits.length != 4) {
+    if (onlyDigits.isEmpty || onlyDigits.length > 9) {
       return null;
     }
-    return onlyDigits;
+    return onlyDigits.padLeft(9, '0');
   }
 
   (int, String, int)? _extractSetAttenuation(String responseLine) {
+    final parsed = _parseSetAttenuationResponse(responseLine);
+    if (parsed == null) {
+      return null;
+    }
+    final statusCode = int.tryParse(parsed.s);
+    if (statusCode == null) {
+      return null;
+    }
+    return (parsed.n, parsed.xx, statusCode);
+  }
+
+  static ({
+    String responseCode,
+    String stationId,
+    int n,
+    String s,
+    String xx,
+  })?
+  _parseSetAttenuationResponse(String responseLine) {
     final cleaned = responseLine.trim();
     if (cleaned.isEmpty) {
       return null;
     }
-    final parts = cleaned.split(',').map((e) => e.trim()).toList();
-    if (parts.length < 5) {
+    final noHash = cleaned.endsWith('#')
+        ? cleaned.substring(0, cleaned.length - 1)
+        : cleaned;
+    final parts = noHash.split(',').map((e) => e.trim()).toList();
+    if (parts.length < 5 || !parts[0].toUpperCase().contains(r'$66')) {
       return null;
     }
     final n = int.tryParse(parts[2]);
-    final statusCode = int.tryParse(parts[3]);
-    final xx = _normalizeAttenuationXx(parts[4]);
-    if (n == null || statusCode == null || xx == null) {
+    final xx = _parseSetAttenuationXxField(parts[4]);
+    if (n == null || xx == null) {
       return null;
     }
-    return (n, xx, statusCode);
+    return (
+      responseCode: parts[0],
+      stationId: parts[1],
+      n: n,
+      s: parts[3],
+      xx: xx,
+    );
   }
 
-  String? _normalizeAttenuationXx(String value) {
+  /// Response popup for `$66,station id,N,S,xx,#` after set.
+  static String _formatSetAttenuationBleSummary(String rawLine) {
+    final trimmed = rawLine.trim();
+    if (trimmed.isEmpty) {
+      return 'No response text was received.';
+    }
+    final parsed = _parseSetAttenuationResponse(rawLine);
+    if (parsed == null) {
+      return 'Could not parse set attenuation response.\n\n'
+          'Raw response:\n$trimmed';
+    }
+
+    final nLabel = switch (parsed.n) {
+      0 => '0 — UHF',
+      1 => '1 — Radio Sonde',
+      _ => '${parsed.n}',
+    };
+    final sLabel = switch (parsed.s) {
+      '0' => '0 — Get',
+      '1' => '1 — Set',
+      _ => parsed.s,
+    };
+    final xxLabel = _isSetAttenuationErrorXx(parsed.xx)
+        ? 'FF — Error'
+        : _displaySensorParameterFieldValue(parsed.xx);
+
+    return _joinLabeledBleSummary(
+      'Device response:',
+      [
+        MapEntry('Response code', parsed.responseCode),
+        MapEntry(
+          'Station ID',
+          _displaySensorParameterFieldValue(parsed.stationId),
+        ),
+        MapEntry('N', nLabel),
+        MapEntry('S', sLabel),
+        MapEntry('Attenuation (xx)', xxLabel),
+      ],
+    );
+  }
+
+  static String? _parseSetAttenuationXxField(String raw) {
+    final upper = raw.trim().toUpperCase();
+    if (upper == 'FF') {
+      return 'FF';
+    }
+    return _normalizeAttenuationXxStatic(raw);
+  }
+
+  static bool _isSetAttenuationErrorXx(String xx) =>
+      xx.trim().toUpperCase() == 'FF';
+
+  String? _normalizeAttenuationXx(String value) =>
+      _parseSetAttenuationXxField(value);
+
+  static String? _normalizeAttenuationXxStatic(String value) {
     final onlyDigits = value.trim().replaceAll(RegExp(r'[^0-9]'), '');
     if (onlyDigits.isEmpty || onlyDigits.length > 2) {
       return null;
@@ -4752,19 +4843,76 @@ class GeneralUserSelfTestDebugBloc
   }
 
   String? _extractRadioSondeTransmitterId(String responseLine) {
+    final parsed = _parseRadioSondeTransmitterIdResponse(responseLine);
+    if (parsed == null) {
+      return null;
+    }
+    final id = parsed.transmitterId;
+    if (id.length > 3) {
+      return id.substring(id.length - 3);
+    }
+    return id;
+  }
+
+  static ({String responseCode, String stationId, String s, String transmitterId})?
+      _parseRadioSondeTransmitterIdResponse(String responseLine) {
     final cleaned = responseLine.trim();
     if (cleaned.isEmpty) {
       return null;
     }
-    final parts = cleaned.split(',').map((e) => e.trim()).toList();
-    if (parts.length < 4) {
+    final noHash = cleaned.endsWith('#')
+        ? cleaned.substring(0, cleaned.length - 1)
+        : cleaned;
+    final parts = noHash.split(',').map((e) => e.trim()).toList();
+    if (parts.length < 4 || !parts[0].toUpperCase().contains(r'$67')) {
       return null;
     }
-    final id = parts[3].replaceAll('#', '').trim();
-    if (id.isEmpty) {
+    final transmitterId = parts[3].trim();
+    if (transmitterId.isEmpty) {
       return null;
     }
-    return id.length >= 5 ? id.substring(0, 5) : id;
+    return (
+      responseCode: parts[0],
+      stationId: parts[1],
+      s: parts[2],
+      transmitterId: transmitterId,
+    );
+  }
+
+  /// Response popup for `$67,station id,S,xxxx,#` (`S=0` success, `S=1` failure).
+  static String _formatRadioSondeTransmitterIdBleSummary(String rawLine) {
+    final trimmed = rawLine.trim();
+    if (trimmed.isEmpty) {
+      return 'No response text was received.';
+    }
+    final parsed = _parseRadioSondeTransmitterIdResponse(rawLine);
+    if (parsed == null) {
+      return 'Could not parse radio sonde transmitter response.\n\n'
+          'Raw response:\n$trimmed';
+    }
+
+    final sLabel = switch (parsed.s) {
+      '0' => '0 — Success',
+      '1' => '1 — Failure',
+      _ => parsed.s,
+    };
+
+    final entries = <MapEntry<String, String>>[
+      MapEntry('Response code', parsed.responseCode),
+      MapEntry(
+        'Station ID',
+        _displaySensorParameterFieldValue(parsed.stationId),
+      ),
+      MapEntry('S', sLabel),
+      MapEntry(
+        'Radio sonde transmitter id',
+        _displaySensorParameterFieldValue(parsed.transmitterId),
+      ),
+    ];
+    return _joinLabeledBleSummary(
+      'Device response:',
+      entries,
+    );
   }
 
   int _extractTransmitterTestStatus(String responseLine) {
@@ -6090,6 +6238,53 @@ class GeneralUserSelfTestDebugBloc
     r'^(\d{2}):(\d{2}):(\d{2})$',
   );
 
+  static String _formatSetTransmissionTimeBleSummary(String rawLine) {
+    final trimmed = rawLine.trim();
+    if (trimmed.isEmpty) {
+      return 'No response text was received.';
+    }
+    final noHash = trimmed.endsWith('#')
+        ? trimmed.substring(0, trimmed.length - 1)
+        : trimmed;
+    final parts = noHash.split(',').map((e) => e.trim()).toList();
+    if (parts.length < 2 || !parts[0].toUpperCase().contains(r'$08')) {
+      return 'The device responded, but the payload could not be parsed as '
+          'transmission time.\n\n'
+          'Raw response:\n$trimmed';
+    }
+
+    String? stationId;
+    late final String time;
+    if (parts.length == 2 &&
+        _transmissionStartTimeHmsPattern.hasMatch(parts[1])) {
+      time = parts[1];
+    } else if (parts.length >= 3 &&
+        _transmissionStartTimeHmsPattern.hasMatch(parts[2])) {
+      stationId = parts[1];
+      time = parts[2];
+    } else if (_transmissionStartTimeHmsPattern.hasMatch(parts.last)) {
+      time = parts.last;
+      if (parts.length > 2) {
+        stationId = parts[1];
+      }
+    } else {
+      return 'The device responded, but the payload could not be parsed as '
+          'transmission time.\n\n'
+          'Raw response:\n$trimmed';
+    }
+
+    final entries = <MapEntry<String, String>>[
+      MapEntry('Response code', parts[0]),
+      if (stationId != null && stationId.isNotEmpty)
+        MapEntry('Station ID', _displaySensorParameterFieldValue(stationId)),
+      MapEntry(
+        'Transmission time',
+        _displaySensorParameterFieldValue(time),
+      ),
+    ];
+    return _joinLabeledBleSummary('Transmission time updated:', entries);
+  }
+
   /// GPRS transmission start time read-back.
   ///
   /// Device may send `$63,HH:MM:SS#` or catalog form `$63,station id,HH:MM:SS#`.
@@ -6996,10 +7191,20 @@ class GeneralUserSelfTestDebugBloc
     }
     final paraNo = _normalizeIndividualSensorParaNo(d.paraNo);
     if (paraNo == null) {
-      throw ArgumentError('Para no must be 1–23.');
+      throw ArgumentError('Para no must be 00–34.');
     }
-    final value = _requireTrimmedSensorField('Value', d.value);
+    final value = _requireIndividualSensorParameterValueAsEntered(d.value);
     return '?86,$sensorNo,$paraNo,$value,#';
+  }
+
+  static String _requireIndividualSensorParameterValueAsEntered(String raw) {
+    if (raw.isEmpty) {
+      throw ArgumentError('Value is required.');
+    }
+    if (raw.contains(',')) {
+      throw ArgumentError('Value cannot contain a comma.');
+    }
+    return raw;
   }
 
   static String? _normalizeIndividualSensorParaNo(String raw) {
@@ -7008,10 +7213,10 @@ class GeneralUserSelfTestDebugBloc
       return null;
     }
     final v = int.tryParse(t);
-    if (v == null || v < 1 || v > 23) {
+    if (v == null || v < 0 || v > 34) {
       return null;
     }
-    return v.toString();
+    return t;
   }
 
   static String _formatSetIndividualSensorParameterBleSummary(String rawLine) {
@@ -7084,14 +7289,16 @@ class GeneralUserSelfTestDebugBloc
 
     final rawParts = _splitDrifterResponseCommaFields(rawLine);
     if (rawParts != null) {
-      if (rawParts.length == _getSensorParameter81PayloadFieldCount) {
+      if (rawParts.length == _getSensorParameter81PayloadFieldCount ||
+          rawParts.length == _getSensorParameter81LegacyPayloadFieldCount) {
         return _formatSensorAllStyleFieldsBleSummary(
           fields: rawParts,
           valueStartIndex: 0,
           heading: 'Updated parameter read-back (Sheet 1 — GET ?81 format):',
         );
       }
-      if (rawParts.length == _getSensorParameter81PayloadFieldCount + 1) {
+      if (rawParts.length == _getSensorParameter81PayloadFieldCount + 1 ||
+          rawParts.length == _getSensorParameter81LegacyPayloadFieldCount + 1) {
         return _formatSensorAllStyleFieldsBleSummary(
           fields: rawParts,
           valueStartIndex: 1,
@@ -7158,8 +7365,8 @@ class GeneralUserSelfTestDebugBloc
     if (para == null || para < 1) {
       return paraNoRaw.trim();
     }
-    if (para <= _getSensorParameter81FieldLabels.length) {
-      return '${_getSensorParameter81FieldLabels[para - 1]} (Sheet 1 / ?81)';
+    if (para <= _getSensorParameter81SetParaFieldLabels.length) {
+      return '${_getSensorParameter81SetParaFieldLabels[para - 1]} (Sheet 1 / ?81)';
     }
     if (para <= _getSensorParameter83FieldLabels.length) {
       return '${_getSensorParameter83FieldLabels[para - 1]} (Sheet 2 / ?83)';
@@ -7245,9 +7452,32 @@ class GeneralUserSelfTestDebugBloc
     return v.toString().padLeft(2, '0');
   }
 
-  static const int _getSensorParameter81PayloadFieldCount = 16;
+  static const int _getSensorParameter81PayloadFieldCount = 17;
+
+  /// Older `$81` bodies without channel no (sensor no + params through Tx.O).
+  static const int _getSensorParameter81LegacyPayloadFieldCount = 16;
 
   static const List<String> _getSensorParameter81FieldLabels = [
+    'Sensor no',
+    'Channel no',
+    'F.G',
+    'Factory off',
+    'senG',
+    'S.off',
+    'Resolution',
+    'Sen Min',
+    'Sens Max',
+    'Averag Scheme',
+    'Vactor',
+    'Start time',
+    'Interval',
+    'Total sample',
+    'Mode',
+    'Tx.G',
+    'Tx.O',
+  ];
+
+  static const List<String> _getSensorParameter81LegacyFieldLabels = [
     'Sensor no',
     'F.G',
     'Factory off',
@@ -7266,7 +7496,33 @@ class GeneralUserSelfTestDebugBloc
     'Tx.O',
   ];
 
-  /// Parsed `$80` / `$81` body: optional leading station id + 16 sensor fields.
+  /// Sheet 1 parameter numbers for `?86` (para 1 = F.G, not sensor/channel).
+  static const List<String> _getSensorParameter81SetParaFieldLabels = [
+    'F.G',
+    'Factory off',
+    'senG',
+    'S.off',
+    'Resolution',
+    'Sen Min',
+    'Sens Max',
+    'Averag Scheme',
+    'Vactor',
+    'Start time',
+    'Interval',
+    'Total sample',
+    'Mode',
+    'Tx.G',
+    'Tx.O',
+  ];
+
+  static List<String> _sensorParameter81LabelsForPayloadLength(int payloadLen) {
+    if (payloadLen == _getSensorParameter81LegacyPayloadFieldCount) {
+      return _getSensorParameter81LegacyFieldLabels;
+    }
+    return _getSensorParameter81FieldLabels;
+  }
+
+  /// Parsed `$80` / `$81` body: optional station id + sensor fields.
   static ({List<String> fields, int valueStartIndex})?
   _parseSensorAllStyleBlePayload(String rawLine, {required String opcode}) {
     final trimmed = rawLine.trim();
@@ -7295,6 +7551,12 @@ class GeneralUserSelfTestDebugBloc
       return (fields: parts, valueStartIndex: 0);
     }
     if (parts.length == _getSensorParameter81PayloadFieldCount + 1) {
+      return (fields: parts, valueStartIndex: 1);
+    }
+    if (parts.length == _getSensorParameter81LegacyPayloadFieldCount) {
+      return (fields: parts, valueStartIndex: 0);
+    }
+    if (parts.length == _getSensorParameter81LegacyPayloadFieldCount + 1) {
       return (fields: parts, valueStartIndex: 1);
     }
     if (parts.length > _getSensorParameter81PayloadFieldCount + 1) {
@@ -7337,6 +7599,9 @@ class GeneralUserSelfTestDebugBloc
       return _displaySensorParameterFieldValue(fields[idx]);
     }
 
+    final payloadLen = fields.length - valueStartIndex;
+    final labels = _sensorParameter81LabelsForPayloadLength(payloadLen);
+
     final entries = <MapEntry<String, String>>[];
     if (valueStartIndex > 0) {
       entries.add(
@@ -7346,9 +7611,9 @@ class GeneralUserSelfTestDebugBloc
         ),
       );
     }
-    for (var i = 0; i < _getSensorParameter81FieldLabels.length; i++) {
+    for (var i = 0; i < labels.length; i++) {
       entries.add(
-        MapEntry(_getSensorParameter81FieldLabels[i], valueAt(i)),
+        MapEntry(labels[i], valueAt(i)),
       );
     }
     return _joinLabeledBleSummary(heading, entries);
@@ -7578,8 +7843,8 @@ class GeneralUserSelfTestDebugBloc
         final map = _parseIndexedHttpJsonPayload(userValue);
         final nRaw = map['n'];
         final ni = nRaw is int ? nRaw : int.tryParse(nRaw?.toString() ?? '');
-        if (ni == null || ni < 0 || ni > 9) {
-          throw ArgumentError('HTTP server number (N) must be from 0 to 9.');
+        if (ni == null || ni < 1 || ni > 3) {
+          throw ArgumentError('HTTP field must be 1, 2, or 3.');
         }
         final url = map['v']?.toString() ?? '';
         final encoded = _asciiPrintableNoCommaWithTrailingSpaceRule(
@@ -7593,8 +7858,8 @@ class GeneralUserSelfTestDebugBloc
         final map = _parseIndexedHttpJsonPayload(userValue);
         final nRaw = map['n'];
         final ni = nRaw is int ? nRaw : int.tryParse(nRaw?.toString() ?? '');
-        if (ni == null || ni < 0 || ni > 3) {
-          throw ArgumentError('HTTP server number (N) must be from 0 to 3.');
+        if (ni == null || ni < 1 || ni > 3) {
+          throw ArgumentError('HTTP field must be 1, 2, or 3.');
         }
         final url = map['v']?.toString() ?? '';
         final encoded = _asciiPrintableNoCommaWithTrailingSpaceRule(
@@ -7608,8 +7873,8 @@ class GeneralUserSelfTestDebugBloc
         final map = _parseIndexedHttpJsonPayload(userValue);
         final nRaw = map['n'];
         final ni = nRaw is int ? nRaw : int.tryParse(nRaw?.toString() ?? '');
-        if (ni == null || ni < 0 || ni > 3) {
-          throw ArgumentError('HTTP server number (N) must be from 0 to 3.');
+        if (ni == null || ni < 1 || ni > 3) {
+          throw ArgumentError('HTTP field must be 1, 2, or 3.');
         }
         final url = map['v']?.toString() ?? '';
         final encoded = _asciiPrintableNoCommaWithTrailingSpaceRule(
@@ -7623,8 +7888,8 @@ class GeneralUserSelfTestDebugBloc
         final map = _parseIndexedHttpJsonPayload(userValue);
         final nRaw = map['n'];
         final ni = nRaw is int ? nRaw : int.tryParse(nRaw?.toString() ?? '');
-        if (ni == null || ni < 0 || ni > 3) {
-          throw ArgumentError('HTTP server number (N) must be from 0 to 3.');
+        if (ni == null || ni < 1 || ni > 3) {
+          throw ArgumentError('HTTP field must be 1, 2, or 3.');
         }
         final url = map['v']?.toString() ?? '';
         final encoded = _asciiPrintableNoCommaWithTrailingSpaceRule(

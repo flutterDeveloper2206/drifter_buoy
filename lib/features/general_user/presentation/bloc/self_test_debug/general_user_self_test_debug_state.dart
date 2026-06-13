@@ -58,13 +58,14 @@ class SelfTestStationNamePrompt extends Equatable {
   List<Object?> get props => [currentStationName, prefetchWarning];
 }
 
+/// `?61,HH:MM:SS,#` — dialog only (no `?04` prefetch); user enters time, then BLE send.
 class SelfTestMeasurementTimePrompt extends Equatable {
-  const SelfTestMeasurementTimePrompt({required this.currentTime});
+  const SelfTestMeasurementTimePrompt({required this.testName});
 
-  final String currentTime;
+  final String testName;
 
   @override
-  List<Object?> get props => [currentTime];
+  List<Object?> get props => [testName];
 }
 
 /// `?08,HH:MM:SS,#` — dialog only (no `?04` prefetch); user picks time, then BLE send.
@@ -105,14 +106,12 @@ class SelfTestMeasurementIntervalPrompt extends Equatable {
   const SelfTestMeasurementIntervalPrompt({
     required this.testName,
     required this.currentMeasurementInterval,
-    required this.allowedMeasurementIntervals,
     this.prefetchWarning,
     this.catalogHelpText = '',
   });
 
   final String testName;
   final String currentMeasurementInterval;
-  final List<String> allowedMeasurementIntervals;
   final String? prefetchWarning;
   final String catalogHelpText;
 
@@ -120,7 +119,6 @@ class SelfTestMeasurementIntervalPrompt extends Equatable {
   List<Object?> get props => [
     testName,
     currentMeasurementInterval,
-    allowedMeasurementIntervals,
     prefetchWarning,
     catalogHelpText,
   ];
@@ -280,16 +278,16 @@ enum SelfTestParameterizedCommandFieldKind {
   /// RTC HTTP key — max 15 chars; trailing space when length is under 40 (catalog).
   rtcHttpKey15,
 
-  /// Primary HTTP — server index N (0–9) plus website (max 128 chars).
+  /// Primary HTTP — HTTP field N (1–3: URL, key, data) plus website (max 128 chars).
   primaryHttpWebsiteIndex128,
 
-  /// Secondary HTTP — server index N (0–3) plus website (max 128 chars).
+  /// Secondary HTTP — HTTP field N (1–3: URL, key, data) plus website (max 128 chars).
   secondaryHttpWebsiteIndex0to3And128,
 
-  /// Third HTTP (`?30`) — N (0–3) plus website (max 128); trailing space when length &lt; 40 (catalog).
+  /// Third HTTP (`?30`) — HTTP field N (1–3) plus website (max 128); trailing space when length &lt; 40 (catalog).
   thirdHttpWebsiteIndex0to3And128Trailing40,
 
-  /// Factory HTTP (`?38`) — N (0–3) plus website (max 128); trailing space when length &lt; 128 (catalog).
+  /// Factory HTTP (`?38`) — HTTP field N (1–3) plus website (max 128); trailing space when length &lt; 128 (catalog).
   factoryHttpWebsiteIndex0to3And128,
 
   /// HTTP server username (`?62`) — server N (1–4) plus username (max 64, padded).

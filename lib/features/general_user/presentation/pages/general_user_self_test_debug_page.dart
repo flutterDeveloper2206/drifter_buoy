@@ -214,6 +214,18 @@ String? _validateSelfTestGetSensorParameter83Number(String? value) {
   return null;
 }
 
+/// `?86` value — sent exactly as entered; spaces, `+`, and `-` are preserved.
+String? _validateSelfTestIndividualSensorParameterValue(String? value) {
+  final t = value ?? '';
+  if (t.isEmpty) {
+    return 'Value is required.';
+  }
+  if (t.contains(',')) {
+    return 'Value cannot contain a comma.';
+  }
+  return null;
+}
+
 String? _validateSelfTestSensorFieldNoComma(
   String label,
   String? value, {
@@ -295,6 +307,31 @@ String? _validateSelfTestHhMmSs(String label, String? value) {
   final ss = int.parse(m.group(3)!);
   if (hh > 23 || mm > 59 || ss > 59) {
     return '$label must use valid 24-hour time.';
+  }
+  return null;
+}
+
+String _selfTestEffectiveHhMmSsInitial(String current, String fallback) {
+  final t = current.trim();
+  if (_validateSelfTestHhMmSs('Time', t.isEmpty ? null : t) == null) {
+    return t;
+  }
+  return fallback;
+}
+
+String? _validateSelfTestTransmissionIntervalHhMmSs(String? value) {
+  final base = _validateSelfTestHhMmSs('Transmission interval', value);
+  if (base != null) {
+    return base;
+  }
+  final raw = value!.trim();
+  final m = RegExp(r'^(\d{2}):(\d{2}):(\d{2})$').firstMatch(raw)!;
+  final total =
+      int.parse(m.group(1)!) * 3600 +
+      int.parse(m.group(2)!) * 60 +
+      int.parse(m.group(3)!);
+  if (total < 10 * 60) {
+    return 'Transmission interval must be at least 00:10:00.';
   }
   return null;
 }
@@ -692,78 +729,78 @@ class _GeneralUserSelfTestDebugPageState
 
   Future<void> _showMeasurementStartTimeDialog(
     BuildContext context,
-    String currentTime,
+    SelfTestMeasurementTimePrompt prompt,
   ) async {
     if (_isMeasurementTimeDialogOpen) {
       return;
     }
     _isMeasurementTimeDialogOpen = true;
-    var selected =
-        _parseTimeOfDay(currentTime) ?? const TimeOfDay(hour: 0, minute: 0);
+    var draftTime = '00:00:00';
+    final formKey = GlobalKey<FormState>();
 
     try {
       await showDialog<void>(
         context: context,
         barrierDismissible: false,
         builder: (ctx) {
-          return StatefulBuilder(
-            builder: (ctx, setLocalState) {
-              final value = _formatTime(selected);
-              return AlertDialog(
-                title: const Text('Measurement Start Time'),
-                content: Column(
+          return AlertDialog(
+            title: Text(prompt.testName),
+            content: SingleChildScrollView(
+              child: Form(
+                key: formKey,
+                child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Current/Picked time: $value',
+                      '?61 — enter measurement start time as HH:MM:SS (e.g. 00:15:10).',
                       style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFF2A2F34),
-                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF6A7178),
                       ),
                     ),
                     const SizedBox(height: 12),
-                    OutlinedButton.icon(
-                      onPressed: () async {
-                        final picked = await showTimePicker(
-                          context: ctx,
-                          initialTime: selected,
-                        );
-                        if (picked == null) {
-                          return;
-                        }
-                        setLocalState(() {
-                          selected = picked;
-                        });
-                      },
-                      icon: const Icon(Icons.access_time_rounded),
-                      label: const Text('Pick Time'),
+                    TextFormField(
+                      initialValue: '00:00:00',
+                      keyboardType: TextInputType.datetime,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      validator: (v) =>
+                          _validateSelfTestHhMmSs('Measurement start time', v),
+                      onChanged: (v) => draftTime = v,
+                      decoration: const InputDecoration(
+                        labelText: 'Measurement start time',
+                        hintText: '00:00:00',
+                        helperText: 'HH:MM:SS (24-hour)',
+                        border: OutlineInputBorder(),
+                      ),
                     ),
                   ],
                 ),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      FocusScope.of(ctx).unfocus();
-                      Navigator.of(ctx).pop();
-                    },
-                    child: const Text('Cancel'),
-                  ),
-                  FilledButton(
-                    onPressed: () {
-                      FocusScope.of(ctx).unfocus();
-                      final bloc = context.read<GeneralUserSelfTestDebugBloc>();
-                      final time = _formatTime(selected);
-                      Navigator.of(ctx).pop();
-                      _runAfterDialogRouteClosed(() {
-                        bloc.add(SubmitGeneralUserMeasurementStartTime(time));
-                      });
-                    },
-                    child: const Text('Update'),
-                  ),
-                ],
-              );
-            },
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  FocusScope.of(ctx).unfocus();
+                  Navigator.of(ctx).pop();
+                },
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  FocusScope.of(ctx).unfocus();
+                  if (!(formKey.currentState?.validate() ?? false)) {
+                    return;
+                  }
+                  final bloc = context.read<GeneralUserSelfTestDebugBloc>();
+                  final time = draftTime.trim();
+                  Navigator.of(ctx).pop();
+                  _runAfterDialogRouteClosed(() {
+                    bloc.add(SubmitGeneralUserMeasurementStartTime(time));
+                  });
+                },
+                child: const Text('Send'),
+              ),
+            ],
           );
         },
       );
@@ -785,78 +822,72 @@ class _GeneralUserSelfTestDebugPageState
       return;
     }
     _isTransmissionTimeDialogOpen = true;
-    var selected = const TimeOfDay(hour: 0, minute: 0);
+    var draftTime = '00:00:00';
+    final formKey = GlobalKey<FormState>();
 
     try {
       await showDialog<void>(
         context: context,
         barrierDismissible: false,
         builder: (ctx) {
-          return StatefulBuilder(
-            builder: (ctx, setLocalState) {
-              final value = _formatTime(selected);
-              return AlertDialog(
-                title: Text(prompt.testName),
-                content: Column(
+          return AlertDialog(
+            title: Text(prompt.testName),
+            content: SingleChildScrollView(
+              child: Form(
+                key: formKey,
+                child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '?08 — transmission time as HH:MM:SS (picker sets seconds to :00).',
+                      '?08 — enter transmission time as HH:MM:SS (e.g. 00:01:10).',
                       style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
                         color: const Color(0xFF6A7178),
                       ),
                     ),
                     const SizedBox(height: 12),
-                    Text(
-                      'Time to send: $value',
-                      style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFF2A2F34),
-                        fontWeight: FontWeight.w600,
+                    TextFormField(
+                      initialValue: '00:00:00',
+                      keyboardType: TextInputType.datetime,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      validator: (v) =>
+                          _validateSelfTestHhMmSs('Transmission time', v),
+                      onChanged: (v) => draftTime = v,
+                      decoration: const InputDecoration(
+                        labelText: 'Transmission time',
+                        hintText: '00:00:00',
+                        helperText: 'HH:MM:SS (24-hour)',
+                        border: OutlineInputBorder(),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    OutlinedButton.icon(
-                      onPressed: () async {
-                        final picked = await showTimePicker(
-                          context: ctx,
-                          initialTime: selected,
-                        );
-                        if (picked == null) {
-                          return;
-                        }
-                        setLocalState(() {
-                          selected = picked;
-                        });
-                      },
-                      icon: const Icon(Icons.access_time_rounded),
-                      label: const Text('Pick Time'),
                     ),
                   ],
                 ),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      FocusScope.of(ctx).unfocus();
-                      Navigator.of(ctx).pop();
-                    },
-                    child: const Text('Cancel'),
-                  ),
-                  FilledButton(
-                    onPressed: () {
-                      FocusScope.of(ctx).unfocus();
-                      final bloc = context.read<GeneralUserSelfTestDebugBloc>();
-                      final time = _formatTime(selected);
-                      Navigator.of(ctx).pop();
-                      _runAfterDialogRouteClosed(() {
-                        bloc.add(SubmitGeneralUserSetTransmissionTime(time));
-                      });
-                    },
-                    child: const Text('Send'),
-                  ),
-                ],
-              );
-            },
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  FocusScope.of(ctx).unfocus();
+                  Navigator.of(ctx).pop();
+                },
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  FocusScope.of(ctx).unfocus();
+                  if (!(formKey.currentState?.validate() ?? false)) {
+                    return;
+                  }
+                  final bloc = context.read<GeneralUserSelfTestDebugBloc>();
+                  final time = draftTime.trim();
+                  Navigator.of(ctx).pop();
+                  _runAfterDialogRouteClosed(() {
+                    bloc.add(SubmitGeneralUserSetTransmissionTime(time));
+                  });
+                },
+                child: const Text('Send'),
+              ),
+            ],
           );
         },
       );
@@ -878,27 +909,30 @@ class _GeneralUserSelfTestDebugPageState
       return;
     }
     _isTransmissionIntervalDialogOpen = true;
-    var selected =
-        _parseTimeOfDay(prompt.currentTxInterval) ??
-        const TimeOfDay(hour: 0, minute: 10);
+    final initialInterval = _selfTestEffectiveHhMmSsInitial(
+      prompt.currentTxInterval,
+      '00:10:00',
+    );
+    var draftInterval = initialInterval;
+    final formKey = GlobalKey<FormState>();
 
     try {
       await showDialog<void>(
         context: context,
         barrierDismissible: false,
         builder: (ctx) {
-          return StatefulBuilder(
-            builder: (ctx, setLocalState) {
-              final value = _formatTime(selected);
-              final hint = prompt.catalogHelpText.trim();
-              return AlertDialog(
-                title: Text(prompt.testName),
-                content: Column(
+          final hint = prompt.catalogHelpText.trim();
+          return AlertDialog(
+            title: Text(prompt.testName),
+            content: SingleChildScrollView(
+              child: Form(
+                key: formKey,
+                child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '?09 — Device was read with ?04,,# (Tx interval = 3rd field). Picker uses HH:MM and sends seconds as :00.',
+                      '?09 — enter transmission interval as HH:MM:SS (min 00:10:00).',
                       style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
                         color: const Color(0xFF6A7178),
                       ),
@@ -923,65 +957,49 @@ class _GeneralUserSelfTestDebugPageState
                       ),
                     ],
                     const SizedBox(height: 12),
-                    Text(
-                      'Interval to send: $value',
-                      style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFF2A2F34),
-                        fontWeight: FontWeight.w600,
+                    TextFormField(
+                      initialValue: initialInterval,
+                      keyboardType: TextInputType.datetime,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      validator: _validateSelfTestTransmissionIntervalHhMmSs,
+                      onChanged: (v) => draftInterval = v,
+                      decoration: const InputDecoration(
+                        labelText: 'Transmission interval',
+                        hintText: '00:10:00',
+                        helperText: 'HH:MM:SS (24-hour), minimum 00:10:00',
+                        border: OutlineInputBorder(),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    OutlinedButton.icon(
-                      onPressed: () async {
-                        final picked = await showTimePicker(
-                          context: ctx,
-                          initialTime: selected,
-                        );
-                        if (picked == null) {
-                          return;
-                        }
-                        setLocalState(() {
-                          selected = picked;
-                        });
-                      },
-                      icon: const Icon(Icons.access_time_rounded),
-                      label: const Text('Pick interval'),
                     ),
                   ],
                 ),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      FocusScope.of(ctx).unfocus();
-                      Navigator.of(ctx).pop();
-                    },
-                    child: const Text('Cancel'),
-                  ),
-                  FilledButton(
-                    onPressed: () {
-                      FocusScope.of(ctx).unfocus();
-                      final secs = selected.hour * 3600 + selected.minute * 60;
-                      if (secs < 10 * 60) {
-                        AppFlushbar.error(
-                          'Transmission interval must be at least 00:10:00.',
-                          context: ctx,
-                        );
-                        return;
-                      }
-                      final bloc = context.read<GeneralUserSelfTestDebugBloc>();
-                      final interval = _formatTime(selected);
-                      Navigator.of(ctx).pop();
-                      _runAfterDialogRouteClosed(() {
-                        bloc.add(
-                          SubmitGeneralUserSetTransmissionInterval(interval),
-                        );
-                      });
-                    },
-                    child: const Text('Send'),
-                  ),
-                ],
-              );
-            },
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  FocusScope.of(ctx).unfocus();
+                  Navigator.of(ctx).pop();
+                },
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  FocusScope.of(ctx).unfocus();
+                  if (!(formKey.currentState?.validate() ?? false)) {
+                    return;
+                  }
+                  final bloc = context.read<GeneralUserSelfTestDebugBloc>();
+                  final interval = draftInterval.trim();
+                  Navigator.of(ctx).pop();
+                  _runAfterDialogRouteClosed(() {
+                    bloc.add(
+                      SubmitGeneralUserSetTransmissionInterval(interval),
+                    );
+                  });
+                },
+                child: const Text('Send'),
+              ),
+            ],
           );
         },
       );
@@ -1003,117 +1021,100 @@ class _GeneralUserSelfTestDebugPageState
       return;
     }
     _isMeasurementIntervalDialogOpen = true;
-
-    String effectiveMi(String current) {
-      if (prompt.allowedMeasurementIntervals.contains(current)) {
-        return current;
-      }
-      return prompt.allowedMeasurementIntervals.isNotEmpty
-          ? prompt.allowedMeasurementIntervals.first
-          : '';
-    }
-
-    var selectedMi = effectiveMi(prompt.currentMeasurementInterval);
+    final initialInterval = _selfTestEffectiveHhMmSsInitial(
+      prompt.currentMeasurementInterval,
+      '00:10:00',
+    );
+    var draftInterval = initialInterval;
+    final formKey = GlobalKey<FormState>();
 
     try {
       await showDialog<void>(
         context: context,
         barrierDismissible: false,
         builder: (ctx) {
-          return StatefulBuilder(
-            builder: (ctx, setLocalState) {
-              final hint = prompt.catalogHelpText.trim();
-              return AlertDialog(
-                title: Text(prompt.testName),
-                content: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '?10 — Measurement interval was read with ?04,,# (4th general-parameter field).',
-                        style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                          color: const Color(0xFF6A7178),
-                        ),
+          final hint = prompt.catalogHelpText.trim();
+          return AlertDialog(
+            title: Text(prompt.testName),
+            content: SingleChildScrollView(
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '?10 — enter measurement interval as HH:MM:SS.',
+                      style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                        color: const Color(0xFF6A7178),
                       ),
-                      if (hint.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          hint,
-                          style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                            color: const Color(0xFF2A2F34),
-                          ),
+                    ),
+                    if (hint.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        hint,
+                        style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                          color: const Color(0xFF2A2F34),
                         ),
-                      ],
-                      if (prompt.prefetchWarning != null &&
-                          prompt.prefetchWarning!.trim().isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          prompt.prefetchWarning!,
-                          style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                            color: const Color(0xFFBF360C),
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 16),
-                      DropdownButtonFormField<String>(
-                        decoration: const InputDecoration(
-                          labelText: 'Measurement interval',
-                          border: OutlineInputBorder(),
-                        ),
-                        initialValue: selectedMi.isEmpty ? null : selectedMi,
-                        items: prompt.allowedMeasurementIntervals
-                            .map(
-                              (e) => DropdownMenuItem<String>(
-                                value: e,
-                                child: Text(e),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (v) {
-                          if (v == null) {
-                            return;
-                          }
-                          setLocalState(() => selectedMi = v);
-                        },
                       ),
                     ],
-                  ),
+                    if (prompt.prefetchWarning != null &&
+                        prompt.prefetchWarning!.trim().isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        prompt.prefetchWarning!,
+                        style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                          color: const Color(0xFFBF360C),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      initialValue: initialInterval,
+                      keyboardType: TextInputType.datetime,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      validator: (v) =>
+                          _validateSelfTestHhMmSs('Measurement interval', v),
+                      onChanged: (v) => draftInterval = v,
+                      decoration: const InputDecoration(
+                        labelText: 'Measurement interval',
+                        hintText: '00:10:00',
+                        helperText: 'HH:MM:SS (24-hour)',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ],
                 ),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      FocusScope.of(ctx).unfocus();
-                      Navigator.of(ctx).pop();
-                    },
-                    child: const Text('Cancel'),
-                  ),
-                  FilledButton(
-                    onPressed: () {
-                      FocusScope.of(ctx).unfocus();
-                      if (selectedMi.isEmpty) {
-                        AppFlushbar.error(
-                          'Select measurement interval.',
-                          context: ctx,
-                        );
-                        return;
-                      }
-                      final bloc = context.read<GeneralUserSelfTestDebugBloc>();
-                      final interval = selectedMi;
-                      Navigator.of(ctx).pop();
-                      _runAfterDialogRouteClosed(() {
-                        bloc.add(
-                          SubmitGeneralUserSetMeasurementInterval(
-                            measurementInterval: interval,
-                          ),
-                        );
-                      });
-                    },
-                    child: const Text('Send'),
-                  ),
-                ],
-              );
-            },
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  FocusScope.of(ctx).unfocus();
+                  Navigator.of(ctx).pop();
+                },
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  FocusScope.of(ctx).unfocus();
+                  if (!(formKey.currentState?.validate() ?? false)) {
+                    return;
+                  }
+                  final bloc = context.read<GeneralUserSelfTestDebugBloc>();
+                  final interval = draftInterval.trim();
+                  Navigator.of(ctx).pop();
+                  _runAfterDialogRouteClosed(() {
+                    bloc.add(
+                      SubmitGeneralUserSetMeasurementInterval(
+                        measurementInterval: interval,
+                      ),
+                    );
+                  });
+                },
+                child: const Text('Send'),
+              ),
+            ],
           );
         },
       );
@@ -1286,27 +1287,6 @@ class _GeneralUserSelfTestDebugPageState
     }
   }
 
-  TimeOfDay? _parseTimeOfDay(String value) {
-    final m = RegExp(
-      r'^(\d{2}):(\d{2})(?::(\d{2}))?$',
-    ).firstMatch(value.trim());
-    if (m == null) {
-      return null;
-    }
-    final hh = int.tryParse(m.group(1) ?? '');
-    final mm = int.tryParse(m.group(2) ?? '');
-    if (hh == null || mm == null || hh < 0 || hh > 23 || mm < 0 || mm > 59) {
-      return null;
-    }
-    return TimeOfDay(hour: hh, minute: mm);
-  }
-
-  String _formatTime(TimeOfDay t) {
-    final hh = t.hour.toString().padLeft(2, '0');
-    final mm = t.minute.toString().padLeft(2, '0');
-    return '$hh:$mm:00';
-  }
-
   Future<void> _showTransmitterFrequencyDialog(
     BuildContext context,
     int currentType,
@@ -1355,13 +1335,15 @@ class _GeneralUserSelfTestDebugPageState
                       const SizedBox(height: 12),
                       TextFormField(
                         initialValue: currentFfff,
-                        maxLength: 4,
+                        maxLength: 9,
                         keyboardType: TextInputType.number,
                         onChanged: (v) => draftFfff = v,
                         decoration: const InputDecoration(
-                          labelText: 'Frequency (FFFF)',
+                          labelText: 'Frequency (9 digits)',
                           border: OutlineInputBorder(),
-                          hintText: '4025',
+                          hintText: '000402500',
+                          helperText:
+                              '402.0000–403.0000 MHz. Sent as nine digits.',
                           counterText: '',
                         ),
                       ),
@@ -1536,7 +1518,7 @@ class _GeneralUserSelfTestDebugPageState
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Enter 5-character transmitter station id',
+                    'Enter 3-character transmitter station id',
                     style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
                       color: const Color(0xFF6A7178),
                     ),
@@ -1544,12 +1526,12 @@ class _GeneralUserSelfTestDebugPageState
                   const SizedBox(height: 10),
                   TextFormField(
                     initialValue: currentId,
-                    maxLength: 5,
+                    maxLength: 3,
                     textCapitalization: TextCapitalization.characters,
                     onChanged: (v) => draftId = v,
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
-                      hintText: 'XXXXX',
+                      hintText: 'XXX',
                       counterText: '',
                     ),
                   ),
@@ -2206,10 +2188,7 @@ class _GeneralUserSelfTestDebugPageState
                     if (prompt == null || _isMeasurementTimeDialogOpen) {
                       return;
                     }
-                    _showMeasurementStartTimeDialog(
-                      context,
-                      prompt.currentTime,
-                    );
+                    _showMeasurementStartTimeDialog(context, prompt);
                   },
                 ),
                 BlocListener<
@@ -2961,10 +2940,7 @@ class _AdminSmsCellAlertDialogState extends State<_AdminSmsCellAlertDialog> {
 
 /// Renders `Key: Value` summary lines as aligned rows (BLE response popups).
 class _BleKeyValueSummary extends StatelessWidget {
-  const _BleKeyValueSummary({
-    required this.text,
-    this.valueStyle,
-  });
+  const _BleKeyValueSummary({required this.text, this.valueStyle});
 
   final String text;
   final TextStyle? valueStyle;
@@ -2976,9 +2952,21 @@ class _BleKeyValueSummary extends StatelessWidget {
       color: const Color(0xFF5C6368),
       fontWeight: FontWeight.w600,
     );
-    final valueStyleResolved =
-        valueStyle ??
-        theme.textTheme.bodySmall?.copyWith(color: const Color(0xFF2A2F34));
+    final defaultValueStyle = theme.textTheme.bodySmall?.copyWith(
+      color: const Color(0xFF2A2F34),
+    );
+    final valueStyleResolved = valueStyle ?? defaultValueStyle;
+    const errorValueColor = Color(0xFFB3261E);
+
+    TextStyle rowValueStyle(String value) {
+      if (value.contains('— Error')) {
+        return (defaultValueStyle ?? const TextStyle()).copyWith(
+          color: errorValueColor,
+          fontWeight: FontWeight.w600,
+        );
+      }
+      return valueStyleResolved ?? defaultValueStyle!;
+    }
 
     String? heading;
     final entries = <MapEntry<String, String>>[];
@@ -3005,7 +2993,7 @@ class _BleKeyValueSummary extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (heading != null) ...[
-          SelectableText(heading, style: valueStyleResolved),
+          SelectableText(heading, style: defaultValueStyle),
           const SizedBox(height: 12),
         ],
         for (var i = 0; i < entries.length; i++) ...[
@@ -3020,7 +3008,7 @@ class _BleKeyValueSummary extends StatelessWidget {
               Expanded(
                 child: SelectableText(
                   entries[i].value,
-                  style: valueStyleResolved,
+                  style: rowValueStyle(entries[i].value),
                 ),
               ),
             ],
@@ -3214,6 +3202,25 @@ class _SetApnAlertDialogState extends State<_SetApnAlertDialog> {
   }
 }
 
+const _httpWebsiteFieldHint =
+    '1 = HTTP server URL, 2 = HTTP server key, 3 = HTTP data';
+
+bool _isHttpWebsiteAddressFieldKind(
+  SelfTestParameterizedCommandFieldKind kind,
+) {
+  return kind ==
+          SelfTestParameterizedCommandFieldKind.primaryHttpWebsiteIndex128 ||
+      kind ==
+          SelfTestParameterizedCommandFieldKind
+              .secondaryHttpWebsiteIndex0to3And128 ||
+      kind ==
+          SelfTestParameterizedCommandFieldKind
+              .thirdHttpWebsiteIndex0to3And128Trailing40 ||
+      kind ==
+          SelfTestParameterizedCommandFieldKind
+              .factoryHttpWebsiteIndex0to3And128;
+}
+
 class _ParameterizedServerCommandDialog extends StatefulWidget {
   const _ParameterizedServerCommandDialog({required this.prompt});
 
@@ -3248,7 +3255,52 @@ class _ParameterizedServerCommandDialogState
         widget.prompt.fieldKind ==
             SelfTestParameterizedCommandFieldKind.dlCellNumberIndex1to4) {
       _httpServerIndex = 1;
+    } else if (_isHttpWebsiteAddressFieldKind(widget.prompt.fieldKind)) {
+      _httpServerIndex = 1;
     }
+  }
+
+  Widget _buildHttpWebsiteAddressFields({required String addressHelperText}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        DropdownButtonFormField<int>(
+          decoration: const InputDecoration(
+            labelText: 'HTTP field',
+            helperText: _httpWebsiteFieldHint,
+            helperMaxLines: 2,
+            border: OutlineInputBorder(),
+          ),
+          initialValue: _httpServerIndex.clamp(1, 3),
+          items: const [
+            DropdownMenuItem(value: 1, child: Text('1')),
+            DropdownMenuItem(value: 2, child: Text('2')),
+            DropdownMenuItem(value: 3, child: Text('3')),
+          ],
+          onChanged: (v) {
+            if (v == null) {
+              return;
+            }
+            setState(() => _httpServerIndex = v);
+          },
+        ),
+        const SizedBox(height: 12),
+        TextFormField(
+          controller: _textController,
+          maxLength: 128,
+          validator: _validateSelfTestPrintableAsciiMax128NoComma,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          decoration: InputDecoration(
+            labelText: 'HTTP website address',
+            helperText: addressHelperText,
+            helperMaxLines: 2,
+            border: const OutlineInputBorder(),
+            counterText: '',
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -3535,168 +3587,30 @@ class _ParameterizedServerCommandDialogState
         );
         break;
       case SelfTestParameterizedCommandFieldKind.primaryHttpWebsiteIndex128:
-        field = Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DropdownButtonFormField<int>(
-              decoration: const InputDecoration(
-                labelText: 'HTTP server number (N)',
-                border: OutlineInputBorder(),
-              ),
-              initialValue: _httpServerIndex,
-              items: List<DropdownMenuItem<int>>.generate(
-                10,
-                (i) => DropdownMenuItem<int>(value: i, child: Text('$i')),
-              ),
-              onChanged: (v) {
-                if (v == null) {
-                  return;
-                }
-                setState(() => _httpServerIndex = v);
-              },
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _textController,
-              maxLength: 128,
-              validator: _validateSelfTestPrintableAsciiMax128NoComma,
-              autovalidateMode: AutovalidateMode.onUserInteraction,
-              decoration: const InputDecoration(
-                labelText: 'HTTP website address',
-                helperText:
-                    'Max 128 printable ASCII. Catalog adds a trailing space when shorter than 128.',
-                border: OutlineInputBorder(),
-                counterText: '',
-              ),
-            ),
-          ],
+        field = _buildHttpWebsiteAddressFields(
+          addressHelperText:
+              'Max 128 printable ASCII. Catalog adds a trailing space when shorter than 128.',
         );
         break;
       case SelfTestParameterizedCommandFieldKind
           .secondaryHttpWebsiteIndex0to3And128:
-        field = Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DropdownButtonFormField<int>(
-              decoration: const InputDecoration(
-                labelText: 'HTTP server number (N)',
-                border: OutlineInputBorder(),
-              ),
-              initialValue: _httpServerIndex.clamp(0, 3),
-              items: const [
-                DropdownMenuItem(value: 0, child: Text('0')),
-                DropdownMenuItem(value: 1, child: Text('1')),
-                DropdownMenuItem(value: 2, child: Text('2')),
-                DropdownMenuItem(value: 3, child: Text('3')),
-              ],
-              onChanged: (v) {
-                if (v == null) {
-                  return;
-                }
-                setState(() => _httpServerIndex = v);
-              },
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _textController,
-              maxLength: 128,
-              validator: _validateSelfTestPrintableAsciiMax128NoComma,
-              autovalidateMode: AutovalidateMode.onUserInteraction,
-              decoration: const InputDecoration(
-                labelText: 'HTTP website address',
-                helperText:
-                    'Max 128 printable ASCII. Catalog adds a trailing space when shorter than 128.',
-                border: OutlineInputBorder(),
-                counterText: '',
-              ),
-            ),
-          ],
+        field = _buildHttpWebsiteAddressFields(
+          addressHelperText:
+              'Max 128 printable ASCII. Catalog adds a trailing space when shorter than 128.',
         );
         break;
       case SelfTestParameterizedCommandFieldKind
           .thirdHttpWebsiteIndex0to3And128Trailing40:
-        field = Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DropdownButtonFormField<int>(
-              decoration: const InputDecoration(
-                labelText: 'HTTP server number (N)',
-                border: OutlineInputBorder(),
-              ),
-              initialValue: _httpServerIndex.clamp(0, 3),
-              items: const [
-                DropdownMenuItem(value: 0, child: Text('0')),
-                DropdownMenuItem(value: 1, child: Text('1')),
-                DropdownMenuItem(value: 2, child: Text('2')),
-                DropdownMenuItem(value: 3, child: Text('3')),
-              ],
-              onChanged: (v) {
-                if (v == null) {
-                  return;
-                }
-                setState(() => _httpServerIndex = v);
-              },
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _textController,
-              maxLength: 128,
-              validator: _validateSelfTestPrintableAsciiMax128NoComma,
-              autovalidateMode: AutovalidateMode.onUserInteraction,
-              decoration: const InputDecoration(
-                labelText: 'HTTP website address',
-                helperText:
-                    'Max 128 printable ASCII. Catalog adds a trailing space when shorter than 40.',
-                border: OutlineInputBorder(),
-                counterText: '',
-              ),
-            ),
-          ],
+        field = _buildHttpWebsiteAddressFields(
+          addressHelperText:
+              'Max 128 printable ASCII. Catalog adds a trailing space when shorter than 40.',
         );
         break;
       case SelfTestParameterizedCommandFieldKind
           .factoryHttpWebsiteIndex0to3And128:
-        field = Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DropdownButtonFormField<int>(
-              decoration: const InputDecoration(
-                labelText: 'HTTP server number (N)',
-                border: OutlineInputBorder(),
-              ),
-              initialValue: _httpServerIndex.clamp(0, 3),
-              items: const [
-                DropdownMenuItem(value: 0, child: Text('0')),
-                DropdownMenuItem(value: 1, child: Text('1')),
-                DropdownMenuItem(value: 2, child: Text('2')),
-                DropdownMenuItem(value: 3, child: Text('3')),
-              ],
-              onChanged: (v) {
-                if (v == null) {
-                  return;
-                }
-                setState(() => _httpServerIndex = v);
-              },
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _textController,
-              maxLength: 128,
-              validator: _validateSelfTestPrintableAsciiMax128NoComma,
-              autovalidateMode: AutovalidateMode.onUserInteraction,
-              decoration: const InputDecoration(
-                labelText: 'HTTP website address',
-                helperText:
-                    'Max 128 printable ASCII. Catalog adds a trailing space when shorter than 128.',
-                border: OutlineInputBorder(),
-                counterText: '',
-              ),
-            ),
-          ],
+        field = _buildHttpWebsiteAddressFields(
+          addressHelperText:
+              'Max 128 printable ASCII. Catalog adds a trailing space when shorter than 128.',
         );
         break;
       case SelfTestParameterizedCommandFieldKind
@@ -5223,8 +5137,8 @@ class _SetIndividualSensorParameterDialogState
       return 'Para no is required.';
     }
     final v = int.tryParse(t);
-    if (v == null || v < 1 || v > 23) {
-      return 'Para no must be 1–23.';
+    if (v == null || v < 0 || v > 34) {
+      return 'Para no must be 00–34.';
     }
     return null;
   }
@@ -5262,16 +5176,18 @@ class _SetIndividualSensorParameterDialogState
               _buildSelfTestSensorSetInputField(
                 controller: _paraNo,
                 label: 'Para no',
-                hint: '1',
-                helper: _setIndividualSensorParameterParaHelp,
+                hint: '01',
+                helper: '00–34. $_setIndividualSensorParameterParaHelp',
                 keyboardType: TextInputType.number,
                 validator: _validateParaNo,
               ),
               _buildSelfTestSensorSetInputField(
                 controller: _value,
                 label: 'Value',
-                hint: '+00001.00000',
-                helper: 'Example: ?86,01,1,+00001.00000,#',
+                hint: '',
+                helper:
+                    'Sent exactly as entered (spaces, +, -). No comma allowed.',
+                validator: _validateSelfTestIndividualSensorParameterValue,
               ),
             ],
           ),

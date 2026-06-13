@@ -208,8 +208,6 @@ class _GeneralUserProfilePageState extends State<GeneralUserProfilePage> {
                                           child: const Text('Edit Profile'),
                                         ),
                                       ),
-                                      SizedBox(height: 20,),
-                                      Text('V 1.0.7'),
                                       const Spacer(),
                                       SizedBox(
                                         width: double.infinity,
@@ -243,6 +241,16 @@ class _GeneralUserProfilePageState extends State<GeneralUserProfilePage> {
                                           ),
                                           child: const Text('Log Out'),
                                         ),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        'Version 1.0.1',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(
+                                              color: const Color(0xFF5C6368),
+                                            ),
                                       ),
                                     ],
                                   );

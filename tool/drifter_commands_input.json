@@ -755,13 +755,13 @@
         "isActive": true
       },
       {
-        "_id": "6a04547227be228113206994",
+        "_id": "6a04547227be228113206992",
         "testName": "GET sensor parameter (?81)",
         "requestCommand": "?81,Sensor Number,#",
         "waitingPeriodSecondsRaw": "NA",
         "requestCommandDescription": "NA",
         "response": "$81,List of all sensor parameters,#",
-        "responseDescription": "Sensor no, F.G, factory off, senG, S.off, Resolution, sen Min, sens Max, Averag Scheme, vactor, start time, interval, total sample, mode, Tx.G, Tx.O",
+        "responseDescription": "Sensor no, Channel no, F.G, factory off, senG, S.off, Resolution, sen Min, sens Max, Averag Scheme, vactor, start time, interval, total sample, mode, Tx.G, Tx.O",
         "isActive": true
       },
       {
