@@ -37,9 +37,10 @@ class GeneralUserProfileEditForm extends StatelessWidget {
       builder: (context, updateState) {
         final isUpdating = updateState is GeneralUserUpdateProfileLoading;
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        return SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             GeneralUserProfileCard(
               data: GeneralUserProfileData(
                 userId: userId,
@@ -195,9 +196,10 @@ class GeneralUserProfileEditForm extends StatelessWidget {
               ),
             ),
           ],
-        );
-      },
-    );
+        ),
+      );
+    },
+  );
   }
 }
 

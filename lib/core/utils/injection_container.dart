@@ -67,6 +67,7 @@ import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_buoy_trajectory_view.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_all_buoys_status.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_update_user_profile.dart';
+import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_create_new_drifter_buoy.dart';
 import 'package:drifter_buoy/features/sample_feature/data/datasources/item_remote_data_source.dart';
 import 'package:drifter_buoy/features/sample_feature/data/repositories/item_repository_impl.dart';
 import 'package:drifter_buoy/features/sample_feature/domain/repositories/item_repository.dart';
@@ -467,6 +468,12 @@ Future<void> initDependencies() async {
     );
   }
 
+  if (!sl.isRegistered<GeneralUserCreateNewDrifterBuoy>()) {
+    sl.registerLazySingleton<GeneralUserCreateNewDrifterBuoy>(
+      () => GeneralUserCreateNewDrifterBuoy(repository: sl()),
+    );
+  }
+
   if (!sl.isRegistered<GeneralUserSetupDevicesBloc>()) {
     sl.registerFactory<GeneralUserSetupDevicesBloc>(
       () => GeneralUserSetupDevicesBloc(getAllBuoysStatus: sl()),
@@ -519,7 +526,9 @@ Future<void> initDependencies() async {
   }
 
   if (!sl.isRegistered<GeneralUserBuoySetupBloc>()) {
-    sl.registerFactory<GeneralUserBuoySetupBloc>(() => GeneralUserBuoySetupBloc());
+    sl.registerFactory<GeneralUserBuoySetupBloc>(
+      () => GeneralUserBuoySetupBloc(createNewDrifterBuoy: sl()),
+    );
   }
 
   if (!sl.isRegistered<GeneralUserSelfTestDebugBloc>()) {

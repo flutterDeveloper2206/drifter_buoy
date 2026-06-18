@@ -17,19 +17,12 @@ class UserMapDashboardGetBuoyDashboardSummary
   factory UserMapDashboardGetBuoyDashboardSummary.fromJson(
     Map<String, dynamic> json,
   ) {
+    final activeVal = json['activeBuoys'] ?? json['onlineBuoys'];
     return UserMapDashboardGetBuoyDashboardSummary(
-      totalBuoys: (json['totalBuoys'] ?? 0) is num
-          ? (json['totalBuoys'] as num).toInt()
-          : int.tryParse((json['totalBuoys'] ?? '0').toString()) ?? 0,
-      activeBuoys: (json['activeBuoys'] ?? 0) is num
-          ? (json['activeBuoys'] as num).toInt()
-          : int.tryParse((json['activeBuoys'] ?? '0').toString()) ?? 0,
-      offlineBuoys: (json['offlineBuoys'] ?? 0) is num
-          ? (json['offlineBuoys'] as num).toInt()
-          : int.tryParse((json['offlineBuoys'] ?? '0').toString()) ?? 0,
-      batteryLowBuoys: (json['batteryLowBuoys'] ?? 0) is num
-          ? (json['batteryLowBuoys'] as num).toInt()
-          : int.tryParse((json['batteryLowBuoys'] ?? '0').toString()) ?? 0,
+      totalBuoys: _toInt(json['totalBuoys']),
+      activeBuoys: _toInt(activeVal),
+      offlineBuoys: _toInt(json['offlineBuoys']),
+      batteryLowBuoys: _toInt(json['batteryLowBuoys']),
     );
   }
 
@@ -114,7 +107,7 @@ class UserMapDashboardGetBuoyDashboardResponse extends Equatable {
     Map<String, dynamic> json,
   ) {
     return UserMapDashboardGetBuoyDashboardResponse(
-      statusCode: (json['statusCode'] ?? 0) as int,
+      statusCode: _toInt(json['statusCode']),
       message: (json['message'] ?? '').toString(),
       isSuccess: (json['isSuccess'] ?? false) as bool,
       result: UserMapDashboardGetBuoyDashboardResult.fromJson(
@@ -125,5 +118,14 @@ class UserMapDashboardGetBuoyDashboardResponse extends Equatable {
 
   @override
   List<Object?> get props => [statusCode, message, result, isSuccess];
+}
+
+int _toInt(dynamic value) {
+  if (value is int) return value;
+  if (value is double) return value.toInt();
+  if (value is String) {
+    return int.tryParse(value) ?? 0;
+  }
+  return 0;
 }
 

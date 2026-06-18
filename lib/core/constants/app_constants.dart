@@ -2,7 +2,7 @@ class AppConstants {
   const AppConstants._();
 
   static const String appName = 'Drifter Buoys';
-  static const String baseUrl = 'https://jsonplaceholder.typicode.com';
+  static const String baseUrl = 'https://mobiledbapi.azistaaerospace.com/';
   static const String itemsEndpoint = '/posts';
 
   static const int defaultUserId = 1;

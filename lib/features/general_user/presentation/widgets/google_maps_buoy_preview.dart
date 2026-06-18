@@ -54,7 +54,7 @@ class _GoogleMapsBuoyPreviewState extends State<GoogleMapsBuoyPreview> {
 
   double _hueForStatus(BuoyStatus status) {
     switch (status) {
-      case BuoyStatus.active:
+      case BuoyStatus.online:
         return BitmapDescriptor.hueGreen;
       case BuoyStatus.offline:
         return BitmapDescriptor.hueRed;

@@ -76,7 +76,7 @@ class GeneralUserMapBloc
     Emitter<GeneralUserMapState> emit,
   ) {
     switch (event.status) {
-      case BuoyStatus.active:
+      case BuoyStatus.online:
         emit(state.copyWith(showActive: !state.showActive));
         return;
       case BuoyStatus.offline:

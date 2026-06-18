@@ -1,57 +1,61 @@
 class ApiEndpoints {
   const ApiEndpoints._();
+  // http://4.213.34.231:5025/api/
 
   static const String loginUrl =
-      'http://4.213.34.231:5025/api/UserAuthenticate/Login';
+      'https://mobiledbapi.azistaaerospace.com/api/UserAuthenticate/Login';
 
   static const String requestVerificationCodeUrl =
-      'http://4.213.34.231:5025/api/UserAuthenticate/RequestVerificationCode';
+      'https://mobiledbapi.azistaaerospace.com/api/UserAuthenticate/RequestVerificationCode';
 
   static const String verifyVerificationCodeUrl =
-      'http://4.213.34.231:5025/api/UserAuthenticate/VerifyCode';
+      'https://mobiledbapi.azistaaerospace.com/api/UserAuthenticate/VerifyCode';
 
   static const String resetPasswordUrl =
-      'http://4.213.34.231:5025/api/UserAuthenticate/ResetPassword';
+      'https://mobiledbapi.azistaaerospace.com/api/UserAuthenticate/ResetPassword';
 
   static const String getBuoyDashboardUrl =
-      'http://4.213.34.231:5025/api/User/UserMapDashboard/GetBuoyDashboard';
+      'https://mobiledbapi.azistaaerospace.com/api/User/UserMapDashboard/GetBuoyDashboard';
 
   static const String getBuoyMapDashboardUrl =
-      'http://4.213.34.231:5025/api/User/UserMapDashboard/GetBuoyMapDashboard';
+      'https://mobiledbapi.azistaaerospace.com/api/User/UserMapDashboard/GetBuoyMapDashboard';
 
   static const String updateUserProfileUrl =
-      'http://4.213.34.231:5025/api/Admin/User/UpdateUserProfile';
+      'https://mobiledbapi.azistaaerospace.com/api/Admin/User/UpdateUserProfile';
 
   static const String getAllBuoysStatusForExportUrl =
-      'http://4.213.34.231:5025/api/Report/Report/GetAllBuoysStatusForExport';
+      'https://mobiledbapi.azistaaerospace.com/api/Report/Report/GetAllBuoysStatusForExport';
 
   static const String getAllBuoysDataOverviewViewUrl =
-      'http://4.213.34.231:5025/api/User/UserViewBuoyDashboard/GetAllBuoysDataOverviewView';
+      'https://mobiledbapi.azistaaerospace.com/api/User/UserViewBuoyDashboard/GetAllBuoysDataOverviewView';
 
   static const String getAllBuoysStatusUrl =
-      'http://4.213.34.231:5025/api/User/UserViewBuoyDashboard/GetAllBuoysStatus';
+      'https://mobiledbapi.azistaaerospace.com/api/User/UserViewBuoyDashboard/GetAllBuoysStatus';
 
   static const String getBuoyDataOverviewUrl =
-      'http://4.213.34.231:5025/api/User/UserViewBuoyDashboard/GetBuoyDataOverview';
+      'https://mobiledbapi.azistaaerospace.com/api/User/UserViewBuoyDashboard/GetBuoyDataOverview';
 
   static const String getBuoyMetricsUrl =
-      'http://4.213.34.231:5025/api/User/UserViewBuoyDashboard/GetBuoyMetrics';
+      'https://mobiledbapi.azistaaerospace.com/api/User/UserViewBuoyDashboard/GetBuoyMetrics';
 
   static const String getBuoyTrajectoryViewUrl =
-      'http://4.213.34.231:5025/api/User/UserViewBuoyDashboard/GetBuoyTrajectoryView';
+      'https://mobiledbapi.azistaaerospace.com/api/User/UserViewBuoyDashboard/GetBuoyTrajectoryView';
 
   static const String getBuoyDistanceReportForExportUrl =
-      'http://4.213.34.231:5025/api/Report/Report/GetBuoyDistanceReportForExport';
+      'https://mobiledbapi.azistaaerospace.com/api/Report/Report/GetBuoyDistanceReportForExport';
 
   static const String getBuoyDataReportForExportUrl =
-      'http://4.213.34.231:5025/api/Report/Report/GetBuoyDataReportForExport';
+      'https://mobiledbapi.azistaaerospace.com/api/Report/Report/GetBuoyDataReportForExport';
 
   static const String registerDeviceTokenUrl =
-      'http://4.213.34.231:5025/api/admin/DeviceToken/register';
+      'https://mobiledbapi.azistaaerospace.com/api/admin/DeviceToken/register';
 
   static const String getAllNotificationsUrl =
-      'http://4.213.34.231:5025/api/admin/Notification/GetAllNotifications';
+      'https://mobiledbapi.azistaaerospace.com/api/admin/Notification/GetAllNotifications';
 
   static const String getAllDrifterBuoyCommandsUrl =
-      'http://4.213.34.231:5025/api/Admin/Command/GetAllDrifterBuoyCommands';
+      'https://mobiledbapi.azistaaerospace.com/api/Admin/Command/GetAllDrifterBuoyCommands';
+
+  static const String createNewDrifterBuoyUrl =
+      'https://mobiledbapi.azistaaerospace.com/api/Admin/Station/CreateNewDrifterBuoy';
 }

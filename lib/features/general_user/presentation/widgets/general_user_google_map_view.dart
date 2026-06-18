@@ -134,7 +134,7 @@ class _GeneralUserGoogleMapViewState extends State<GeneralUserGoogleMapView> {
 
   double _hueForStatus(BuoyStatus status) {
     return switch (status) {
-      BuoyStatus.active => BitmapDescriptor.hueGreen,
+      BuoyStatus.online => BitmapDescriptor.hueGreen,
       BuoyStatus.offline => BitmapDescriptor.hueRed,
       BuoyStatus.batteryLow => BitmapDescriptor.hueOrange,
     };
@@ -152,7 +152,7 @@ class _GeneralUserGoogleMapViewState extends State<GeneralUserGoogleMapView> {
     // While icons are loading, fall back to default pins.
     if (isSelected) {
       return switch (buoy.status) {
-        BuoyStatus.active =>
+        BuoyStatus.online =>
           _activeSelectedIcon ??
               BitmapDescriptor.defaultMarkerWithHue(_hueForStatus(buoy.status)),
         BuoyStatus.offline =>
@@ -165,7 +165,7 @@ class _GeneralUserGoogleMapViewState extends State<GeneralUserGoogleMapView> {
     }
 
     return switch (buoy.status) {
-      BuoyStatus.active =>
+      BuoyStatus.online =>
         _activeIcon ??
             BitmapDescriptor.defaultMarkerWithHue(_hueForStatus(buoy.status)),
       BuoyStatus.offline =>
@@ -309,7 +309,7 @@ class _GeneralUserGoogleMapViewState extends State<GeneralUserGoogleMapView> {
       return;
     }
     final baseImage = switch (buoy.status) {
-      BuoyStatus.active => _imgGreen!,
+      BuoyStatus.online => _imgGreen!,
       BuoyStatus.offline => _imgRed!,
       BuoyStatus.batteryLow => _imgYellow!,
     };
@@ -517,15 +517,7 @@ class _GeneralUserGoogleMapViewState extends State<GeneralUserGoogleMapView> {
     }
   }
 
-  Future<void> _nudgeZoom(double delta) async {
-    final c = _controller;
-    if (c == null) {
-      return;
-    }
-    try {
-      await c.animateCamera(CameraUpdate.zoomBy(delta));
-    } on Object catch (_) {}
-  }
+
 
   @override
   Widget build(BuildContext context) {

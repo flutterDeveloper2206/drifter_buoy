@@ -2,7 +2,7 @@ import 'package:equatable/equatable.dart';
 
 enum GeneralUserSetupDevicesStatus { initial, loading, loaded, error }
 
-enum GeneralUserSetupDeviceConnectionStatus { active, offline, batteryLow }
+enum GeneralUserSetupDeviceConnectionStatus { online, offline, batteryLow }
 
 class GeneralUserSetupDeviceItem extends Equatable {
   const GeneralUserSetupDeviceItem({

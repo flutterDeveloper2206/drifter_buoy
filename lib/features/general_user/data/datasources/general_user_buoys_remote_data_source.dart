@@ -10,6 +10,7 @@ import 'package:drifter_buoy/features/general_user/data/models/user_view_buoy_da
 import 'package:drifter_buoy/features/general_user/data/models/user_view_buoy_dashboard_get_buoy_metrics_response.dart';
 import 'package:drifter_buoy/features/general_user/data/models/user_view_buoy_dashboard_get_buoy_trajectory_view_response.dart';
 import 'package:drifter_buoy/features/general_user/data/utils/general_user_buoy_id_for_api.dart';
+import 'package:drifter_buoy/features/general_user/data/models/create_new_drifter_buoy_response.dart';
 
 class GeneralUserBuoysRemoteDataSource {
   const GeneralUserBuoysRemoteDataSource({required ApiService apiService})
@@ -165,6 +166,39 @@ class GeneralUserBuoysRemoteDataSource {
         return UserViewBuoyDashboardGetBuoyTrajectoryViewResponse.fromJson(
           data,
         );
+      },
+    );
+  }
+
+  ResultFuture<CreateNewDrifterBuoyResponse> createNewDrifterBuoy({
+    required String stationId,
+    required String stationName,
+    required String transmissionInterval,
+    required String transmissionStartTime,
+  }) {
+    final payload = <String, dynamic>{
+      'station': {
+        'stationId': stationId,
+        'stationName': stationName,
+        'transmissionInterval': transmissionInterval,
+        'transmissionStartTime': transmissionStartTime,
+      }
+    };
+
+    return _apiService.post<CreateNewDrifterBuoyResponse>(
+      ApiEndpoints.createNewDrifterBuoyUrl,
+      data: payload,
+      parser: (dynamic data) {
+        if (data is String) {
+          final decoded = jsonDecode(data);
+          if (decoded is Map<String, dynamic>) {
+            return CreateNewDrifterBuoyResponse.fromJson(decoded);
+          }
+        }
+        if (data is! Map<String, dynamic>) {
+          throw Exception('Invalid create new drifter buoy response format');
+        }
+        return CreateNewDrifterBuoyResponse.fromJson(data);
       },
     );
   }

@@ -79,7 +79,7 @@ class GeneralUserDashboardPage extends StatelessWidget {
                           child: _StatItem(
                             icon: Icons.wifi,
                             iconColor: Color(0xFF4AAF5D),
-                            title: 'Active Buoys',
+                            title: 'Online Buoys',
                             value: summary.activeBuoys.toString(),
                             total: '/${summary.totalBuoys}',
                           ),
@@ -310,7 +310,7 @@ class _MapPreviewCard extends StatelessWidget {
       final latLng = LatLng(location.latitude, location.longitude);
 
       final status = i < activeCount
-          ? BuoyStatus.active
+          ? BuoyStatus.online
           : i < activeCount + offlineCount
           ? BuoyStatus.offline
           : i < activeCount + offlineCount + batteryLowCount

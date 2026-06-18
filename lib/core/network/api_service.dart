@@ -5,16 +5,23 @@ import 'package:dartz_plus/dartz_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:drifter_buoy/core/constants/app_constants.dart';
+import 'package:drifter_buoy/core/constants/app_routes.dart';
 import 'package:drifter_buoy/core/error/exception_manager.dart';
 import 'package:drifter_buoy/core/error/failure.dart';
 import 'package:drifter_buoy/core/utils/app_logger.dart';
+import 'package:drifter_buoy/core/utils/navigation_service.dart';
 import 'package:drifter_buoy/core/utils/typedefs.dart';
 import 'package:drifter_buoy/core/network/auth_interceptor.dart';
 import 'package:drifter_buoy/core/storage/auth_session_store.dart';
 import 'package:drifter_buoy/core/network/api_error_response.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class ApiService {
   final Dio _dio;
+  final AuthSessionStore? _authSessionStore;
+
+  static bool _sessionExpiredDialogShowing = false;
 
   ApiService({required String baseUrl, AuthSessionStore? authSessionStore})
     : _dio = Dio(
@@ -27,7 +34,8 @@ class ApiService {
           // backend message/result consistently.
           validateStatus: (status) => status != null && status < 500,
         ),
-      ) {
+      ),
+      _authSessionStore = authSessionStore {
     if (authSessionStore != null) {
       _dio.interceptors.add(
         AuthInterceptor(authSessionStore: authSessionStore),
@@ -102,13 +110,22 @@ class ApiService {
       final failure = _validateResponse(response);
       if (failure != null) {
         AppLogger.w('DELETE failed: $path', error: failure.message);
+        if (response.statusCode == 440) {
+          _handleSessionExpired(failure.message);
+        }
         return Left(failure);
       }
 
       AppLogger.i('DELETE success: $path');
       return const Right(null);
     } on DioException catch (error) {
+      final statusCode = error.response?.statusCode;
       AppLogger.e('DELETE DioException: $path', error: error);
+      if (statusCode == 440) {
+        final message = _extractErrorMessage(error.response?.data) ??
+            'Your session token has expired. Please log in again.';
+        _handleSessionExpired(message);
+      }
       return Left(ExceptionManager.mapDioException(error));
     } catch (error) {
       AppLogger.e('DELETE Unknown error: $path', error: error);
@@ -160,6 +177,9 @@ class ApiService {
           'API RESPONSE\nURL: ${response.requestOptions.uri}\nSTATUS: ${response.statusCode}\nRESPONSE: ${_formatResponseBody(response.data)}\nERROR: ${failure.message}',
         );
         AppLogger.w('${method.name.toUpperCase()} failed: $path');
+        if (response.statusCode == 440) {
+          _handleSessionExpired(failure.message);
+        }
         return Left(failure);
       }
 
@@ -178,6 +198,11 @@ class ApiService {
         '${method.name.toUpperCase()} DioException: $path',
         error: error,
       );
+      if (statusCode == 440) {
+        final message = _extractErrorMessage(error.response?.data) ??
+            'Your session token has expired. Please log in again.';
+        _handleSessionExpired(message);
+      }
       return Left(ExceptionManager.mapDioException(error));
     } catch (error) {
       AppLogger.e(
@@ -300,6 +325,76 @@ class ApiService {
     }
 
     return data.toString();
+  }
+
+  void _handleSessionExpired(String message) {
+    if (_sessionExpiredDialogShowing) {
+      return;
+    }
+    _sessionExpiredDialogShowing = true;
+
+    // Clear session details asynchronously
+    _authSessionStore?.clear();
+
+    final context = NavigationService.currentContext;
+    if (context != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        showDialog<void>(
+          context: context,
+          barrierDismissible: false,
+          builder: (dialogContext) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              title: Row(
+                children: const [
+                  Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
+                  SizedBox(width: 8),
+                  Text('Session Expired'),
+                ],
+              ),
+              content: Text(
+                message.trim().isNotEmpty
+                    ? message
+                    : 'Your session token has expired. Please log in again.',
+                style: const TextStyle(fontSize: 16),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    _sessionExpiredDialogShowing = false;
+                    Navigator.of(dialogContext).pop();
+                    try {
+                      GoRouter.of(context).go(AppRoutes.loginPath);
+                    } catch (e) {
+                      AppLogger.e('Router navigation to login failed', error: e);
+                    }
+                  },
+                  child: const Text(
+                    'OK',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF206BBE),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      });
+    } else {
+      _sessionExpiredDialogShowing = false;
+      final navigatorState = NavigationService.navigator;
+      if (navigatorState != null) {
+        try {
+          NavigationService.navigator?.context.go(AppRoutes.loginPath);
+        } catch (e) {
+          AppLogger.e('Global navigation fallback failed', error: e);
+        }
+      }
+    }
   }
 }
 

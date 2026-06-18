@@ -302,12 +302,34 @@ class _GeneralUserSetupDetailPageState
                                         ],
                                       ),
                                       const SizedBox(height: 8),
-                                      Text(
-                                        'Enable Configuration to Set Up Buoy',
-                                        style: Theme.of(context).textTheme
-                                            .compactSupportingText(
-                                              const Color(0xFF6A7178),
-                                            ),
+                                      GestureDetector(
+                                        onTap: () {
+                                          if (!state.enableConfiguration) {
+                                            AppFlushbar.info(
+                                              'Please enable configuration using the switch above.',
+                                              context: context,
+                                            );
+                                            return;
+                                          }
+                                          if (!bluetoothOn) {
+                                            AppFlushbar.error(
+                                              'Bluetooth is not connected. Please connect to a device first.',
+                                              context: context,
+                                            );
+                                            return;
+                                          }
+                                          context.push(
+                                            AppRoutes.buoySetupPath,
+                                            extra: state.contextBuoyId,
+                                          );
+                                        },
+                                        child: Text(
+                                          'Enable Configuration to Set Up Buoy',
+                                          style: Theme.of(context).textTheme
+                                              .compactSupportingText(
+                                                const Color(0xFF6A7178),
+                                              ),
+                                        ),
                                       ),
                                       if (state.enableConfiguration &&
                                           bluetoothOn) ...[
@@ -327,8 +349,7 @@ class _GeneralUserSetupDetailPageState
                                             child: Row(
                                               children: [
                                                 const Icon(
-                                                  Icons
-                                                      .arrow_circle_right_outlined,
+                                                  Icons.published_with_changes,
                                                   color: _blue,
                                                   size: 22,
                                                 ),

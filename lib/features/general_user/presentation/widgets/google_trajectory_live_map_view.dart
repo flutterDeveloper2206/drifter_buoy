@@ -159,7 +159,7 @@ class _GoogleTrajectoryLiveMapViewState
     if (_imgGreen == null || _imgRed == null || _imgYellow == null) return;
 
     final base = switch (p.status) {
-      BuoyStatus.active => _imgGreen!,
+      BuoyStatus.online => _imgGreen!,
       BuoyStatus.offline => _imgRed!,
       BuoyStatus.batteryLow => _imgYellow!,
     };
@@ -278,7 +278,7 @@ class _GoogleTrajectoryLiveMapViewState
 
   double _hueForStatus(BuoyStatus status) {
     return switch (status) {
-      BuoyStatus.active => BitmapDescriptor.hueGreen,
+      BuoyStatus.online => BitmapDescriptor.hueGreen,
       BuoyStatus.offline => BitmapDescriptor.hueRed,
       BuoyStatus.batteryLow => BitmapDescriptor.hueOrange,
     };

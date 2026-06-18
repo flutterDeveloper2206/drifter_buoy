@@ -130,7 +130,7 @@ class GeneralUserMapBuoyDetailsBloc
     return List<GeneralUserBuoyDetail>.generate(base.length, (index) {
       final buoy = base[index];
       final statusLabel = switch (buoy.status) {
-        BuoyStatus.active => 'Active',
+        BuoyStatus.online => 'Online',
         BuoyStatus.offline => 'Offline',
         BuoyStatus.batteryLow => 'Battery Low',
       };

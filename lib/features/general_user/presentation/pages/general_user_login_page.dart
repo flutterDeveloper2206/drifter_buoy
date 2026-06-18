@@ -27,8 +27,8 @@ class _GeneralUserLoginPageState extends State<GeneralUserLoginPage> {
   @override
   void initState() {
     super.initState();
-    _emailController = TextEditingController(text: 'DBTesting@123');
-    _passwordController = TextEditingController(text: 'Azista@123');
+    _emailController = TextEditingController();
+    _passwordController = TextEditingController();
     _obscurePasswordNotifier = ValueNotifier<bool>(true);
   }
 

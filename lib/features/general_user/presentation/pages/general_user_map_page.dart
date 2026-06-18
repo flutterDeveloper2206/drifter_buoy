@@ -539,12 +539,12 @@ class _MapSelectedBuoyCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final statusColor = switch (buoy.status) {
-      BuoyStatus.active => const Color(0xFF2CC66A),
+      BuoyStatus.online => const Color(0xFF2CC66A),
       BuoyStatus.offline => const Color(0xFFE74C3C),
       BuoyStatus.batteryLow => const Color(0xFF4F95DA),
     };
     final statusLabel = switch (buoy.status) {
-      BuoyStatus.active => 'Active',
+      BuoyStatus.online => 'Online',
       BuoyStatus.offline => 'Offline',
       BuoyStatus.batteryLow => 'Battery Low',
     };
@@ -864,7 +864,7 @@ class _MapLegendCard extends StatelessWidget {
         children: [
           _LegendPinItem(
             assetPath: 'assets/images/green.png',
-            label: 'Active',
+            label: 'Online',
             enabled: isActiveVisible,
             enabledColor: const Color(0xFF4CAF50),
             disabledColor: disabledColor,

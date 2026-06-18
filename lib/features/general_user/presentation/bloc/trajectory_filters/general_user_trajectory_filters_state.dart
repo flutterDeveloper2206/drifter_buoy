@@ -49,7 +49,7 @@ class GeneralUserTrajectoryFiltersState extends Equatable {
     return trajectoryPoints
         .map(
           (point) => point.status == BuoyStatus.batteryLow
-              ? point.copyWith(status: BuoyStatus.active)
+              ? point.copyWith(status: BuoyStatus.online)
               : point,
         )
         .toList(growable: false);

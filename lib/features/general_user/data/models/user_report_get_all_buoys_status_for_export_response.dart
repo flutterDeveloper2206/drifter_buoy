@@ -55,7 +55,9 @@ class BuoyExportStatusItemModel extends Equatable {
     );
   }
 
-  bool get isActive => status.trim().toLowerCase() == 'active';
+  bool get isActive =>
+      status.trim().toLowerCase() == 'active' ||
+      status.trim().toLowerCase() == 'online';
 
   @override
   List<Object> get props => [buoyId, status, lastUpdated];

@@ -500,7 +500,7 @@ BuoyStatus _mapStatusFromDashboardItem(
     return BuoyStatus.batteryLow;
   }
   final fromApi = _statusFromApi(e.buoyStatus);
-  if (looksLow && fromApi == BuoyStatus.active) {
+  if (looksLow && fromApi == BuoyStatus.online) {
     return BuoyStatus.batteryLow;
   }
   return fromApi;
@@ -508,7 +508,7 @@ BuoyStatus _mapStatusFromDashboardItem(
 
 BuoyStatus _statusFromApi(String status) {
   final normalized = status.trim().toLowerCase();
-  if (normalized == 'active') return BuoyStatus.active;
+  if (normalized == 'active' || normalized == 'online') return BuoyStatus.online;
   if (normalized == 'battery low' || normalized == 'batterylow') {
     return BuoyStatus.batteryLow;
   }

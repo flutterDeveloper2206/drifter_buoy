@@ -114,8 +114,8 @@ class GeneralUserSetupDevicesBloc
 
 GeneralUserSetupDeviceConnectionStatus _mapConnectionStatus(String raw) {
   final status = raw.trim().toLowerCase();
-  if (status == 'active') {
-    return GeneralUserSetupDeviceConnectionStatus.active;
+  if (status == 'online' || status == 'active') {
+    return GeneralUserSetupDeviceConnectionStatus.online;
   }
   if (status == 'offline') {
     return GeneralUserSetupDeviceConnectionStatus.offline;

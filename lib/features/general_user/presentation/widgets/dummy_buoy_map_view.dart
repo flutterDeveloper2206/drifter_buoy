@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
-enum BuoyStatus { active, offline, batteryLow }
+enum BuoyStatus { online, offline, batteryLow }
 
 class DummyBuoy extends Equatable {
   final String id;
@@ -69,7 +69,7 @@ class DummyBuoyMapView extends StatelessWidget {
     DummyBuoy(
       id: 'DB - 01',
       position: LatLng(37.7955, -122.4312),
-      status: BuoyStatus.active,
+      status: BuoyStatus.online,
       battery: '11.8 v',
       gps: '15°40\'51.0"N',
       signal: '79%',
@@ -77,7 +77,7 @@ class DummyBuoyMapView extends StatelessWidget {
     DummyBuoy(
       id: 'DB - 01',
       position: LatLng(37.7570, -122.4010),
-      status: BuoyStatus.active,
+      status: BuoyStatus.online,
       battery: '12.1 v',
       gps: '15°41\'02.1"N',
       signal: '82%',
@@ -85,7 +85,7 @@ class DummyBuoyMapView extends StatelessWidget {
     DummyBuoy(
       id: 'DB - 01',
       position: LatLng(37.7688, -122.3820),
-      status: BuoyStatus.active,
+      status: BuoyStatus.online,
       battery: '10.9 v',
       gps: '15°39\'48.5"N',
       signal: '71%',
@@ -109,7 +109,7 @@ class DummyBuoyMapView extends StatelessWidget {
     DummyBuoy(
       id: 'DB - 01',
       position: LatLng(37.7414, -122.4098),
-      status: BuoyStatus.active,
+      status: BuoyStatus.online,
       battery: '11.2 v',
       gps: '15°40\'15.0"N',
       signal: '65%',
@@ -117,7 +117,7 @@ class DummyBuoyMapView extends StatelessWidget {
     DummyBuoy(
       id: 'DB - 01',
       position: LatLng(37.7244, -122.3875),
-      status: BuoyStatus.active,
+      status: BuoyStatus.online,
       battery: '12.4 v',
       gps: '15°42\'11.5"N',
       signal: '88%',
@@ -125,7 +125,7 @@ class DummyBuoyMapView extends StatelessWidget {
     DummyBuoy(
       id: 'DB - 01',
       position: LatLng(37.7128, -122.3518),
-      status: BuoyStatus.active,
+      status: BuoyStatus.online,
       battery: '11.0 v',
       gps: '15°37\'39.2"N',
       signal: '73%',
@@ -222,7 +222,7 @@ class _BuoyMarker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final statusColor = switch (status) {
-      BuoyStatus.active => const Color(0xFF4CAF50),
+      BuoyStatus.online => const Color(0xFF4CAF50),
       BuoyStatus.offline => const Color(0xFFE74C3C),
       BuoyStatus.batteryLow => const Color(0xFFF4B400),
     };

@@ -56,7 +56,7 @@ BuoyStatus _statusForRow(BuoyTrajectoryViewRowModel row) {
     return BuoyStatus.batteryLow;
   }
 
-  return BuoyStatus.active;
+  return BuoyStatus.online;
 }
 
 String _labelForRow(BuoyTrajectoryViewRowModel row) {

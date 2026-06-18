@@ -241,7 +241,7 @@ class _MapLegendCard extends StatelessWidget {
         children: [
           AppMapLegendItem(
             icon: Icons.wifi,
-            label: 'Active',
+            label: 'Online',
             color: Color(0xFF4CAF50),
           ),
           AppMapLegendItem(

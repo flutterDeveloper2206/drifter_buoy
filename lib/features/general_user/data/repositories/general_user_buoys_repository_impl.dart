@@ -6,6 +6,7 @@ import 'package:drifter_buoy/features/general_user/data/models/user_view_buoy_da
 import 'package:drifter_buoy/features/general_user/data/models/user_view_buoy_dashboard_get_buoy_metrics_response.dart';
 import 'package:drifter_buoy/features/general_user/data/models/user_view_buoy_dashboard_get_buoy_trajectory_view_response.dart';
 import 'package:drifter_buoy/features/general_user/domain/repositories/general_user_buoys_repository.dart';
+import 'package:drifter_buoy/features/general_user/data/models/create_new_drifter_buoy_response.dart';
 
 class GeneralUserBuoysRepositoryImpl implements GeneralUserBuoysRepository {
   GeneralUserBuoysRepositoryImpl({
@@ -60,6 +61,21 @@ class GeneralUserBuoysRepositoryImpl implements GeneralUserBuoysRepository {
       fromDate: fromDate,
       toDate: toDate,
       intervalMinutes: intervalMinutes,
+    );
+  }
+
+  @override
+  ResultFuture<CreateNewDrifterBuoyResponse> createNewDrifterBuoy({
+    required String stationId,
+    required String stationName,
+    required String transmissionInterval,
+    required String transmissionStartTime,
+  }) {
+    return _remoteDataSource.createNewDrifterBuoy(
+      stationId: stationId,
+      stationName: stationName,
+      transmissionInterval: transmissionInterval,
+      transmissionStartTime: transmissionStartTime,
     );
   }
 }
