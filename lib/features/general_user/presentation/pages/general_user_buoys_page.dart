@@ -137,7 +137,12 @@ class _GeneralUserBuoysPageState extends State<GeneralUserBuoysPage> {
                             ),
                             if (state.filteredBuoys.isEmpty)
                               Padding(
-                                padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                                padding: const EdgeInsets.fromLTRB(
+                                  16,
+                                  0,
+                                  16,
+                                  0,
+                                ),
                                 child: SizedBox(
                                   height:
                                       MediaQuery.of(context).size.height * 0.42,
@@ -148,7 +153,9 @@ class _GeneralUserBuoysPageState extends State<GeneralUserBuoysPage> {
                                 ),
                               )
                             else
-                              ...state.filteredBuoys.asMap().entries.map((entry) {
+                              ...state.filteredBuoys.asMap().entries.map((
+                                entry,
+                              ) {
                                 final index = entry.key;
                                 final buoy = entry.value;
                                 return Padding(
@@ -234,7 +241,7 @@ class _StatusSummaryCard extends StatelessWidget {
             child: _SummaryItem(
               icon: Icons.wifi,
               iconColor: const Color(0xFF47B45E),
-              title: 'Active Buoys',
+              title: 'Online Buoys',
               value: activeCount,
               total: total,
             ),
@@ -430,9 +437,9 @@ class _FilterRow extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           _FilterChip(
-            label: 'Active',
-            selected: selectedFilter == GeneralUserBuoyFilter.active,
-            onTap: () => onFilterTap(GeneralUserBuoyFilter.active),
+            label: 'Online',
+            selected: selectedFilter == GeneralUserBuoyFilter.online,
+            onTap: () => onFilterTap(GeneralUserBuoyFilter.online),
           ),
           const SizedBox(width: 8),
           _FilterChip(
@@ -498,19 +505,19 @@ class _BuoyCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final statusColor = switch (buoy.status) {
-      GeneralUserBuoyConnectionStatus.active => const Color(0xFF22BE61),
+      GeneralUserBuoyConnectionStatus.online => const Color(0xFF22BE61),
       GeneralUserBuoyConnectionStatus.offline => const Color(0xFFE45852),
       GeneralUserBuoyConnectionStatus.batteryLow => const Color(0xFF4F95DA),
     };
 
     final statusIcon = switch (buoy.status) {
-      GeneralUserBuoyConnectionStatus.active => Icons.wifi,
+      GeneralUserBuoyConnectionStatus.online => Icons.wifi,
       GeneralUserBuoyConnectionStatus.offline => Icons.wifi_off,
       GeneralUserBuoyConnectionStatus.batteryLow => Icons.battery_1_bar,
     };
 
     final statusLabel = switch (buoy.status) {
-      GeneralUserBuoyConnectionStatus.active => 'Active',
+      GeneralUserBuoyConnectionStatus.online => 'Online',
       GeneralUserBuoyConnectionStatus.offline => 'Offline',
       GeneralUserBuoyConnectionStatus.batteryLow => 'Battery Low',
     };

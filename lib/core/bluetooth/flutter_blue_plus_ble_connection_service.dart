@@ -389,8 +389,11 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
   static List<BleScanResult> _dedupeAndSort(List<ScanResult> raw) {
     final best = <String, BleScanResult>{};
     for (final sr in raw) {
+      final name = _displayNameOrNull(sr);
+      if (name == null) {
+        continue;
+      }
       final id = sr.device.remoteId.str;
-      final name = _displayName(sr);
       final candidate = BleScanResult(
         remoteId: id,
         displayName: name,
@@ -405,7 +408,7 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
     return list;
   }
 
-  static String _displayName(ScanResult sr) {
+  static String? _displayNameOrNull(ScanResult sr) {
     final adv = sr.advertisementData.advName.trim();
     final platform = sr.device.platformName.trim();
     final an = sr.device.advName.trim();
@@ -414,7 +417,7 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
         return s;
       }
     }
-    return 'Unknown device';
+    return null;
   }
 
   /// Resolves UART-like pair: explicit UUIDs from [DrifterBleGatt], else any

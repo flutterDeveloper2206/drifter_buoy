@@ -222,6 +222,25 @@ class ClearGeneralUserRadioSondeTransmitterIdPrompt
   const ClearGeneralUserRadioSondeTransmitterIdPrompt();
 }
 
+class SubmitGeneralUserUhfSondeTxInTime
+    extends GeneralUserSelfTestDebugEvent {
+  const SubmitGeneralUserUhfSondeTxInTime({
+    required this.fieldN,
+    required this.timeValue,
+  });
+
+  final int fieldN;
+  final String timeValue;
+
+  @override
+  List<Object> get props => [fieldN, timeValue];
+}
+
+class ClearGeneralUserUhfSondeTxInTimePrompt
+    extends GeneralUserSelfTestDebugEvent {
+  const ClearGeneralUserUhfSondeTxInTimePrompt();
+}
+
 class SubmitGeneralUserTransmitterTest extends GeneralUserSelfTestDebugEvent {
   const SubmitGeneralUserTransmitterTest({
     required this.plainCarrierOn,

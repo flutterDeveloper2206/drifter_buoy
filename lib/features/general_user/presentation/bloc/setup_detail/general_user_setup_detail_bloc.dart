@@ -146,9 +146,9 @@ class GeneralUserSetupDetailBloc
     SelectBluetoothDevice event,
     Emitter<GeneralUserSetupDetailState> emit,
   ) {
-    final name = event.displayName.trim().isEmpty
-        ? 'Unknown device'
-        : event.displayName.trim();
+    final name = event.displayName.trim().isNotEmpty
+        ? event.displayName.trim()
+        : event.bluetoothId;
     emit(
       state.copyWith(
         bluetoothDevice: name,

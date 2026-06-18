@@ -138,8 +138,8 @@ class GeneralUserBuoysBloc
         .where((buoy) {
           final statusMatch = switch (filter) {
             GeneralUserBuoyFilter.all => true,
-            GeneralUserBuoyFilter.active =>
-              buoy.status == GeneralUserBuoyConnectionStatus.active,
+            GeneralUserBuoyFilter.online =>
+              buoy.status == GeneralUserBuoyConnectionStatus.online,
             GeneralUserBuoyFilter.offline =>
               buoy.status == GeneralUserBuoyConnectionStatus.offline,
             GeneralUserBuoyFilter.batteryLow =>
@@ -163,8 +163,8 @@ class GeneralUserBuoysBloc
 
 GeneralUserBuoyConnectionStatus _mapStatus(String rawStatus) {
   final status = rawStatus.trim().toLowerCase();
-  if (status == 'active') {
-    return GeneralUserBuoyConnectionStatus.active;
+  if (status == 'online' || status == 'active') {
+    return GeneralUserBuoyConnectionStatus.online;
   }
   if (status == 'offline') {
     return GeneralUserBuoyConnectionStatus.offline;
