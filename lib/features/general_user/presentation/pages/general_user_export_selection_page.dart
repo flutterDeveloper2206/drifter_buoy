@@ -526,11 +526,11 @@ class _BuoySelectableCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = item.isActive
+    final statusColor = item.isOnline
         ? const Color(0xFF22BE61)
         : const Color(0xFFE74C3C);
-    final statusIcon = item.isActive ? Icons.wifi : Icons.wifi_off;
-    final statusLabel = item.isActive ? 'Active' : 'Offline';
+    final statusIcon = item.isOnline ? Icons.wifi : Icons.wifi_off;
+    final statusLabel = item.isOnline ? 'Online' : 'Offline';
 
     return InkWell(
       onTap: onTap,

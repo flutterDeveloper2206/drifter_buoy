@@ -308,7 +308,7 @@ class _BuoyHeaderCard extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               Text(
-                data.isActive ? 'Active' : 'Offline',
+                data.isActive ? 'Online' : 'Offline',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: data.isActive
                       ? const Color(0xFF22BE61)

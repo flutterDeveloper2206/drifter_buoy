@@ -1,4 +1,5 @@
 import 'package:drifter_buoy/core/utils/app_logger.dart';
+import 'package:drifter_buoy/core/utils/buoy_status_utils.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/map_buoy_details/general_user_map_buoy_details_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/map_buoy_details/general_user_map_buoy_details_state.dart';
 import 'package:drifter_buoy/features/general_user/presentation/widgets/dummy_buoy_map_view.dart';
@@ -130,9 +131,9 @@ class GeneralUserMapBuoyDetailsBloc
     return List<GeneralUserBuoyDetail>.generate(base.length, (index) {
       final buoy = base[index];
       final statusLabel = switch (buoy.status) {
-        BuoyStatus.active => 'Active',
-        BuoyStatus.offline => 'Offline',
-        BuoyStatus.batteryLow => 'Battery Low',
+        BuoyStatus.active => buoyStatusDisplayLabel(BuoyStatus.active),
+        BuoyStatus.offline => buoyStatusDisplayLabel(BuoyStatus.offline),
+        BuoyStatus.batteryLow => buoyStatusDisplayLabel(BuoyStatus.batteryLow),
       };
 
       return GeneralUserBuoyDetail(

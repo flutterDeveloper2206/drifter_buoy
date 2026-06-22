@@ -9,6 +9,7 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/dashboard/g
 import 'package:drifter_buoy/features/general_user/presentation/bloc/dashboard/general_user_dashboard_state.dart';
 import 'package:drifter_buoy/features/general_user/data/models/user_map_dashboard_get_buoy_dashboard_response.dart';
 import 'package:drifter_buoy/features/general_user/data/models/user_map_dashboard_get_buoy_map_dashboard_response.dart';
+import 'package:drifter_buoy/core/utils/buoy_status_utils.dart';
 import 'package:drifter_buoy/features/general_user/presentation/widgets/dummy_buoy_map_view.dart';
 import 'package:drifter_buoy/features/general_user/presentation/widgets/general_user_google_map_view.dart';
 import 'package:flutter/material.dart';
@@ -79,7 +80,7 @@ class GeneralUserDashboardPage extends StatelessWidget {
                           child: _StatItem(
                             icon: Icons.wifi,
                             iconColor: Color(0xFF4AAF5D),
-                            title: 'Active Buoys',
+                            title: 'Online Buoys',
                             value: summary.activeBuoys.toString(),
                             total: '/${summary.totalBuoys}',
                           ),
@@ -294,32 +295,47 @@ class _MapPreviewCard extends StatelessWidget {
               .toList(growable: false)
         : dashboardData.buoyLocations;
 
-    // Assign marker colors using the server summary counts.
-    final activeCount = summary.activeBuoys.clamp(0, locations.length);
-    final offlineCount = summary.offlineBuoys.clamp(
-      0,
-      locations.length - activeCount,
-    );
-    final batteryLowCount = (locations.length - activeCount - offlineCount)
-        .clamp(0, summary.batteryLowBuoys);
-
     final buoyMarkers = <DummyBuoy>[];
 
-    for (int i = 0; i < locations.length; i++) {
-      final location = locations[i];
-      final latLng = LatLng(location.latitude, location.longitude);
-
-      final status = i < activeCount
-          ? BuoyStatus.active
-          : i < activeCount + offlineCount
-          ? BuoyStatus.offline
-          : i < activeCount + offlineCount + batteryLowCount
-          ? BuoyStatus.batteryLow
-          : BuoyStatus.offline;
-
-      buoyMarkers.add(
-        DummyBuoy(id: location.buoyId, position: latLng, status: status),
+    if (mapData.isNotEmpty) {
+      for (final item in mapData) {
+        buoyMarkers.add(
+          DummyBuoy(
+            id: item.buoyId,
+            position: LatLng(item.latitude, item.longitude),
+            status: mapDashboardItemToBuoyStatus(item),
+            battery: item.batteryDisplay,
+            gps: item.gpsDisplay.isNotEmpty ? item.gpsDisplay : '—',
+            signal: item.signalDisplay,
+            lastUpdate: item.lastUpdate.isNotEmpty ? item.lastUpdate : '—',
+          ),
+        );
+      }
+    } else {
+      final activeCount = summary.activeBuoys.clamp(0, locations.length);
+      final offlineCount = summary.offlineBuoys.clamp(
+        0,
+        locations.length - activeCount,
       );
+      final batteryLowCount = (locations.length - activeCount - offlineCount)
+          .clamp(0, summary.batteryLowBuoys);
+
+      for (int i = 0; i < locations.length; i++) {
+        final location = locations[i];
+        final latLng = LatLng(location.latitude, location.longitude);
+
+        final status = i < activeCount
+            ? BuoyStatus.active
+            : i < activeCount + offlineCount
+            ? BuoyStatus.offline
+            : i < activeCount + offlineCount + batteryLowCount
+            ? BuoyStatus.batteryLow
+            : BuoyStatus.offline;
+
+        buoyMarkers.add(
+          DummyBuoy(id: location.buoyId, position: latLng, status: status),
+        );
+      }
     }
 
     return IgnorePointer(

@@ -13,6 +13,9 @@ class GeneralUserExportSelectionItem extends Equatable {
     required this.isActive,
   });
 
+  /// Whether the buoy is online (`Online` / legacy `Active` from API).
+  bool get isOnline => isActive;
+
   @override
   List<Object> get props => [id, lastUpdate, isActive];
 }

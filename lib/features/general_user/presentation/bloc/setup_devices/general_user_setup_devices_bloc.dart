@@ -1,4 +1,5 @@
 import 'package:drifter_buoy/core/utils/app_logger.dart';
+import 'package:drifter_buoy/core/utils/buoy_status_utils.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_all_buoys_status.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_devices/general_user_setup_devices_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_devices/general_user_setup_devices_state.dart';
@@ -114,7 +115,7 @@ class GeneralUserSetupDevicesBloc
 
 GeneralUserSetupDeviceConnectionStatus _mapConnectionStatus(String raw) {
   final status = raw.trim().toLowerCase();
-  if (status == 'active') {
+  if (isBuoyOnlineApiStatus(status)) {
     return GeneralUserSetupDeviceConnectionStatus.active;
   }
   if (status == 'offline') {
@@ -128,20 +129,7 @@ GeneralUserSetupDeviceConnectionStatus _mapConnectionStatus(String raw) {
   return GeneralUserSetupDeviceConnectionStatus.offline;
 }
 
-String _formatStatusLabel(String raw) {
-  final s = raw.trim();
-  if (s.isEmpty) {
-    return 'Unknown';
-  }
-  return s
-      .split(' ')
-      .map(
-        (w) => w.isEmpty
-            ? w
-            : '${w[0].toUpperCase()}${w.substring(1).toLowerCase()}',
-      )
-      .join(' ');
-}
+String _formatStatusLabel(String raw) => formatApiBuoyStatusLabel(raw);
 
 String _formatLastReceived(String raw) {
   final value = raw.trim();

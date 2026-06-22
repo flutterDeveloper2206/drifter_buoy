@@ -57,6 +57,7 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_
 import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_filters/general_user_trajectory_filters_event.dart';
 import 'package:drifter_buoy/features/general_user/data/models/user_map_dashboard_get_buoy_map_dashboard_response.dart';
 import 'package:drifter_buoy/features/general_user/presentation/navigation/general_user_metrics_route_extra.dart';
+import 'package:drifter_buoy/core/utils/buoy_status_utils.dart';
 import 'package:drifter_buoy/features/general_user/presentation/widgets/dummy_buoy_map_view.dart';
 import 'package:drifter_buoy/features/sample_feature/presentation/bloc/items_bloc.dart';
 import 'package:drifter_buoy/features/sample_feature/presentation/bloc/items_event.dart';
@@ -480,7 +481,7 @@ List<DummyBuoy>? _toPreloadedMapBuoys(dynamic extra) {
         (e) => DummyBuoy(
           id: e.buoyId,
           position: LatLng(e.latitude, e.longitude),
-          status: _mapStatusFromDashboardItem(e),
+          status: mapDashboardItemToBuoyStatus(e),
           battery: e.batteryDisplay,
           gps: e.gpsDisplay.isNotEmpty ? e.gpsDisplay : '—',
           signal: e.signalDisplay,
@@ -488,31 +489,6 @@ List<DummyBuoy>? _toPreloadedMapBuoys(dynamic extra) {
         ),
       )
       .toList(growable: false);
-}
-
-BuoyStatus _mapStatusFromDashboardItem(
-  UserMapDashboardGetBuoyMapDashboardItem e,
-) {
-  final low = e.isBatteryLow.trim().toLowerCase();
-  final looksLow = low == 'yes' || low == 'true' || low == '1';
-  final statusRaw = e.buoyStatus.trim();
-  if (statusRaw.isEmpty && looksLow) {
-    return BuoyStatus.batteryLow;
-  }
-  final fromApi = _statusFromApi(e.buoyStatus);
-  if (looksLow && fromApi == BuoyStatus.active) {
-    return BuoyStatus.batteryLow;
-  }
-  return fromApi;
-}
-
-BuoyStatus _statusFromApi(String status) {
-  final normalized = status.trim().toLowerCase();
-  if (normalized == 'active') return BuoyStatus.active;
-  if (normalized == 'battery low' || normalized == 'batterylow') {
-    return BuoyStatus.batteryLow;
-  }
-  return BuoyStatus.offline;
 }
 
 ({String buoyId, bool focusBatterySection}) _parseGeneralUserMetricsExtra(

@@ -1,4 +1,5 @@
 import 'package:drifter_buoy/core/constants/app_routes.dart';
+import 'package:drifter_buoy/core/utils/buoy_status_utils.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_icon_circle_button.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_settings_tiles.dart';
@@ -544,7 +545,7 @@ class _MapSelectedBuoyCard extends StatelessWidget {
       BuoyStatus.batteryLow => const Color(0xFF4F95DA),
     };
     final statusLabel = switch (buoy.status) {
-      BuoyStatus.active => 'Active',
+      BuoyStatus.active => buoyStatusDisplayLabel(BuoyStatus.active),
       BuoyStatus.offline => 'Offline',
       BuoyStatus.batteryLow => 'Battery Low',
     };
@@ -864,7 +865,7 @@ class _MapLegendCard extends StatelessWidget {
         children: [
           _LegendPinItem(
             assetPath: 'assets/images/green.png',
-            label: 'Active',
+            label: 'Online',
             enabled: isActiveVisible,
             enabledColor: const Color(0xFF4CAF50),
             disabledColor: disabledColor,

@@ -1,57 +1,63 @@
+import 'package:drifter_buoy/core/constants/app_constants.dart';
+
 class ApiEndpoints {
   const ApiEndpoints._();
 
-  static const String loginUrl =
-      'http://4.213.34.231:5025/api/UserAuthenticate/Login';
+  static const String _base = AppConstants.baseUrl;
+
+  static const String loginUrl = '$_base/api/UserAuthenticate/Login';
 
   static const String requestVerificationCodeUrl =
-      'http://4.213.34.231:5025/api/UserAuthenticate/RequestVerificationCode';
+      '$_base/api/UserAuthenticate/RequestVerificationCode';
 
   static const String verifyVerificationCodeUrl =
-      'http://4.213.34.231:5025/api/UserAuthenticate/VerifyCode';
+      '$_base/api/UserAuthenticate/VerifyCode';
 
   static const String resetPasswordUrl =
-      'http://4.213.34.231:5025/api/UserAuthenticate/ResetPassword';
+      '$_base/api/UserAuthenticate/ResetPassword';
 
   static const String getBuoyDashboardUrl =
-      'http://4.213.34.231:5025/api/User/UserMapDashboard/GetBuoyDashboard';
+      '$_base/api/User/UserMapDashboard/GetBuoyDashboard';
 
   static const String getBuoyMapDashboardUrl =
-      'http://4.213.34.231:5025/api/User/UserMapDashboard/GetBuoyMapDashboard';
+      '$_base/api/User/UserMapDashboard/GetBuoyMapDashboard';
 
   static const String updateUserProfileUrl =
-      'http://4.213.34.231:5025/api/Admin/User/UpdateUserProfile';
+      '$_base/api/Admin/User/UpdateUserProfile';
 
   static const String getAllBuoysStatusForExportUrl =
-      'http://4.213.34.231:5025/api/Report/Report/GetAllBuoysStatusForExport';
+      '$_base/api/Report/Report/GetAllBuoysStatusForExport';
 
   static const String getAllBuoysDataOverviewViewUrl =
-      'http://4.213.34.231:5025/api/User/UserViewBuoyDashboard/GetAllBuoysDataOverviewView';
+      '$_base/api/User/UserViewBuoyDashboard/GetAllBuoysDataOverviewView';
 
   static const String getAllBuoysStatusUrl =
-      'http://4.213.34.231:5025/api/User/UserViewBuoyDashboard/GetAllBuoysStatus';
+      '$_base/api/User/UserViewBuoyDashboard/GetAllBuoysStatus';
 
   static const String getBuoyDataOverviewUrl =
-      'http://4.213.34.231:5025/api/User/UserViewBuoyDashboard/GetBuoyDataOverview';
+      '$_base/api/User/UserViewBuoyDashboard/GetBuoyDataOverview';
 
   static const String getBuoyMetricsUrl =
-      'http://4.213.34.231:5025/api/User/UserViewBuoyDashboard/GetBuoyMetrics';
+      '$_base/api/User/UserViewBuoyDashboard/GetBuoyMetrics';
 
   static const String getBuoyTrajectoryViewUrl =
-      'http://4.213.34.231:5025/api/User/UserViewBuoyDashboard/GetBuoyTrajectoryView';
+      '$_base/api/User/UserViewBuoyDashboard/GetBuoyTrajectoryView';
 
   static const String getBuoyDistanceReportForExportUrl =
-      'http://4.213.34.231:5025/api/Report/Report/GetBuoyDistanceReportForExport';
+      '$_base/api/Report/Report/GetBuoyDistanceReportForExport';
 
   static const String getBuoyDataReportForExportUrl =
-      'http://4.213.34.231:5025/api/Report/Report/GetBuoyDataReportForExport';
+      '$_base/api/Report/Report/GetBuoyDataReportForExport';
 
   static const String registerDeviceTokenUrl =
-      'http://4.213.34.231:5025/api/admin/DeviceToken/register';
+      '$_base/api/admin/DeviceToken/register';
 
   static const String getAllNotificationsUrl =
-      'http://4.213.34.231:5025/api/admin/Notification/GetAllNotifications';
+      '$_base/api/admin/Notification/GetAllNotifications';
 
   static const String getAllDrifterBuoyCommandsUrl =
-      'http://4.213.34.231:5025/api/Admin/Command/GetAllDrifterBuoyCommands';
+      '$_base/api/Admin/Command/GetAllDrifterBuoyCommands';
+
+  static const String createNewDrifterBuoyUrl =
+      '$_base/api/User/UserBuoySetup/CreateNewDrifterBuoy';
 }

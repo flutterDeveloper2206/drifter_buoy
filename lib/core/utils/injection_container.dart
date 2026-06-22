@@ -34,6 +34,7 @@ import 'package:drifter_buoy/features/general_user/data/datasources/general_user
 import 'package:drifter_buoy/features/general_user/data/datasources/general_user_report_remote_data_source.dart';
 import 'package:drifter_buoy/features/general_user/data/repositories/general_user_report_repository_impl.dart';
 import 'package:drifter_buoy/features/general_user/data/datasources/general_user_buoys_remote_data_source.dart';
+import 'package:drifter_buoy/features/general_user/data/datasources/general_user_buoy_setup_remote_data_source.dart';
 import 'package:drifter_buoy/features/general_user/data/datasources/general_user_self_test_remote_data_source.dart';
 import 'package:drifter_buoy/features/general_user/data/repositories/general_user_auth_repository_impl.dart';
 import 'package:drifter_buoy/features/general_user/data/repositories/general_user_device_token_repository_impl.dart';
@@ -41,6 +42,7 @@ import 'package:drifter_buoy/features/general_user/data/repositories/general_use
 import 'package:drifter_buoy/features/general_user/data/repositories/general_user_dashboard_repository_impl.dart';
 import 'package:drifter_buoy/features/general_user/data/repositories/general_user_export_selection_repository_impl.dart';
 import 'package:drifter_buoy/features/general_user/data/repositories/general_user_notifications_repository_impl.dart';
+import 'package:drifter_buoy/features/general_user/data/repositories/general_user_buoy_setup_repository_impl.dart';
 import 'package:drifter_buoy/features/general_user/data/repositories/general_user_buoys_repository_impl.dart';
 import 'package:drifter_buoy/features/general_user/domain/repositories/general_user_auth_repository.dart';
 import 'package:drifter_buoy/features/general_user/domain/repositories/general_user_device_token_repository.dart';
@@ -49,6 +51,7 @@ import 'package:drifter_buoy/features/general_user/domain/repositories/general_u
 import 'package:drifter_buoy/features/general_user/domain/repositories/general_user_export_selection_repository.dart';
 import 'package:drifter_buoy/features/general_user/domain/repositories/general_user_notifications_repository.dart';
 import 'package:drifter_buoy/features/general_user/domain/repositories/general_user_report_repository.dart';
+import 'package:drifter_buoy/features/general_user/domain/repositories/general_user_buoy_setup_repository.dart';
 import 'package:drifter_buoy/features/general_user/domain/repositories/general_user_buoys_repository.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_login.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_request_verification_code.dart';
@@ -64,6 +67,7 @@ import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_all_buoys_data_overview_view.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_buoy_data_overview.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_buoy_metrics.dart';
+import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_create_new_drifter_buoy.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_buoy_trajectory_view.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_all_buoys_status.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_update_user_profile.dart';
@@ -519,7 +523,27 @@ Future<void> initDependencies() async {
   }
 
   if (!sl.isRegistered<GeneralUserBuoySetupBloc>()) {
-    sl.registerFactory<GeneralUserBuoySetupBloc>(() => GeneralUserBuoySetupBloc());
+    if (!sl.isRegistered<GeneralUserBuoySetupRemoteDataSource>()) {
+      sl.registerLazySingleton<GeneralUserBuoySetupRemoteDataSource>(
+        () => GeneralUserBuoySetupRemoteDataSource(apiService: sl()),
+      );
+    }
+
+    if (!sl.isRegistered<GeneralUserBuoySetupRepository>()) {
+      sl.registerLazySingleton<GeneralUserBuoySetupRepository>(
+        () => GeneralUserBuoySetupRepositoryImpl(remoteDataSource: sl()),
+      );
+    }
+
+    if (!sl.isRegistered<GeneralUserCreateNewDrifterBuoy>()) {
+      sl.registerLazySingleton<GeneralUserCreateNewDrifterBuoy>(
+        () => GeneralUserCreateNewDrifterBuoy(repository: sl()),
+      );
+    }
+
+    sl.registerFactory<GeneralUserBuoySetupBloc>(
+      () => GeneralUserBuoySetupBloc(createNewDrifterBuoy: sl()),
+    );
   }
 
   if (!sl.isRegistered<GeneralUserSelfTestDebugBloc>()) {
