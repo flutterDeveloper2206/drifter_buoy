@@ -1,30 +1,27 @@
 import 'package:equatable/equatable.dart';
 
 class CreateNewDrifterBuoyResponse extends Equatable {
+  final int statusCode;
+  final String message;
+  final dynamic result;
+  final bool isSuccess;
+
   const CreateNewDrifterBuoyResponse({
     required this.statusCode,
     required this.message,
+    required this.result,
     required this.isSuccess,
   });
 
-  final int statusCode;
-  final String message;
-  final bool isSuccess;
-
   factory CreateNewDrifterBuoyResponse.fromJson(Map<String, dynamic> json) {
     return CreateNewDrifterBuoyResponse(
-      statusCode: _toInt(json['statusCode']),
+      statusCode: (json['statusCode'] ?? 0) as int,
       message: (json['message'] ?? '').toString(),
-      isSuccess: json['isSuccess'] == true,
+      result: json['result'],
+      isSuccess: (json['isSuccess'] ?? false) as bool,
     );
   }
 
   @override
-  List<Object> get props => [statusCode, message, isSuccess];
-}
-
-int _toInt(dynamic value) {
-  if (value is int) return value;
-  if (value is num) return value.toInt();
-  return int.tryParse(value?.toString() ?? '') ?? 0;
+  List<Object?> get props => [statusCode, message, result, isSuccess];
 }

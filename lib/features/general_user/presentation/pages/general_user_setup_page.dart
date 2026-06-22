@@ -413,7 +413,7 @@ class _SetupDeviceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final (icon, iconColor, textColor) = switch (item.connectionStatus) {
-      GeneralUserSetupDeviceConnectionStatus.active => (
+      GeneralUserSetupDeviceConnectionStatus.online => (
         Icons.wifi_rounded,
         const Color(0xFF22BE61),
         const Color(0xFF22BE61),

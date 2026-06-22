@@ -38,7 +38,7 @@ class GeneralUserMapState extends Equatable {
     return buoys
         .where((buoy) {
           return switch (buoy.status) {
-            BuoyStatus.active => showActive,
+            BuoyStatus.online => showActive,
             BuoyStatus.offline => showOffline,
             BuoyStatus.batteryLow => showBatteryLow,
           };

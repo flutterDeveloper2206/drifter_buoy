@@ -599,7 +599,7 @@ BuoyStatus _buoyMapStatusForOverview(GeneralUserBuoyOverviewData data) {
   if (data.isBatteryLow) {
     return BuoyStatus.batteryLow;
   }
-  return BuoyStatus.active;
+  return BuoyStatus.online;
 }
 
 final class _TrajectoryPreviewVm extends Equatable {

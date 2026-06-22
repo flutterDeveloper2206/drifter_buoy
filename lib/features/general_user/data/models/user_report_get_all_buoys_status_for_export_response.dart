@@ -1,4 +1,3 @@
-import 'package:drifter_buoy/core/utils/buoy_status_utils.dart';
 import 'package:equatable/equatable.dart';
 
 class UserReportGetAllBuoysStatusForExportResponse extends Equatable {
@@ -56,10 +55,9 @@ class BuoyExportStatusItemModel extends Equatable {
     );
   }
 
-  bool get isOnline => isBuoyOnlineApiStatus(status);
-
-  /// Legacy name kept for call sites; treats `Online` and `Active` as online.
-  bool get isActive => isOnline;
+  bool get isActive =>
+      status.trim().toLowerCase() == 'active' ||
+      status.trim().toLowerCase() == 'online';
 
   @override
   List<Object> get props => [buoyId, status, lastUpdated];

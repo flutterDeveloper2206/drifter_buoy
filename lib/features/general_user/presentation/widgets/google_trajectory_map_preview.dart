@@ -170,7 +170,7 @@ class _GoogleTrajectoryMapPreviewState
 
   Future<BitmapDescriptor?> _buildLabeledMainMarker() async {
     final base = switch (widget.buoy.status) {
-      BuoyStatus.active => _greenImage,
+      BuoyStatus.online => _greenImage,
       BuoyStatus.offline => _redImage,
       BuoyStatus.batteryLow => _yellowImage,
     };
@@ -233,7 +233,7 @@ class _GoogleTrajectoryMapPreviewState
 
   BitmapDescriptor _iconForStatus(BuoyStatus status) {
     return switch (status) {
-      BuoyStatus.active =>
+      BuoyStatus.online =>
         _activeIcon ??
             BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
       BuoyStatus.offline =>
@@ -440,16 +440,6 @@ class _GoogleTrajectoryMapPreviewState
     } on Object {
       _didFit = false;
     }
-  }
-
-  Future<void> _nudgeZoom(double delta) async {
-    final c = _controller;
-    if (c == null) {
-      return;
-    }
-    try {
-      await c.animateCamera(CameraUpdate.zoomBy(delta));
-    } on Object catch (_) {}
   }
 
   @override

@@ -4,6 +4,7 @@ import 'package:drifter_buoy/features/general_user/data/models/user_view_buoy_da
 import 'package:drifter_buoy/features/general_user/data/models/user_view_buoy_dashboard_get_buoy_data_overview_response.dart';
 import 'package:drifter_buoy/features/general_user/data/models/user_view_buoy_dashboard_get_buoy_metrics_response.dart';
 import 'package:drifter_buoy/features/general_user/data/models/user_view_buoy_dashboard_get_buoy_trajectory_view_response.dart';
+import 'package:drifter_buoy/features/general_user/data/models/create_new_drifter_buoy_response.dart';
 
 abstract class GeneralUserBuoysRepository {
   ResultFuture<UserViewBuoyDashboardGetAllBuoysStatusResponse>
@@ -28,5 +29,12 @@ abstract class GeneralUserBuoysRepository {
     required String fromDate,
     required String toDate,
     required int intervalMinutes,
+  });
+
+  ResultFuture<CreateNewDrifterBuoyResponse> createNewDrifterBuoy({
+    required String stationId,
+    required String stationName,
+    required String transmissionInterval,
+    required String transmissionStartTime,
   });
 }

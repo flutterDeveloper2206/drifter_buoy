@@ -1,13 +1,12 @@
 import 'package:drifter_buoy/core/utils/typedefs.dart';
 import 'package:drifter_buoy/features/general_user/data/models/create_new_drifter_buoy_response.dart';
-import 'package:drifter_buoy/features/general_user/domain/repositories/general_user_buoy_setup_repository.dart';
+import 'package:drifter_buoy/features/general_user/domain/repositories/general_user_buoys_repository.dart';
 
 class GeneralUserCreateNewDrifterBuoy {
-  GeneralUserCreateNewDrifterBuoy({
-    required GeneralUserBuoySetupRepository repository,
-  }) : _repository = repository;
+  const GeneralUserCreateNewDrifterBuoy({required GeneralUserBuoysRepository repository})
+      : _repository = repository;
 
-  final GeneralUserBuoySetupRepository _repository;
+  final GeneralUserBuoysRepository _repository;
 
   ResultFuture<CreateNewDrifterBuoyResponse> call({
     required String stationId,

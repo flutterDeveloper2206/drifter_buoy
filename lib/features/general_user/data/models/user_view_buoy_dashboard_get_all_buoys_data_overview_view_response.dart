@@ -83,7 +83,7 @@ class BuoysOverviewSummaryModel extends Equatable {
   factory BuoysOverviewSummaryModel.fromJson(Map<String, dynamic> json) {
     return BuoysOverviewSummaryModel(
       totalBuoys: _toInt(json['totalBuoys']),
-      activeBuoys: _toInt(json['activeBuoys']),
+      activeBuoys: _toInt(json['activeBuoys'] ?? json['onlineBuoys']),
       offlineBuoys: _toInt(json['offlineBuoys']),
       batteryLowBuoys: _toInt(json['batteryLowBuoys']),
     );

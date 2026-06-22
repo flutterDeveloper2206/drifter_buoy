@@ -129,9 +129,7 @@ class GetAllDrifterBuoyCommandsResponse extends Equatable {
     }
 
     return GetAllDrifterBuoyCommandsResponse(
-      statusCode: (json['statusCode'] ?? 0) is num
-          ? (json['statusCode'] as num).toInt()
-          : int.tryParse((json['statusCode'] ?? '0').toString()) ?? 0,
+      statusCode: _toInt(json['statusCode']),
       message: (json['message'] ?? '').toString(),
       result: list,
       isSuccess:
@@ -141,4 +139,13 @@ class GetAllDrifterBuoyCommandsResponse extends Equatable {
   }
   @override
   List<Object?> get props => [statusCode, message, result, isSuccess];
+}
+
+int _toInt(dynamic value) {
+  if (value is int) return value;
+  if (value is double) return value.toInt();
+  if (value is String) {
+    return int.tryParse(value) ?? 0;
+  }
+  return 0;
 }

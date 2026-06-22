@@ -222,7 +222,7 @@ class _BuoyDetailsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final statusColor = switch (detail.buoy.status) {
-      BuoyStatus.active => const Color(0xFF2CC66A),
+      BuoyStatus.online => const Color(0xFF2CC66A),
       BuoyStatus.offline => const Color(0xFFE74C3C),
       BuoyStatus.batteryLow => const Color(0xFF4F95DA),
     };
@@ -333,7 +333,7 @@ class _MapLegendCard extends StatelessWidget {
           AppMapLegendItem(
             icon: Icons.wifi,
             label: 'Online',
-            color: legendColor(BuoyStatus.active, const Color(0xFF4CAF50)),
+            color: legendColor(BuoyStatus.online, const Color(0xFF4CAF50)),
           ),
           AppMapLegendItem(
             icon: Icons.wifi_off,

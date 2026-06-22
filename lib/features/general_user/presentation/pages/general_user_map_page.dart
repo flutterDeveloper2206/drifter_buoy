@@ -1,5 +1,4 @@
 import 'package:drifter_buoy/core/constants/app_routes.dart';
-import 'package:drifter_buoy/core/utils/buoy_status_utils.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_icon_circle_button.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_settings_tiles.dart';
@@ -540,12 +539,12 @@ class _MapSelectedBuoyCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final statusColor = switch (buoy.status) {
-      BuoyStatus.active => const Color(0xFF2CC66A),
+      BuoyStatus.online => const Color(0xFF2CC66A),
       BuoyStatus.offline => const Color(0xFFE74C3C),
       BuoyStatus.batteryLow => const Color(0xFF4F95DA),
     };
     final statusLabel = switch (buoy.status) {
-      BuoyStatus.active => buoyStatusDisplayLabel(BuoyStatus.active),
+      BuoyStatus.online => 'Online',
       BuoyStatus.offline => 'Offline',
       BuoyStatus.batteryLow => 'Battery Low',
     };
