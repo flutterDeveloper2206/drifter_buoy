@@ -41,6 +41,8 @@ class GeneralUserMapState extends Equatable {
             BuoyStatus.online => showActive,
             BuoyStatus.offline => showOffline,
             BuoyStatus.batteryLow => showBatteryLow,
+            // TODO: Handle this case.
+            BuoyStatus.active => throw UnimplementedError(),
           };
         })
         .toList(growable: false);

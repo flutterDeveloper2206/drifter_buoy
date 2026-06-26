@@ -22,13 +22,9 @@ const Set<String> _ftpPasswordCatalogIds = {
   '6a04547227be228113206973',
 };
 
-/// List row subtitle: use request template when catalog description is empty or `NA`.
-String _selfTestCommandListSubtitle(DrifterBuoyCommandModel command) {
-  final desc = command.requestCommandDescription.trim();
-  if (desc.isEmpty || desc.toUpperCase() == 'NA') {
-    return command.requestCommand.trim();
-  }
-  return desc;
+/// List row description from API `requestCommandDescription`.
+String _selfTestCommandListDescription(DrifterBuoyCommandModel command) {
+  return command.requestCommandDescription.trim();
 }
 
 String? _validateSelfTestParameterizedFtp20(String? value) {
@@ -1672,8 +1668,7 @@ class _GeneralUserSelfTestDebugPageState
                           initialValue: draftTime,
                           keyboardType: TextInputType.datetime,
                           autovalidateMode: AutovalidateMode.onUserInteraction,
-                          validator: (v) =>
-                              _validateSelfTestHhMmSs('Time', v),
+                          validator: (v) => _validateSelfTestHhMmSs('Time', v),
                           onChanged: (v) => draftTime = v,
                           decoration: const InputDecoration(
                             labelText: 'Time (HH:MM:SS)',
@@ -2880,9 +2875,9 @@ class _GeneralUserSelfTestDebugPageState
                                                       .running;
                                           return _ActionTile(
                                             title:
-                                                '${commandIndex + 1}-${command.testName}',
+                                                '${commandIndex + 1}-${command.testName.trim()}',
                                             subtitle:
-                                                _selfTestCommandListSubtitle(
+                                                _selfTestCommandListDescription(
                                                   command,
                                                 ),
                                             running: false,

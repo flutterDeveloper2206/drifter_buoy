@@ -162,6 +162,8 @@ class _GoogleTrajectoryLiveMapViewState
       BuoyStatus.online => _imgGreen!,
       BuoyStatus.offline => _imgRed!,
       BuoyStatus.batteryLow => _imgYellow!,
+      // TODO: Handle this case.
+      BuoyStatus.active => throw UnimplementedError(),
     };
 
     final bytes = await _buildMarkerBytes(
@@ -281,6 +283,8 @@ class _GoogleTrajectoryLiveMapViewState
       BuoyStatus.online => BitmapDescriptor.hueGreen,
       BuoyStatus.offline => BitmapDescriptor.hueRed,
       BuoyStatus.batteryLow => BitmapDescriptor.hueOrange,
+      // TODO: Handle this case.
+      BuoyStatus.active => throw UnimplementedError(),
     };
   }
 

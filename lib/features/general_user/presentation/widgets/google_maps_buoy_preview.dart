@@ -60,6 +60,9 @@ class _GoogleMapsBuoyPreviewState extends State<GoogleMapsBuoyPreview> {
         return BitmapDescriptor.hueRed;
       case BuoyStatus.batteryLow:
         return BitmapDescriptor.hueOrange;
+      case BuoyStatus.active:
+        // TODO: Handle this case.
+        throw UnimplementedError();
     }
   }
 

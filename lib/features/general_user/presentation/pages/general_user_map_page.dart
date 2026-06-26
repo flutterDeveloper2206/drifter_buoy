@@ -542,11 +542,15 @@ class _MapSelectedBuoyCard extends StatelessWidget {
       BuoyStatus.online => const Color(0xFF2CC66A),
       BuoyStatus.offline => const Color(0xFFE74C3C),
       BuoyStatus.batteryLow => const Color(0xFF4F95DA),
+      // TODO: Handle this case.
+      BuoyStatus.active => throw UnimplementedError(),
     };
     final statusLabel = switch (buoy.status) {
       BuoyStatus.online => 'Online',
       BuoyStatus.offline => 'Offline',
       BuoyStatus.batteryLow => 'Battery Low',
+      // TODO: Handle this case.
+      BuoyStatus.active => throw UnimplementedError(),
     };
 
     return Material(

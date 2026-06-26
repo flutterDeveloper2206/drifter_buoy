@@ -56,6 +56,8 @@ String buoyStatusDisplayLabel(BuoyStatus status) {
     BuoyStatus.active => 'Online',
     BuoyStatus.offline => 'Offline',
     BuoyStatus.batteryLow => 'Battery Low',
+    // TODO: Handle this case.
+    BuoyStatus.online => throw UnimplementedError(),
   };
 }
 

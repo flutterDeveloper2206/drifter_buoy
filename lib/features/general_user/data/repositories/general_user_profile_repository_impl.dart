@@ -1,6 +1,7 @@
 import 'package:drifter_buoy/core/utils/typedefs.dart';
 import 'package:drifter_buoy/features/general_user/data/datasources/general_user_profile_remote_data_source.dart';
 import 'package:drifter_buoy/features/general_user/data/models/admin_user_update_user_profile_response.dart';
+import 'package:drifter_buoy/features/general_user/data/models/user_authenticate_change_current_password_response.dart';
 import 'package:drifter_buoy/features/general_user/domain/repositories/general_user_profile_repository.dart';
 
 class GeneralUserProfileRepositoryImpl implements GeneralUserProfileRepository {
@@ -26,6 +27,20 @@ class GeneralUserProfileRepositoryImpl implements GeneralUserProfileRepository {
       lastName: lastName,
       mobileNumber: mobileNumber,
       emailAddress: emailAddress,
+    );
+  }
+
+  @override
+  ResultFuture<UserAuthenticateChangeCurrentPasswordResponse>
+      changeCurrentPassword({
+    required String currentPassword,
+    required String newPassword,
+    required String confirmPassword,
+  }) {
+    return _remoteDataSource.changeCurrentPassword(
+      currentPassword: currentPassword,
+      newPassword: newPassword,
+      confirmPassword: confirmPassword,
     );
   }
 }

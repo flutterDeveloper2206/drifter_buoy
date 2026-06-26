@@ -133,6 +133,8 @@ class GeneralUserMapBuoyDetailsBloc
         BuoyStatus.online => 'Online',
         BuoyStatus.offline => 'Offline',
         BuoyStatus.batteryLow => 'Battery Low',
+        // TODO: Handle this case.
+        BuoyStatus.active => throw UnimplementedError(),
       };
 
       return GeneralUserBuoyDetail(

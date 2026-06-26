@@ -16,6 +16,7 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/forgot_pass
 import 'package:drifter_buoy/features/general_user/presentation/bloc/create_password/general_user_create_password_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/profile/general_user_profile_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/profile_update/general_user_update_profile_bloc.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/change_password/general_user_change_password_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/map/general_user_map_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/map_buoy_details/general_user_map_buoy_details_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/map_filters/general_user_map_filters_bloc.dart';
@@ -67,6 +68,7 @@ import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_buoy_trajectory_view.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_all_buoys_status.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_update_user_profile.dart';
+import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_change_current_password.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_create_new_drifter_buoy.dart';
 import 'package:drifter_buoy/features/sample_feature/data/datasources/item_remote_data_source.dart';
 import 'package:drifter_buoy/features/sample_feature/data/repositories/item_repository_impl.dart';
@@ -428,6 +430,20 @@ Future<void> initDependencies() async {
     sl.registerFactory<GeneralUserUpdateProfileBloc>(
       () => GeneralUserUpdateProfileBloc(
         updateUserProfile: sl(),
+      ),
+    );
+  }
+
+  if (!sl.isRegistered<GeneralUserChangeCurrentPassword>()) {
+    sl.registerLazySingleton<GeneralUserChangeCurrentPassword>(
+      () => GeneralUserChangeCurrentPassword(repository: sl()),
+    );
+  }
+
+  if (!sl.isRegistered<GeneralUserChangePasswordBloc>()) {
+    sl.registerFactory<GeneralUserChangePasswordBloc>(
+      () => GeneralUserChangePasswordBloc(
+        changeCurrentPassword: sl(),
       ),
     );
   }

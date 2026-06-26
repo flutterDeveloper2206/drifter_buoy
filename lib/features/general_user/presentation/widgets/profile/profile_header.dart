@@ -4,7 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 class GeneralUserProfileHeader extends StatelessWidget {
-  const GeneralUserProfileHeader({super.key});
+  const GeneralUserProfileHeader({
+    super.key,
+    this.title = 'Profile',
+    this.onBack,
+  });
+
+  final String title;
+  final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) {
@@ -14,6 +21,10 @@ class GeneralUserProfileHeader extends StatelessWidget {
         children: [
           AppIconCircleButton(
             onTap: () {
+              if (onBack != null) {
+                onBack!();
+                return;
+              }
               if (GoRouter.of(context).canPop()) {
                 context.pop();
               } else {
@@ -25,7 +36,7 @@ class GeneralUserProfileHeader extends StatelessWidget {
           Expanded(
             child: Center(
               child: Text(
-                'Profile',
+                title,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       color: const Color(0xFF262C31),
                       fontWeight: FontWeight.w700,
@@ -39,4 +50,3 @@ class GeneralUserProfileHeader extends StatelessWidget {
     );
   }
 }
-

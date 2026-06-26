@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:drifter_buoy/core/bluetooth/ble_connection_service.dart';
+import 'package:drifter_buoy/core/error/failure.dart';
 import 'package:drifter_buoy/core/utils/app_logger.dart';
 import 'package:drifter_buoy/features/general_user/data/datasources/general_user_self_test_remote_data_source.dart';
 import 'package:drifter_buoy/features/general_user/data/models/drifter_buoy_command_model.dart';
@@ -1503,7 +1504,7 @@ class GeneralUserSelfTestDebugBloc
     ),
   ];
 
-  /// Resolves static catalog text/timeouts when the API returns duplicate Mongo ids.
+  /// Merges API catalog text with static BLE timeouts/templates for duplicate Mongo ids.
   static DrifterBuoyCommandModel _catalogEntryForApi(
     DrifterBuoyCommandModel api,
   ) {
@@ -1513,12 +1514,45 @@ class GeneralUserSelfTestDebugBloc
         .where((DrifterBuoyCommandModel c) => c.id == id)
         .toList();
     if (rows.isEmpty) return api;
-    if (rows.length == 1) return rows.single;
-    final want = api.requestCommand.trim();
-    for (final DrifterBuoyCommandModel c in rows) {
-      if (c.requestCommand.trim() == want) return c;
+
+    final DrifterBuoyCommandModel staticRow;
+    if (rows.length == 1) {
+      staticRow = rows.single;
+    } else {
+      final want = api.requestCommand.trim();
+      staticRow = rows.firstWhere(
+        (DrifterBuoyCommandModel c) => c.requestCommand.trim() == want,
+        orElse: () => rows.first,
+      );
     }
-    return rows.first;
+
+    return _mergeApiCommandWithStatic(api, staticRow);
+  }
+
+  static DrifterBuoyCommandModel _mergeApiCommandWithStatic(
+    DrifterBuoyCommandModel api,
+    DrifterBuoyCommandModel staticRow,
+  ) {
+    return DrifterBuoyCommandModel(
+      id: api.id.isNotEmpty ? api.id : staticRow.id,
+      testName: api.testName.trim().isNotEmpty
+          ? api.testName
+          : staticRow.testName,
+      requestCommand: api.requestCommand.trim().isNotEmpty
+          ? api.requestCommand
+          : staticRow.requestCommand,
+      waitingPeriodSecondsRaw: api.waitingPeriodSecondsRaw.trim().isNotEmpty
+          ? api.waitingPeriodSecondsRaw
+          : staticRow.waitingPeriodSecondsRaw,
+      requestCommandDescription: api.requestCommandDescription,
+      response: api.response.trim().isNotEmpty
+          ? api.response
+          : staticRow.response,
+      responseDescription: api.responseDescription.trim().isNotEmpty
+          ? api.responseDescription
+          : staticRow.responseDescription,
+      isActive: api.isActive,
+    );
   }
 
   /// Sheet order for menu taps: walk [_staticCommands] top-to-bottom and keep only
@@ -1624,6 +1658,10 @@ class GeneralUserSelfTestDebugBloc
     return cmd.requestCommand.trim().startsWith('?86,');
   }
 
+  static bool _isUnauthorizedFailure(Failure failure) {
+    return failure.statusCode == 401 || failure.statusCode == 440;
+  }
+
   /// Loads permitted commands from the backend; menu order follows the CSV catalog [_staticCommands].
   Future<void> _onLoadGeneralUserSelfTestDebug(
     LoadGeneralUserSelfTestDebug event,
@@ -1641,6 +1679,21 @@ class GeneralUserSelfTestDebugBloc
     final result = await _remote.getAllDrifterBuoyCommands();
     result.fold(
       (failure) {
+        if (_isUnauthorizedFailure(failure)) {
+          AppLogger.w(
+            'Self-test command API unauthorized (${failure.message}).',
+          );
+          emit(
+            state.copyWith(
+              status: GeneralUserSelfTestDebugStatus.error,
+              commands: const [],
+              message: failure.message,
+              isSuccessMessage: false,
+            ),
+          );
+          return;
+        }
+
         AppLogger.w(
           'Self-test command API unavailable (${failure.message}). '
           'Using built-in command catalog.',

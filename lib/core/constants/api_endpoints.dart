@@ -1,61 +1,66 @@
+import 'package:drifter_buoy/core/constants/app_constants.dart';
+
 class ApiEndpoints {
   const ApiEndpoints._();
-  // http://4.213.34.231:5025/api/
 
-  static const String loginUrl =
-      'https://mobiledbapi.azistaaerospace.com/api/UserAuthenticate/Login';
+  static String get _base => AppConstants.baseUrl;
 
-  static const String requestVerificationCodeUrl =
-      'https://mobiledbapi.azistaaerospace.com/api/UserAuthenticate/RequestVerificationCode';
+  static String get loginUrl => '${_base}api/UserAuthenticate/Login';
 
-  static const String verifyVerificationCodeUrl =
-      'https://mobiledbapi.azistaaerospace.com/api/UserAuthenticate/VerifyCode';
+  static String get requestVerificationCodeUrl =>
+      '${_base}api/UserAuthenticate/RequestVerificationCode';
 
-  static const String resetPasswordUrl =
-      'https://mobiledbapi.azistaaerospace.com/api/UserAuthenticate/ResetPassword';
+  static String get verifyVerificationCodeUrl =>
+      '${_base}api/UserAuthenticate/VerifyCode';
 
-  static const String getBuoyDashboardUrl =
-      'https://mobiledbapi.azistaaerospace.com/api/User/UserMapDashboard/GetBuoyDashboard';
+  static String get resetPasswordUrl =>
+      '${_base}api/UserAuthenticate/ResetPassword';
 
-  static const String getBuoyMapDashboardUrl =
-      'https://mobiledbapi.azistaaerospace.com/api/User/UserMapDashboard/GetBuoyMapDashboard';
+  static String get changeCurrentPasswordUrl =>
+      '${_base}api/UserAuthenticate/ChangeCurrentPassword';
 
-  static const String updateUserProfileUrl =
-      'https://mobiledbapi.azistaaerospace.com/api/Admin/User/UpdateUserProfile';
+  static String get getBuoyDashboardUrl =>
+      '${_base}api/User/UserMapDashboard/GetBuoyDashboard';
 
-  static const String getAllBuoysStatusForExportUrl =
-      'https://mobiledbapi.azistaaerospace.com/api/Report/Report/GetAllBuoysStatusForExport';
+  static String get getBuoyMapDashboardUrl =>
+      '${_base}api/User/UserMapDashboard/GetBuoyMapDashboard';
 
-  static const String getAllBuoysDataOverviewViewUrl =
-      'https://mobiledbapi.azistaaerospace.com/api/User/UserViewBuoyDashboard/GetAllBuoysDataOverviewView';
+  static String get updateUserProfileUrl =>
+      '${_base}api/Admin/User/UpdateUserProfile';
 
-  static const String getAllBuoysStatusUrl =
-      'https://mobiledbapi.azistaaerospace.com/api/User/UserViewBuoyDashboard/GetAllBuoysStatus';
+  static String get getAllBuoysStatusForExportUrl =>
+      '${_base}api/Report/Report/GetAllBuoysStatusForExport';
 
-  static const String getBuoyDataOverviewUrl =
-      'https://mobiledbapi.azistaaerospace.com/api/User/UserViewBuoyDashboard/GetBuoyDataOverview';
+  static String get getAllBuoysDataOverviewViewUrl =>
+      '${_base}api/User/UserViewBuoyDashboard/GetAllBuoysDataOverviewView';
 
-  static const String getBuoyMetricsUrl =
-      'https://mobiledbapi.azistaaerospace.com/api/User/UserViewBuoyDashboard/GetBuoyMetrics';
+  static String get getAllBuoysStatusUrl =>
+      '${_base}api/User/UserViewBuoyDashboard/GetAllBuoysStatus';
 
-  static const String getBuoyTrajectoryViewUrl =
-      'https://mobiledbapi.azistaaerospace.com/api/User/UserViewBuoyDashboard/GetBuoyTrajectoryView';
+  static String get getBuoyDataOverviewUrl =>
+      '${_base}api/User/UserViewBuoyDashboard/GetBuoyDataOverview';
 
-  static const String getBuoyDistanceReportForExportUrl =
-      'https://mobiledbapi.azistaaerospace.com/api/Report/Report/GetBuoyDistanceReportForExport';
+  static String get getBuoyMetricsUrl =>
+      '${_base}api/User/UserViewBuoyDashboard/GetBuoyMetrics';
 
-  static const String getBuoyDataReportForExportUrl =
-      'https://mobiledbapi.azistaaerospace.com/api/Report/Report/GetBuoyDataReportForExport';
+  static String get getBuoyTrajectoryViewUrl =>
+      '${_base}api/User/UserViewBuoyDashboard/GetBuoyTrajectoryView';
 
-  static const String registerDeviceTokenUrl =
-      'https://mobiledbapi.azistaaerospace.com/api/admin/DeviceToken/register';
+  static String get getBuoyDistanceReportForExportUrl =>
+      '${_base}api/Report/Report/GetBuoyDistanceReportForExport';
 
-  static const String getAllNotificationsUrl =
-      'https://mobiledbapi.azistaaerospace.com/api/admin/Notification/GetAllNotifications';
+  static String get getBuoyDataReportForExportUrl =>
+      '${_base}api/Report/Report/GetBuoyDataReportForExport';
 
-  static const String getAllDrifterBuoyCommandsUrl =
-      'https://mobiledbapi.azistaaerospace.com/api/Admin/Command/GetAllDrifterBuoyCommands';
+  static String get registerDeviceTokenUrl =>
+      '${_base}api/admin/DeviceToken/register';
 
-  static const String createNewDrifterBuoyUrl =
-      'https://mobiledbapi.azistaaerospace.com/api/Admin/Station/CreateNewDrifterBuoy';
+  static String get getAllNotificationsUrl =>
+      '${_base}api/admin/Notification/GetAllNotifications';
+
+  static String get getAllDrifterBuoyCommandsUrl =>
+      '${_base}api/Admin/Command/GetAllDrifterBuoyCommands';
+
+  static String get createNewDrifterBuoyUrl =>
+      '${_base}api/Admin/Station/CreateNewDrifterBuoy';
 }

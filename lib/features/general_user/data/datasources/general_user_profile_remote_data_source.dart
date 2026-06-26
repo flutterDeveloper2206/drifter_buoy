@@ -4,6 +4,7 @@ import 'package:drifter_buoy/core/constants/api_endpoints.dart';
 import 'package:drifter_buoy/core/network/api_service.dart';
 import 'package:drifter_buoy/core/utils/typedefs.dart';
 import 'package:drifter_buoy/features/general_user/data/models/admin_user_update_user_profile_response.dart';
+import 'package:drifter_buoy/features/general_user/data/models/user_authenticate_change_current_password_response.dart';
 import 'package:dio/dio.dart';
 
 class GeneralUserProfileRemoteDataSource {
@@ -45,6 +46,40 @@ class GeneralUserProfileRemoteDataSource {
         }
 
         return AdminUserUpdateUserProfileResponse.fromJson(data);
+      },
+    );
+  }
+
+  ResultFuture<UserAuthenticateChangeCurrentPasswordResponse>
+      changeCurrentPassword({
+    required String currentPassword,
+    required String newPassword,
+    required String confirmPassword,
+  }) {
+    final formData = FormData.fromMap({
+      'CurrentPassword': currentPassword,
+      'NewPassword': newPassword,
+      'ConfirmPassword': confirmPassword,
+    });
+
+    return _apiService.post<UserAuthenticateChangeCurrentPasswordResponse>(
+      ApiEndpoints.changeCurrentPasswordUrl,
+      data: formData,
+      parser: (dynamic data) {
+        if (data is String) {
+          final decoded = jsonDecode(data);
+          if (decoded is Map<String, dynamic>) {
+            return UserAuthenticateChangeCurrentPasswordResponse.fromJson(
+              decoded,
+            );
+          }
+        }
+
+        if (data is! Map<String, dynamic>) {
+          throw Exception('Invalid change password response format');
+        }
+
+        return UserAuthenticateChangeCurrentPasswordResponse.fromJson(data);
       },
     );
   }

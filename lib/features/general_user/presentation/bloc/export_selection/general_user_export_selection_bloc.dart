@@ -56,7 +56,7 @@ class GeneralUserExportSelectionBloc extends Bloc<
               (item) => GeneralUserExportSelectionItem(
                 id: item.buoyId.trim(),
                 lastUpdate: _formatLastUpdated(item.lastUpdated),
-                isActive: item.isOnline,
+                isActive: item.isActive,
               ),
             )
             .toList(growable: false);

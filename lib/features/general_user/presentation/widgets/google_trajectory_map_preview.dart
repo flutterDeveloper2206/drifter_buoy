@@ -173,6 +173,8 @@ class _GoogleTrajectoryMapPreviewState
       BuoyStatus.online => _greenImage,
       BuoyStatus.offline => _redImage,
       BuoyStatus.batteryLow => _yellowImage,
+      // TODO: Handle this case.
+      BuoyStatus.active => throw UnimplementedError(),
     };
     if (base == null) return null;
 
@@ -242,6 +244,8 @@ class _GoogleTrajectoryMapPreviewState
       BuoyStatus.batteryLow =>
         _batteryLowIcon ??
             BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+      // TODO: Handle this case.
+      BuoyStatus.active => throw UnimplementedError(),
     };
   }
 

@@ -73,6 +73,8 @@ class _PreviewBuoyMarker extends StatelessWidget {
       BuoyStatus.online => const Color(0xFF4CAF50),
       BuoyStatus.offline => const Color(0xFFE74C3C),
       BuoyStatus.batteryLow => const Color(0xFFF4B400),
+      // TODO: Handle this case.
+      BuoyStatus.active => throw UnimplementedError(),
     };
 
     return Column(

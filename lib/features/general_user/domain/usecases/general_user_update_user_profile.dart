@@ -32,8 +32,8 @@ class GeneralUserUpdateUserProfile {
       emailAddress: emailAddress,
     );
 
-    return result.fold(
-      (failure) => Left(failure),
+    return await result.fold(
+      (failure) async => Left(failure),
       (response) async {
         // Keep profile screen data consistent by updating the stored session.
         final loginResponse = await _authSessionStore.getLoginResponse();

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
-enum BuoyStatus { online, offline, batteryLow }
+enum BuoyStatus { online, offline, batteryLow, active }
 
 class DummyBuoy extends Equatable {
   final String id;
@@ -225,6 +225,8 @@ class _BuoyMarker extends StatelessWidget {
       BuoyStatus.online => const Color(0xFF4CAF50),
       BuoyStatus.offline => const Color(0xFFE74C3C),
       BuoyStatus.batteryLow => const Color(0xFFF4B400),
+      // TODO: Handle this case.
+      BuoyStatus.active => throw UnimplementedError(),
     };
 
     return Column(

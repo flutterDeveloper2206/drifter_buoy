@@ -85,6 +85,9 @@ class GeneralUserMapBloc
       case BuoyStatus.batteryLow:
         emit(state.copyWith(showBatteryLow: !state.showBatteryLow));
         return;
+      case BuoyStatus.active:
+        // TODO: Handle this case.
+        throw UnimplementedError();
     }
   }
 

@@ -110,7 +110,7 @@ class ApiService {
       final failure = _validateResponse(response);
       if (failure != null) {
         AppLogger.w('DELETE failed: $path', error: failure.message);
-        if (response.statusCode == 440) {
+        if (_isUnauthorizedStatus(response.statusCode)) {
           _handleSessionExpired(failure.message);
         }
         return Left(failure);
@@ -121,9 +121,9 @@ class ApiService {
     } on DioException catch (error) {
       final statusCode = error.response?.statusCode;
       AppLogger.e('DELETE DioException: $path', error: error);
-      if (statusCode == 440) {
+      if (_isUnauthorizedStatus(statusCode)) {
         final message = _extractErrorMessage(error.response?.data) ??
-            'Your session token has expired. Please log in again.';
+            'Your session has expired. Please log in again.';
         _handleSessionExpired(message);
       }
       return Left(ExceptionManager.mapDioException(error));
@@ -177,7 +177,7 @@ class ApiService {
           'API RESPONSE\nURL: ${response.requestOptions.uri}\nSTATUS: ${response.statusCode}\nRESPONSE: ${_formatResponseBody(response.data)}\nERROR: ${failure.message}',
         );
         AppLogger.w('${method.name.toUpperCase()} failed: $path');
-        if (response.statusCode == 440) {
+        if (_isUnauthorizedStatus(failure.statusCode)) {
           _handleSessionExpired(failure.message);
         }
         return Left(failure);
@@ -198,9 +198,9 @@ class ApiService {
         '${method.name.toUpperCase()} DioException: $path',
         error: error,
       );
-      if (statusCode == 440) {
+      if (_isUnauthorizedStatus(statusCode)) {
         final message = _extractErrorMessage(error.response?.data) ??
-            'Your session token has expired. Please log in again.';
+            'Your session has expired. Please log in again.';
         _handleSessionExpired(message);
       }
       return Left(ExceptionManager.mapDioException(error));
@@ -220,10 +220,16 @@ class ApiService {
       final apiError = ApiErrorResponse.fromJson(response.data);
       if (!apiError.isSuccess) {
         final message = apiError.message.trim();
-        return ApiFailure(
-          message.isNotEmpty ? message : 'Request failed. Please try again.',
-          statusCode,
-        );
+        final effectiveStatusCode = apiError.statusCode > 0
+            ? apiError.statusCode
+            : statusCode;
+        final failureMessage = message.isNotEmpty
+            ? message
+            : 'Request failed. Please try again.';
+        if (_isUnauthorizedStatus(effectiveStatusCode)) {
+          _handleSessionExpired(failureMessage);
+        }
+        return ApiFailure(failureMessage, effectiveStatusCode);
       }
       return null;
     }
@@ -232,7 +238,14 @@ class ApiService {
         _extractErrorMessage(response.data) ??
         'Request failed. Please try again.';
 
+    if (_isUnauthorizedStatus(statusCode)) {
+      _handleSessionExpired(message);
+    }
     return ApiFailure(message, statusCode);
+  }
+
+  static bool _isUnauthorizedStatus(int? statusCode) {
+    return statusCode == 401 || statusCode == 440;
   }
 
   String? _extractErrorMessage(dynamic responseData) {
