@@ -25,6 +25,8 @@ const Set<String> _ftpPasswordCatalogIds = {
 /// List row description from API `requestCommandDescription`.
 String _selfTestCommandListDescription(DrifterBuoyCommandModel command) {
   return command.requestCommandDescription.trim();
+}String _selfTestCommandListDescriptionNote(DrifterBuoyCommandModel command) {
+  return command.note?.trim()??'';
 }
 
 String? _validateSelfTestParameterizedFtp20(String? value) {
@@ -2877,9 +2879,9 @@ class _GeneralUserSelfTestDebugPageState
                                             title:
                                                 '${commandIndex + 1}-${command.testName.trim()}',
                                             subtitle:
-                                                _selfTestCommandListDescription(
-                                                  command,
-                                                ),
+                                                'Des: ${_selfTestCommandListDescription(
+                                                command,
+                                                )}\nNote: ${_selfTestCommandListDescriptionNote(command).isNotEmpty?_selfTestCommandListDescriptionNote(command):'NA'}',
                                             running: false,
                                             onTap: running
                                                 ? null

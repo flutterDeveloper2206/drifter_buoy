@@ -29,6 +29,7 @@ class DrifterBuoyCommandModel extends Equatable {
     required this.requestCommandDescription,
     required this.response,
     required this.responseDescription,
+     this.note ,
     this.isActive = true,
   });
 
@@ -37,6 +38,7 @@ class DrifterBuoyCommandModel extends Equatable {
   final String requestCommand;
   final String waitingPeriodSecondsRaw;
   final String requestCommandDescription;
+  final String? note;
   final String response;
   final String responseDescription;
   final bool isActive;
@@ -51,6 +53,7 @@ class DrifterBuoyCommandModel extends Equatable {
       requestCommandDescription: (json['requestCommandDescription'] ?? '')
           .toString(),
       response: (json['response'] ?? '').toString(),
+      note: (json['note'] ?? '').toString(),
       responseDescription: (json['responseDescription'] ?? '').toString(),
       isActive: _parseIsActive(json['isActive'] ?? json['isactive']),
     );
@@ -88,6 +91,7 @@ class DrifterBuoyCommandModel extends Equatable {
     requestCommandDescription,
     response,
     responseDescription,
+    note,
     isActive,
   ];
 }

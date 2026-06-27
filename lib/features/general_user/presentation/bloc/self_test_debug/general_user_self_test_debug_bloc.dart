@@ -1548,6 +1548,7 @@ class GeneralUserSelfTestDebugBloc
       response: api.response.trim().isNotEmpty
           ? api.response
           : staticRow.response,
+      note: api.note,
       responseDescription: api.responseDescription.trim().isNotEmpty
           ? api.responseDescription
           : staticRow.responseDescription,
