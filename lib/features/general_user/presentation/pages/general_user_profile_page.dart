@@ -713,7 +713,7 @@ class _GeneralUserProfilePageState extends State<GeneralUserProfilePage> {
 
                                         Text(
 
-                                          'Version 1.0.1',
+                                          'Version 1.0.2',
 
                                           style: Theme.of(context)
 
