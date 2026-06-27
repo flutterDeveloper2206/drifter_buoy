@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:drifter_buoy/core/bluetooth/ble_drifter_runtime_settings.dart';
 import 'package:drifter_buoy/core/bluetooth/ble_connection_service.dart';
 import 'package:drifter_buoy/core/constants/app_routes.dart';
+import 'package:drifter_buoy/core/constants/app_constants.dart';
 import 'package:drifter_buoy/core/theme/app_typography.dart';
 import 'package:drifter_buoy/core/utils/injection_container.dart';
 import 'package:drifter_buoy/core/utils/navigation_service.dart';
@@ -16,6 +17,7 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_detai
 import 'package:drifter_buoy/features/general_user/presentation/widgets/setup_bluetooth_devices_sheet.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -197,229 +199,224 @@ class _GeneralUserSetupDetailPageState
                   },
                 ),
                 Expanded(
-                  child:
-                      BlocBuilder<
-                        GeneralUserSetupDetailBloc,
-                        GeneralUserSetupDetailState
-                      >(
-                        builder: (context, state) {
-                          if (state.status ==
-                                  GeneralUserSetupDetailStatus.loading ||
-                              state.status ==
-                                  GeneralUserSetupDetailStatus.initial) {
-                            return const AppLoader();
-                          }
-                          if (state.status ==
-                              GeneralUserSetupDetailStatus.error) {
-                            return AppErrorView(
-                              message: state.message,
-                              onRetry: () {
-                                context.read<GeneralUserSetupDetailBloc>().add(
-                                  LoadGeneralUserSetupDetail(
-                                    buoyId: state.contextBuoyId,
-                                  ),
-                                );
-                              },
+                  child: BlocBuilder<GeneralUserSetupDetailBloc, GeneralUserSetupDetailState>(
+                    builder: (context, state) {
+                      if (state.status ==
+                              GeneralUserSetupDetailStatus.loading ||
+                          state.status ==
+                              GeneralUserSetupDetailStatus.initial) {
+                        return const AppLoader();
+                      }
+                      if (state.status == GeneralUserSetupDetailStatus.error) {
+                        return AppErrorView(
+                          message: state.message,
+                          onRetry: () {
+                            context.read<GeneralUserSetupDetailBloc>().add(
+                              LoadGeneralUserSetupDetail(
+                                buoyId: state.contextBuoyId,
+                              ),
                             );
-                          }
+                          },
+                        );
+                      }
 
-                          final bluetoothOn = state.bluetoothRemoteId != null;
+                      final bluetoothOn = state.bluetoothRemoteId != null;
 
-                          return SingleChildScrollView(
-                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                _WhiteCard(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
+                      return SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _WhiteCard(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Row(
                                     children: [
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              'Bluetooth Setup',
-                                              style: Theme.of(context).textTheme
-                                                  .compactSectionTitle(
-                                                    const Color(0xFF1D2329),
-                                                  ),
-                                            ),
-                                          ),
-                                          Switch(
-                                            value: bluetoothOn,
-                                            onChanged: (v) =>
-                                                _onBluetoothSwitch(context, v),
-                                            activeTrackColor: const Color(
-                                              0xFF1682C9,
-                                            ),
-                                            activeThumbColor: Colors.white,
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 12),
-                                      _BluetoothGrid(
-                                        state: state,
-                                        onCellTap: () =>
-                                            _openBluetoothPicker(context),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                _WhiteCard(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              'Enable Configuration',
-                                              style: Theme.of(context).textTheme
-                                                  .compactSectionTitle(
-                                                    const Color(0xFF1D2329),
-                                                  ),
-                                            ),
-                                          ),
-                                          Switch(
-                                            value: state.enableConfiguration,
-                                            onChanged: (_) {
-                                              context
-                                                  .read<
-                                                    GeneralUserSetupDetailBloc
-                                                  >()
-                                                  .add(
-                                                    const ToggleGeneralUserEnableConfiguration(),
-                                                  );
-                                            },
-                                            activeTrackColor: const Color(
-                                              0xFF1682C9,
-                                            ),
-                                            activeThumbColor: Colors.white,
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 8),
-                                      GestureDetector(
-                                        onTap: () {
-                                          if (!state.enableConfiguration) {
-                                            AppFlushbar.info(
-                                              'Please enable configuration using the switch above.',
-                                              context: context,
-                                            );
-                                            return;
-                                          }
-                                          if (!bluetoothOn) {
-                                            AppFlushbar.error(
-                                              'Bluetooth is not connected. Please connect to a device first.',
-                                              context: context,
-                                            );
-                                            return;
-                                          }
-                                          context.push(
-                                            AppRoutes.buoySetupPath,
-                                            extra: state.contextBuoyId,
-                                          );
-                                        },
+                                      Expanded(
                                         child: Text(
-                                          'Enable Configuration to Set Up Buoy',
+                                          'Bluetooth Setup',
                                           style: Theme.of(context).textTheme
-                                              .compactSupportingText(
-                                                const Color(0xFF6A7178),
+                                              .compactSectionTitle(
+                                                const Color(0xFF1D2329),
                                               ),
                                         ),
                                       ),
-                                      if (state.enableConfiguration &&
-                                          bluetoothOn) ...[
-                                        const SizedBox(height: 14),
-                                        InkWell(
-                                          onTap: () => context.push(
-                                            AppRoutes.buoySetupPath,
-                                            extra: state.contextBuoyId,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                          child: Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                              vertical: 6,
-                                            ),
-                                            child: Row(
-                                              children: [
-                                                const Icon(
-                                                  Icons.published_with_changes,
-                                                  color: _blue,
-                                                  size: 22,
-                                                ),
-                                                const SizedBox(width: 8),
-                                                Text(
-                                                  'Continue to Buoy Setup',
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .compactActionText(_blue),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
+                                      Switch(
+                                        value: bluetoothOn,
+                                        onChanged: (v) =>
+                                            _onBluetoothSwitch(context, v),
+                                        activeTrackColor: const Color(
+                                          0xFF1682C9,
                                         ),
-                                      ],
+                                        activeThumbColor: Colors.white,
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  _BluetoothGrid(
+                                    state: state,
+                                    onCellTap: () =>
+                                        _openBluetoothPicker(context),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            _WhiteCard(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          'Enable Configuration',
+                                          style: Theme.of(context).textTheme
+                                              .compactSectionTitle(
+                                                const Color(0xFF1D2329),
+                                              ),
+                                        ),
+                                      ),
+                                      Switch(
+                                        value: state.enableConfiguration,
+                                        onChanged: (_) {
+                                          context
+                                              .read<
+                                                GeneralUserSetupDetailBloc
+                                              >()
+                                              .add(
+                                                const ToggleGeneralUserEnableConfiguration(),
+                                              );
+                                        },
+                                        activeTrackColor: const Color(
+                                          0xFF1682C9,
+                                        ),
+                                        activeThumbColor: Colors.white,
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+
+                                  if (state.enableConfiguration)
+                                    GestureDetector(
+                                      onTap: () {
+                                        if (!state.enableConfiguration) {
+                                          AppFlushbar.info(
+                                            'Please enable configuration using the switch above.',
+                                            context: context,
+                                          );
+                                          return;
+                                        }
+                                        if (!bluetoothOn) {
+                                          AppFlushbar.error(
+                                            'Bluetooth is not connected. Please connect to a device first.',
+                                            context: context,
+                                          );
+                                          return;
+                                        }
+                                        context.push(
+                                          AppRoutes.buoySetupPath,
+                                          extra: state.contextBuoyId,
+                                        );
+                                      },
+                                      child: Text(
+                                        'Enable Configuration to Set Up Buoy',
+                                        style: Theme.of(context).textTheme
+                                            .compactSupportingText(
+                                              const Color.fromARGB(
+                                                255,
+                                                74,
+                                                159,
+                                                244,
+                                              ),
+                                            ),
+                                      ),
+                                    ),
+                                  if (state.enableConfiguration &&
+                                      bluetoothOn) ...[
+                                    const SizedBox(height: 14),
+                                    InkWell(
+                                      onTap: () => context.push(
+                                        AppRoutes.buoySetupPath,
+                                        extra: state.contextBuoyId,
+                                      ),
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 6,
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            const Icon(
+                                              Icons.published_with_changes,
+                                              color: _blue,
+                                              size: 22,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              'Continue to Buoy Setup',
+                                              style: Theme.of(context).textTheme
+                                                  .compactActionText(_blue),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+
+                            const SizedBox(height: 12),
+                            _WhiteCard(
+                              child: InkWell(
+                                onTap: () => _onSelfTestDebugTap(context),
+                                borderRadius: BorderRadius.circular(12),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 4,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          'Self-Test and Debug',
+                                          style: Theme.of(context).textTheme
+                                              .compactSectionTitle(
+                                                const Color(0xFF1D2329),
+                                              ),
+                                        ),
+                                      ),
+                                      const Icon(
+                                        Icons.chevron_right_rounded,
+                                        color: Color(0xFF8A9095),
+                                        size: 28,
+                                      ),
                                     ],
                                   ),
                                 ),
-                                const SizedBox(height: 12),
-                                _BleTimingSettingsCard(
-                                  chunkWriteDelayMs: state.chunkWriteDelayMs,
-                                  commandResponseTimeoutSec:
-                                      state.commandResponseTimeoutSec,
-                                  onSave: (chunkMs, timeoutSec) {
-                                    context
-                                        .read<GeneralUserSetupDetailBloc>()
-                                        .add(
-                                          SaveBleTimingSettings(
-                                            chunkWriteDelayMs: chunkMs,
-                                            commandResponseTimeoutSec:
-                                                timeoutSec,
-                                          ),
-                                        );
-                                  },
-                                ),
-                                const SizedBox(height: 12),
-                                _WhiteCard(
-                                  child: InkWell(
-                                    onTap: () => _onSelfTestDebugTap(context),
-                                    borderRadius: BorderRadius.circular(12),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 4,
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              'Self-Test and Debug',
-                                              style: Theme.of(context).textTheme
-                                                  .compactSectionTitle(
-                                                    const Color(0xFF1D2329),
-                                                  ),
-                                            ),
-                                          ),
-                                          const Icon(
-                                            Icons.chevron_right_rounded,
-                                            color: Color(0xFF8A9095),
-                                            size: 28,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
-                          );
-                        },
-                      ),
+                            const SizedBox(height: 12),
+                            _BleTimingSettingsCard(
+                              chunkWriteDelayMs: state.chunkWriteDelayMs,
+                              commandResponseTimeoutSec:
+                                  state.commandResponseTimeoutSec,
+                              onSave: (chunkMs, timeoutSec) {
+                                context.read<GeneralUserSetupDetailBloc>().add(
+                                  SaveBleTimingSettings(
+                                    chunkWriteDelayMs: chunkMs,
+                                    commandResponseTimeoutSec: timeoutSec,
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ],
             ),
@@ -450,6 +447,7 @@ class _BleTimingSettingsCardState extends State<_BleTimingSettingsCard> {
   late final TextEditingController _chunkController;
   late final TextEditingController _timeoutController;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  bool _isExpanded = false;
 
   @override
   void initState() {
@@ -518,6 +516,106 @@ class _BleTimingSettingsCardState extends State<_BleTimingSettingsCard> {
     );
   }
 
+  Future<void> _showPinDialog() async {
+    final TextEditingController pinController = TextEditingController();
+    final GlobalKey<FormState> dialogFormKey = GlobalKey<FormState>();
+    String? errorMessage;
+    bool obscurePin = true;
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              title: const Text('Enter PIN'),
+              content: Form(
+                key: dialogFormKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text(
+                      'Please enter the 4-digit security PIN to access timing settings.',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF6A7178),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: pinController,
+                      keyboardType: TextInputType.number,
+                      maxLength: 4,
+                      obscureText: obscurePin,
+                      autofocus: true,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
+                      decoration: InputDecoration(
+                        labelText: 'PIN',
+                        errorText: errorMessage,
+                        border: const OutlineInputBorder(),
+                        counterText: '',
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            obscurePin
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                            color: const Color(0xFF3A4046),
+                          ),
+                          onPressed: () {
+                            setStateDialog(() {
+                              obscurePin = !obscurePin;
+                            });
+                          },
+                        ),
+                      ),
+                      validator: (val) {
+                        if (val == null || val.trim().isEmpty) {
+                          return 'PIN is required';
+                        }
+                        if (val.trim().length != 4) {
+                          return 'PIN must be 4 digits';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (!dialogFormKey.currentState!.validate()) {
+                      return;
+                    }
+                    if (pinController.text.trim() == AppConstants.bleTimingSettingsPin) {
+                      Navigator.of(ctx).pop();
+                      setState(() {
+                        _isExpanded = true;
+                      });
+                    } else {
+                      setStateDialog(() {
+                        errorMessage = 'wrong pin';
+                      });
+                    }
+                  },
+                  child: const Text('Submit'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context).textTheme;
@@ -528,50 +626,81 @@ class _BleTimingSettingsCardState extends State<_BleTimingSettingsCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              'BLE Command Timing',
-              style: theme.compactSectionTitle(const Color(0xFF1D2329)),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Chunk interval applies between each 20-character BLE write. '
-              'Command timeout applies to every Self-Test / Debug response wait.',
-              style: theme.compactSupportingText(const Color(0xFF6A7178)),
-            ),
-            const SizedBox(height: 14),
-            TextFormField(
-              controller: _chunkController,
-              keyboardType: TextInputType.number,
-              validator: _validateChunkMs,
-              autovalidateMode: AutovalidateMode.onUserInteraction,
-              decoration: const InputDecoration(
-                labelText: 'Chunk write interval (ms)',
-                helperText:
-                    'Delay between 20-character BLE chunks (default 3000).',
-                border: OutlineInputBorder(),
+            InkWell(
+              onTap: () {
+                if (_isExpanded) {
+                  setState(() {
+                    _isExpanded = false;
+                  });
+                } else {
+                  _showPinDialog();
+                }
+              },
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'BLE Command Timing',
+                        style: theme.compactSectionTitle(
+                          const Color(0xFF1D2329),
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      _isExpanded
+                          ? Icons.keyboard_arrow_up_rounded
+                          : Icons.keyboard_arrow_down_rounded,
+                      color: const Color(0xFF8A9095),
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _timeoutController,
-              keyboardType: TextInputType.number,
-              validator: _validateTimeoutSec,
-              autovalidateMode: AutovalidateMode.onUserInteraction,
-              decoration: const InputDecoration(
-                labelText: 'Command response timeout (sec)',
-                helperText:
-                    'Wait for device response ending with # (default 60).',
-                border: OutlineInputBorder(),
+            if (_isExpanded) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Chunk interval applies between each 20-character BLE write. '
+                'Command timeout applies to every Self-Test / Debug response wait.',
+                style: theme.compactSupportingText(const Color(0xFF6A7178)),
               ),
-            ),
-            const SizedBox(height: 14),
-            Align(
-              alignment: Alignment.centerRight,
-              child: FilledButton(
-                onPressed: _submit,
-                child: const Text('Save timing'),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: _chunkController,
+                keyboardType: TextInputType.number,
+                validator: _validateChunkMs,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                decoration: const InputDecoration(
+                  labelText: 'Chunk write interval (ms)',
+                  helperText:
+                      'Delay between 20-character BLE chunks (default 3000).',
+                  border: OutlineInputBorder(),
+                ),
               ),
-            ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _timeoutController,
+                keyboardType: TextInputType.number,
+                validator: _validateTimeoutSec,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                decoration: const InputDecoration(
+                  labelText: 'Command response timeout (sec)',
+                  helperText:
+                      'Wait for device response ending with # (default 60).',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Align(
+                alignment: Alignment.centerRight,
+                child: FilledButton(
+                  onPressed: _submit,
+                  child: const Text('Save timing'),
+                ),
+              ),
+            ],
           ],
         ),
       ),

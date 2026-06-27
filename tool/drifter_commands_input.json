@@ -747,11 +747,11 @@
       {
         "_id": "6a04547227be228113206991",
         "testName": "SET Sensor ALL parameter",
-        "requestCommand": "?80,(Sensor no, channel no,F.G, factory off, senG, Soff, Resolution, sen Min, sens Max, Averag Scheme, vactor, start time, interval, total sample, mode, Tx.G, Tx.O ),#",
+        "requestCommand": "?80,(Sensor no, channel no,F.G, factory off, senG, Soff, Resolution, sen Min, sens Max, Averag Scheme, Vector, start time, interval, total sample, mode, Tx.G, Tx.O ),#",
         "waitingPeriodSecondsRaw": "NA",
         "requestCommandDescription": "NA",
         "response": "$80,List of all sensor parameters,#",
-        "responseDescription": "Sensor no, channel no, F.G, factory off, senG, S.off, Resolution, sen Min, sens Max, Averag Scheme, vactor, start time, interval, total sample, mode, Tx.G, Tx.O",
+        "responseDescription": "Sensor no, channel no, F.G, factory off, senG, S.off, Resolution, sen Min, sens Max, Averag Scheme, Vector, start time, interval, total sample, mode, Tx.G, Tx.O",
         "isActive": true
       },
       {
@@ -761,7 +761,7 @@
         "waitingPeriodSecondsRaw": "NA",
         "requestCommandDescription": "NA",
         "response": "$81,List of all sensor parameters,#",
-        "responseDescription": "Sensor no, Channel no, F.G, factory off, senG, S.off, Resolution, sen Min, sens Max, Averag Scheme, vactor, start time, interval, total sample, mode, Tx.G, Tx.O",
+        "responseDescription": "Sensor no, Channel no, F.G, factory off, senG, S.off, Resolution, sen Min, sens Max, Averag Scheme, Vector, start time, interval, total sample, mode, Tx.G, Tx.O",
         "isActive": true
       },
       {

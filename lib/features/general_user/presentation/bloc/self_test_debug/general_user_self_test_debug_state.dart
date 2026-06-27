@@ -545,7 +545,7 @@ class SelfTestSetSensorAllParametersDraft extends Equatable {
     this.senMin = '-00040.00000',
     this.sensMax = '+00060.00000',
     this.averagScheme = '0',
-    this.vactor = '00',
+    this.Vector = '00',
     this.startTime = '00:59:07',
     this.interval = '01:00:00',
     this.totalSample = '01',
@@ -564,7 +564,7 @@ class SelfTestSetSensorAllParametersDraft extends Equatable {
   final String senMin;
   final String sensMax;
   final String averagScheme;
-  final String vactor;
+  final String Vector;
   final String startTime;
   final String interval;
   final String totalSample;
@@ -584,7 +584,7 @@ class SelfTestSetSensorAllParametersDraft extends Equatable {
     senMin,
     sensMax,
     averagScheme,
-    vactor,
+    Vector,
     startTime,
     interval,
     totalSample,

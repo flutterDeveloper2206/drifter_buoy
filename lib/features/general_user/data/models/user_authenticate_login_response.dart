@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 class UserAuthenticateLoginResult extends Equatable {
+  final String mpin;
   final String userId;
   final String roleName;
   final String userCode;
@@ -20,6 +21,7 @@ class UserAuthenticateLoginResult extends Equatable {
   final bool isActive;
 
   const UserAuthenticateLoginResult({
+    required this.mpin,
     required this.userId,
     required this.roleName,
     required this.userCode,
@@ -41,6 +43,7 @@ class UserAuthenticateLoginResult extends Equatable {
 
   factory UserAuthenticateLoginResult.fromJson(Map<String, dynamic> json) {
     return UserAuthenticateLoginResult(
+      mpin: (json['mpin'] ?? '').toString(),
       userId: (json['userId'] ?? '').toString(),
       roleName: (json['roleName'] ?? '').toString(),
       userCode: (json['userCode'] ?? '').toString(),
@@ -64,6 +67,7 @@ class UserAuthenticateLoginResult extends Equatable {
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
+      'mpin': mpin,
       'userId': userId,
       'roleName': roleName,
       'userCode': userCode,
@@ -86,6 +90,7 @@ class UserAuthenticateLoginResult extends Equatable {
 
   @override
   List<Object?> get props => [
+        mpin,
         userId,
         roleName,
         userCode,

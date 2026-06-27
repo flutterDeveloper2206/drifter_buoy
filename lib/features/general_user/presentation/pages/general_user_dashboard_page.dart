@@ -18,6 +18,7 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/map_filters/general_user_map_filters_event.dart';
 
+
 class GeneralUserDashboardPage extends StatelessWidget {
   const GeneralUserDashboardPage({super.key});
 
@@ -28,8 +29,9 @@ class GeneralUserDashboardPage extends StatelessWidget {
     return BlocBuilder<GeneralUserDashboardBloc, GeneralUserDashboardState>(
       builder: (context, state) {
         Widget body;
-        if (state is GeneralUserDashboardLoaded) {
-          final loadedState = state;
+        final isSyncing = state is GeneralUserDashboardSyncingCommands;
+        if (state is GeneralUserDashboardLoaded || state is GeneralUserDashboardSyncingCommands) {
+          final dynamic loadedState = state;
           final dashboardData = loadedState.data;
           final summary = dashboardData.summary;
           body = RefreshIndicator(
@@ -47,6 +49,41 @@ class GeneralUserDashboardPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (loadedState.isOffline) ...[
+                    Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF3CD),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFFFEEBA)),
+                      ),
+                      child: Row(
+                        children: const [
+                          Icon(
+                            Icons.cloud_off_rounded,
+                            color: Color(0xFF856404),
+                            size: 20,
+                          ),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Offline Mode — Bluetooth setups and Self-Test features are fully available.',
+                              style: TextStyle(
+                                color: Color(0xFF856404),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   Text(
                     'Dashboard',
                     style: textTheme.titleLarge?.copyWith(
@@ -193,11 +230,44 @@ class GeneralUserDashboardPage extends StatelessWidget {
           child: Scaffold(
             backgroundColor: const Color(0xFFD9DEE2),
             body: SafeArea(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+              child: Stack(
                 children: [
-                  const AppGeneralUserMainAppBar(),
-                  Expanded(child: body),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const AppGeneralUserMainAppBar(),
+                      Expanded(child: body),
+                    ],
+                  ),
+                  if (isSyncing) ...[
+                    const ModalBarrier(
+                      dismissible: false,
+                      color: Colors.black54,
+                    ),
+                    const Center(
+                      child: Card(
+                        margin: EdgeInsets.all(32),
+                        child: Padding(
+                          padding: EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              CircularProgressIndicator(),
+                              SizedBox(width: 10),
+                              Text(
+                                'Setting up commands. Please wait...',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.normal,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -281,6 +351,37 @@ class _MapPreviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (mapData.isEmpty && dashboardData.buoyLocations.isEmpty) {
+      return Container(
+        height: 180,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF2F2F2),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE2E2E2)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(
+              Icons.map_outlined,
+              size: 48,
+              color: Color(0xFF8B9196),
+            ),
+            SizedBox(height: 12),
+            Text(
+              'Map preview is not available offline',
+              style: TextStyle(
+                fontSize: 14,
+                color: Color(0xFF6A7178),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     final summary = dashboardData.summary;
     final locations = mapData.isNotEmpty
         ? mapData

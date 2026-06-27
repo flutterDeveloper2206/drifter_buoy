@@ -6,5 +6,6 @@ class AppPrefKeys {
   static const String authAccessToken = 'drifter_buoy_auth_token';
   static const String authRefreshToken = 'drifter_buoy_auth_refresh_token';
   static const String authResetToken = 'drifter_buoy_auth_reset_token';
+  static const String authMpin = 'drifter_buoy_auth_mpin';
 }
 

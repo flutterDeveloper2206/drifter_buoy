@@ -8,6 +8,8 @@ abstract class GeneralUserDashboardState extends Equatable {
   bool get isAdmin;
 
   String get message;
+
+  bool get isOffline => false;
 }
 
 class GeneralUserDashboardInitial extends GeneralUserDashboardState {
@@ -38,6 +40,29 @@ class GeneralUserDashboardLoading extends GeneralUserDashboardState {
 
 class GeneralUserDashboardLoaded extends GeneralUserDashboardState {
   const GeneralUserDashboardLoaded({
+    required this.isAdmin,
+    required this.data,
+    required this.mapData,
+    this.isOffline = false,
+  });
+
+  @override
+  final bool isAdmin;
+
+  final UserMapDashboardGetBuoyDashboardResult data;
+  final List<UserMapDashboardGetBuoyMapDashboardItem> mapData;
+  @override
+  final bool isOffline;
+
+  @override
+  String get message => '';
+
+  @override
+  List<Object?> get props => [isAdmin, data, mapData, isOffline];
+}
+
+class GeneralUserDashboardSyncingCommands extends GeneralUserDashboardState {
+  const GeneralUserDashboardSyncingCommands({
     required this.isAdmin,
     required this.data,
     required this.mapData,

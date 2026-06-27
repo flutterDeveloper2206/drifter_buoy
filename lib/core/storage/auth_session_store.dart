@@ -25,11 +25,15 @@ class AuthSessionStore {
     _cachedIsAdmin = isAdminRoleName(response.result.roleName);
     final loginJson = jsonEncode(response.toJson());
     await _appPrefs.setString(AppPrefKeys.authLoginResponse, loginJson);
-    await _appPrefs.setString(AppPrefKeys.authAccessToken, response.result.token);
+    await _appPrefs.setString(
+      AppPrefKeys.authAccessToken,
+      response.result.token,
+    );
     await _appPrefs.setString(
       AppPrefKeys.authRefreshToken,
       response.result.refreshToken,
     );
+    await _appPrefs.setString(AppPrefKeys.authMpin, response.result.mpin);
   }
 
   Future<UserAuthenticateLoginResponse?> getLoginResponse() async {
@@ -75,12 +79,16 @@ class AuthSessionStore {
     return _appPrefs.getString(AppPrefKeys.authResetToken);
   }
 
+  Future<String?> getMpin() async {
+    return _appPrefs.getString(AppPrefKeys.authMpin);
+  }
+
   Future<void> clear() async {
     _cachedIsAdmin = null;
     await _appPrefs.remove(AppPrefKeys.authLoginResponse);
     await _appPrefs.remove(AppPrefKeys.authAccessToken);
     await _appPrefs.remove(AppPrefKeys.authRefreshToken);
     await _appPrefs.remove(AppPrefKeys.authResetToken);
+    await _appPrefs.remove(AppPrefKeys.authMpin);
   }
 }
-

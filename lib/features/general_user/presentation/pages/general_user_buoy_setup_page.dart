@@ -69,7 +69,7 @@ class GeneralUserBuoySetupPage extends StatelessWidget {
                             ),
                             const SizedBox(height: 12),
                             _Field(
-                              label: 'Station ID',
+                              label: 'Buoy ID',
                               value: state.stationId,
                               formFieldKey: ValueKey(
                                 'stationId-$fieldsMounted',

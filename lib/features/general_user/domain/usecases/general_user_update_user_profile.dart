@@ -12,8 +12,8 @@ class GeneralUserUpdateUserProfile {
   GeneralUserUpdateUserProfile({
     required GeneralUserProfileRepository repository,
     required AuthSessionStore authSessionStore,
-  })  : _repository = repository,
-        _authSessionStore = authSessionStore;
+  }) : _repository = repository,
+       _authSessionStore = authSessionStore;
 
   ResultFuture<AdminUserUpdateUserProfileResponse> call({
     required String userId,
@@ -32,52 +32,52 @@ class GeneralUserUpdateUserProfile {
       emailAddress: emailAddress,
     );
 
-    return await result.fold(
-      (failure) async => Left(failure),
-      (response) async {
-        // Keep profile screen data consistent by updating the stored session.
-        final loginResponse = await _authSessionStore.getLoginResponse();
-        if (loginResponse != null) {
-          final old = loginResponse.result;
-          final updatedFullName = _formatFullName(
-            firstName: firstName,
-            middleName: middleName,
-            lastName: lastName,
-          );
+    return await result.fold((failure) async => Left(failure), (
+      response,
+    ) async {
+      // Keep profile screen data consistent by updating the stored session.
+      final loginResponse = await _authSessionStore.getLoginResponse();
+      if (loginResponse != null) {
+        final old = loginResponse.result;
+        final updatedFullName = _formatFullName(
+          firstName: firstName,
+          middleName: middleName,
+          lastName: lastName,
+        );
 
-          final updatedResult = UserAuthenticateLoginResult(
-            userId: old.userId,
-            roleName: old.roleName,
-            userCode: old.userCode,
-            firstName: firstName,
-            middleName: middleName,
-            lastName: lastName,
-            fullName: updatedFullName,
-            userName: old.userName,
-            emailAddress: emailAddress,
-            mobileNumber: mobileNumber,
-            clientCode: old.clientCode,
-            token: old.token,
-            refreshToken: old.refreshToken,
-            dbProvider: old.dbProvider,
-            profileDetails: old.profileDetails,
-            profileDetailsList: old.profileDetailsList,
-            isActive: old.isActive,
-          );
+        final updatedResult = UserAuthenticateLoginResult(
+          mpin: old.mpin,
+          userId: old.userId,
+          roleName: old.roleName,
+          userCode: old.userCode,
+          firstName: firstName,
+          middleName: middleName,
+          lastName: lastName,
+          fullName: updatedFullName,
+          userName: old.userName,
+          emailAddress: emailAddress,
+          mobileNumber: mobileNumber,
+          clientCode: old.clientCode,
+          token: old.token,
+          refreshToken: old.refreshToken,
+          dbProvider: old.dbProvider,
+          profileDetails: old.profileDetails,
+          profileDetailsList: old.profileDetailsList,
+          isActive: old.isActive,
+        );
 
-          await _authSessionStore.saveLoginResponse(
-            UserAuthenticateLoginResponse(
-              statusCode: response.statusCode,
-              message: response.message,
-              result: updatedResult,
-              isSuccess: response.isSuccess,
-            ),
-          );
-        }
+        await _authSessionStore.saveLoginResponse(
+          UserAuthenticateLoginResponse(
+            statusCode: response.statusCode,
+            message: response.message,
+            result: updatedResult,
+            isSuccess: response.isSuccess,
+          ),
+        );
+      }
 
-        return Right(response);
-      },
-    );
+      return Right(response);
+    });
   }
 
   String _formatFullName({
@@ -90,4 +90,3 @@ class GeneralUserUpdateUserProfile {
         .trim();
   }
 }
-

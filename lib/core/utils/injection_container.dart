@@ -398,6 +398,7 @@ Future<void> initDependencies() async {
       () => GeneralUserDashboardBloc(
         getBuoyDashboard: sl(),
         getBuoyMapDashboard: sl(),
+        remoteDataSource: sl(),
       ),
     );
   }

@@ -29,8 +29,9 @@ class DrifterBuoyCommandModel extends Equatable {
     required this.requestCommandDescription,
     required this.response,
     required this.responseDescription,
-     this.note ,
+    this.note,
     this.isActive = true,
+    this.serialNumber = 0,
   });
 
   final String id;
@@ -42,6 +43,7 @@ class DrifterBuoyCommandModel extends Equatable {
   final String response;
   final String responseDescription;
   final bool isActive;
+  final int serialNumber;
 
   factory DrifterBuoyCommandModel.fromJson(Map<String, dynamic> json) {
     return DrifterBuoyCommandModel(
@@ -56,6 +58,7 @@ class DrifterBuoyCommandModel extends Equatable {
       note: (json['note'] ?? '').toString(),
       responseDescription: (json['responseDescription'] ?? '').toString(),
       isActive: _parseIsActive(json['isActive'] ?? json['isactive']),
+      serialNumber: _toInt(json['serialNumber'] ?? json['serial_number']),
     );
   }
 
@@ -93,6 +96,7 @@ class DrifterBuoyCommandModel extends Equatable {
     responseDescription,
     note,
     isActive,
+    serialNumber,
   ];
 }
 

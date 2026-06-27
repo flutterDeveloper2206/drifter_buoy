@@ -69,7 +69,7 @@ class GeneralUserBuoySetupBloc
       emit(
         state.copyWith(
           status: GeneralUserBuoySetupStatus.loaded,
-          message: 'Station ID is required.',
+          message: 'Buoy ID is required.',
           isSuccessMessage: false,
         ),
       );
@@ -79,7 +79,7 @@ class GeneralUserBuoySetupBloc
       emit(
         state.copyWith(
           status: GeneralUserBuoySetupStatus.loaded,
-          message: 'Station ID cannot contain a comma.',
+          message: 'Buoy ID cannot contain a comma.',
           isSuccessMessage: false,
         ),
       );
@@ -89,7 +89,7 @@ class GeneralUserBuoySetupBloc
       emit(
         state.copyWith(
           status: GeneralUserBuoySetupStatus.loaded,
-          message: 'Station ID must be at most 8 characters.',
+          message: 'Buoy ID must be at most 8 characters.',
           isSuccessMessage: false,
         ),
       );

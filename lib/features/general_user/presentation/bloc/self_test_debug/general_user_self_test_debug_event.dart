@@ -13,12 +13,16 @@ class LoadGeneralUserSelfTestDebug extends GeneralUserSelfTestDebugEvent {
 }
 
 class RunGeneralUserSelfTestDebugAction extends GeneralUserSelfTestDebugEvent {
-  const RunGeneralUserSelfTestDebugAction(this.commandIndex);
+  const RunGeneralUserSelfTestDebugAction(
+    this.commandIndex, {
+    this.overrideCommand,
+  });
 
   final int commandIndex;
+  final String? overrideCommand;
 
   @override
-  List<Object> get props => [commandIndex];
+  List<Object?> get props => [commandIndex, overrideCommand];
 }
 
 class ClearGeneralUserSelfTestDebugMessage
@@ -175,13 +179,15 @@ class SubmitGeneralUserTransmitterFrequency
   const SubmitGeneralUserTransmitterFrequency({
     required this.transmitterType,
     required this.frequencyValue,
+    required this.sValue,
   });
 
   final int transmitterType;
   final String frequencyValue;
+  final int sValue;
 
   @override
-  List<Object> get props => [transmitterType, frequencyValue];
+  List<Object> get props => [transmitterType, frequencyValue, sValue];
 }
 
 class ClearGeneralUserTransmitterFrequencyPrompt
@@ -243,17 +249,15 @@ class ClearGeneralUserUhfSondeTxInTimePrompt
 
 class SubmitGeneralUserTransmitterTest extends GeneralUserSelfTestDebugEvent {
   const SubmitGeneralUserTransmitterTest({
-    required this.plainCarrierOn,
-    required this.modulationOn,
-    required this.prbsOn,
+    required this.selectedN,
+    required this.sValue,
   });
 
-  final bool plainCarrierOn;
-  final bool modulationOn;
-  final bool prbsOn;
+  final int selectedN;
+  final int sValue;
 
   @override
-  List<Object> get props => [plainCarrierOn, modulationOn, prbsOn];
+  List<Object> get props => [selectedN, sValue];
 }
 
 class ClearGeneralUserTransmitterTestPrompt

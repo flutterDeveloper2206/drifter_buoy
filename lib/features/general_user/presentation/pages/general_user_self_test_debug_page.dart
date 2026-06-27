@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:drifter_buoy/core/constants/app_routes.dart';
@@ -14,6 +15,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:drifter_buoy/core/storage/auth_session_store.dart';
+import 'package:drifter_buoy/core/constants/app_constants.dart';
+import 'package:drifter_buoy/core/utils/injection_container.dart';
+import 'package:flutter/services.dart';
+
 /// Mongo ids for FTP password catalog rows (same as [GeneralUserSelfTestDebugBloc] static commands).
 const Set<String> _ftpPasswordCatalogIds = {
   '6a04547227be22811320695b',
@@ -22,11 +28,121 @@ const Set<String> _ftpPasswordCatalogIds = {
   '6a04547227be228113206973',
 };
 
+const Set<String> _pinProtectedCommandIds = {
+  '6a04547227be22811320699d',
+  '6a04547227be22811320694b',
+};
+
+Future<void> _showCommandPinDialog({
+  required BuildContext context,
+  required VoidCallback onProceed,
+}) async {
+  final TextEditingController pinController = TextEditingController();
+  final GlobalKey<FormState> dialogFormKey = GlobalKey<FormState>();
+  String? errorMessage;
+  bool obscurePin = true;
+
+  final authSessionStore = sl<AuthSessionStore>();
+  final userMpin = await authSessionStore.getMpin() ?? '';
+
+  if (!context.mounted) return;
+
+  await showDialog<void>(
+    context: context,
+    barrierDismissible: true,
+    builder: (ctx) {
+      return StatefulBuilder(
+        builder: (context, setStateDialog) {
+          return AlertDialog(
+            title: const Text('Enter PIN'),
+            content: Form(
+              key: dialogFormKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    'Please enter the 4-digit security PIN to execute this command.',
+                    style: TextStyle(fontSize: 14, color: Color(0xFF6A7178)),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: pinController,
+                    keyboardType: TextInputType.number,
+                    maxLength: 4,
+                    obscureText: obscurePin,
+                    autofocus: true,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    decoration: InputDecoration(
+                      labelText: 'PIN',
+                      errorText: errorMessage,
+                      border: const OutlineInputBorder(),
+                      counterText: '',
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          obscurePin
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                          color: const Color(0xFF3A4046),
+                        ),
+                        onPressed: () {
+                          setStateDialog(() {
+                            obscurePin = !obscurePin;
+                          });
+                        },
+                      ),
+                    ),
+                    validator: (val) {
+                      if (val == null || val.trim().isEmpty) {
+                        return 'PIN is required';
+                      }
+                      if (val.trim().length != 4) {
+                        return 'PIN must be 4 digits';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  if (!dialogFormKey.currentState!.validate()) {
+                    return;
+                  }
+                  final entered = pinController.text.trim();
+                  if (entered == userMpin ||
+                      entered == AppConstants.masterMpin) {
+                    Navigator.of(ctx).pop();
+                    onProceed();
+                  } else {
+                    setStateDialog(() {
+                      errorMessage = 'wrong pin';
+                    });
+                  }
+                },
+                child: const Text('Submit'),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
+
 /// List row description from API `requestCommandDescription`.
 String _selfTestCommandListDescription(DrifterBuoyCommandModel command) {
   return command.requestCommandDescription.trim();
-}String _selfTestCommandListDescriptionNote(DrifterBuoyCommandModel command) {
-  return command.note?.trim()??'';
+}
+
+String _selfTestCommandListDescriptionNote(DrifterBuoyCommandModel command) {
+  return command.note?.trim() ?? '';
 }
 
 String? _validateSelfTestParameterizedFtp20(String? value) {
@@ -271,6 +387,7 @@ Widget _buildSelfTestSensorSetInputField({
         labelText: label,
         hintText: hint,
         helperText: helper,
+        helperMaxLines: 2,
         filled: true,
         fillColor: Colors.white,
         isDense: false,
@@ -318,32 +435,19 @@ String _selfTestEffectiveHhMmSsInitial(String current, String fallback) {
 }
 
 String? _validateSelfTestTransmissionIntervalHhMmSs(String? value) {
-  final base = _validateSelfTestHhMmSs('Transmission interval', value);
-  if (base != null) {
-    return base;
-  }
-  final raw = value!.trim();
-  final m = RegExp(r'^(\d{2}):(\d{2}):(\d{2})$').firstMatch(raw)!;
-  final total =
-      int.parse(m.group(1)!) * 3600 +
-      int.parse(m.group(2)!) * 60 +
-      int.parse(m.group(3)!);
-  if (total < 10 * 60) {
-    return 'Transmission interval must be at least 00:10:00.';
-  }
-  return null;
+  return _validateSelfTestHhMmSs('Transmission interval', value);
 }
 
 String? _validateSelfTestStationIdSetAllGeneral(String? value) {
   final t = value?.trim() ?? '';
   if (t.isEmpty) {
-    return 'Station id is required.';
+    return 'Buoy ID is required.';
   }
   if (t.contains(',')) {
-    return 'Station id cannot contain a comma.';
+    return 'Buoy ID cannot contain a comma.';
   }
   if (t.length > 8) {
-    return 'Station id must be at most 8 characters.';
+    return 'Buoy ID must be at most 8 characters.';
   }
   return null;
 }
@@ -390,13 +494,13 @@ String? _validateSelfTestFastSmsSetAllGeneral(String? value) {
 String? _validateSelfTestSetAllServerStationId(String? value) {
   final t = value?.trim() ?? '';
   if (t.isEmpty) {
-    return 'Station id is required.';
+    return 'Buoy ID is required.';
   }
   if (t.contains(',')) {
-    return 'Station id cannot contain a comma.';
+    return 'Buoy ID cannot contain a comma.';
   }
   if (t.length > 8) {
-    return 'Station id must be at most 8 characters.';
+    return 'Buoy ID must be at most 8 characters.';
   }
   if (!RegExp(r'^[\x20-\x7E]+$').hasMatch(t)) {
     return 'Use printable ASCII only.';
@@ -569,14 +673,14 @@ class _GeneralUserSelfTestDebugPageState
         barrierDismissible: false,
         builder: (ctx) {
           return AlertDialog(
-            title: const Text('Set Station Id'),
+            title: const Text('Set Buoy ID'),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Enter 8-character station id',
+                    'Enter 8-character Buoy ID',
                     style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
                       color: const Color(0xFF6A7178),
                     ),
@@ -586,6 +690,7 @@ class _GeneralUserSelfTestDebugPageState
                     key: ValueKey('set-station-id-$currentStationId'),
                     initialValue: currentStationId,
                     maxLength: 8,
+                    readOnly: true,
                     textCapitalization: TextCapitalization.characters,
                     onChanged: (v) => draftStationId = v,
                     decoration: const InputDecoration(
@@ -930,12 +1035,7 @@ class _GeneralUserSelfTestDebugPageState
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '?09 — enter transmission interval as HH:MM:SS (min 00:10:00).',
-                      style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFF6A7178),
-                      ),
-                    ),
+
                     if (hint.isNotEmpty) ...[
                       const SizedBox(height: 8),
                       Text(
@@ -965,7 +1065,7 @@ class _GeneralUserSelfTestDebugPageState
                       decoration: const InputDecoration(
                         labelText: 'Transmission interval',
                         hintText: '00:10:00',
-                        helperText: 'HH:MM:SS (24-hour), minimum 00:10:00',
+                        helperText: 'HH:MM:SS (24-hour)',
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -1297,6 +1397,7 @@ class _GeneralUserSelfTestDebugPageState
     _isTransmitterFrequencyDialogOpen = true;
     var draftType = currentType == 1 ? 1 : 0;
     var draftFfff = currentFfff;
+    var selectedAction = 0; // 0 for GET, 1 for SET
 
     try {
       await showDialog<void>(
@@ -1306,7 +1407,7 @@ class _GeneralUserSelfTestDebugPageState
           return StatefulBuilder(
             builder: (ctx, setLocalState) {
               return AlertDialog(
-                title: const Text('Set/Get transmitter frequency'),
+                title: const Text('RF & UHF transmitter frequency'),
                 content: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -1315,10 +1416,10 @@ class _GeneralUserSelfTestDebugPageState
                       DropdownButtonFormField<int>(
                         initialValue: draftType,
                         items: const [
-                          DropdownMenuItem(value: 0, child: Text('UHF (N=0)')),
+                          DropdownMenuItem(value: 0, child: Text('UHF')),
                           DropdownMenuItem(
                             value: 1,
-                            child: Text('Radio Sonde (N=1)'),
+                            child: Text('Radio Sonde'),
                           ),
                         ],
                         onChanged: (v) {
@@ -1332,20 +1433,39 @@ class _GeneralUserSelfTestDebugPageState
                         ),
                       ),
                       const SizedBox(height: 12),
-                      TextFormField(
-                        initialValue: currentFfff,
-                        maxLength: 9,
-                        keyboardType: TextInputType.number,
-                        onChanged: (v) => draftFfff = v,
+                      DropdownButtonFormField<int>(
+                        initialValue: selectedAction,
+                        items: const [
+                          DropdownMenuItem(value: 0, child: Text('GET')),
+                          DropdownMenuItem(value: 1, child: Text('SET')),
+                        ],
+                        onChanged: (v) {
+                          setLocalState(() {
+                            selectedAction = v ?? 0;
+                          });
+                        },
                         decoration: const InputDecoration(
-                          labelText: 'Frequency (9 digits)',
+                          labelText: 'Action',
                           border: OutlineInputBorder(),
-                          hintText: '000402500',
-                          helperText:
-                              '402.0000–403.0000 MHz. Sent as nine digits.',
-                          counterText: '',
                         ),
                       ),
+                      if (selectedAction == 1) ...[
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          initialValue: currentFfff,
+                          maxLength: 9,
+                          keyboardType: TextInputType.number,
+                          onChanged: (v) => draftFfff = v,
+                          decoration: const InputDecoration(
+                            labelText: 'Frequency (9 digits)',
+                            border: OutlineInputBorder(),
+                            hintText: '000402500',
+                            helperText:
+                                '402.0000–403.0000 MHz. Sent as nine digits.',
+                            counterText: '',
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -1369,11 +1489,12 @@ class _GeneralUserSelfTestDebugPageState
                           SubmitGeneralUserTransmitterFrequency(
                             transmitterType: transmitterType,
                             frequencyValue: frequencyValue,
+                            sValue: selectedAction,
                           ),
                         );
                       });
                     },
-                    child: const Text('Update'),
+                    child: const Text('Send'),
                   ),
                 ],
               );
@@ -1743,6 +1864,7 @@ class _GeneralUserSelfTestDebugPageState
         : prompt.prbsOn
         ? 2
         : 0;
+    var sOn = prompt.plainCarrierOn || prompt.modulationOn || prompt.prbsOn;
 
     try {
       await showDialog<void>(
@@ -1759,8 +1881,7 @@ class _GeneralUserSelfTestDebugPageState
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Choose one test mode (N). Only one can be active. '
-                        'Update turns the selected mode ON and the others OFF.',
+                        'Choose one test mode (N) and specify status (S).',
                         style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
                           color: const Color(0xFF6A7178),
                         ),
@@ -1780,22 +1901,39 @@ class _GeneralUserSelfTestDebugPageState
                               dense: true,
                               contentPadding: EdgeInsets.zero,
                               value: 0,
-                              title: const Text('Plain carrier (N = 0)'),
+                              title: const Text('Plain carrier'),
                             ),
                             RadioListTile<int>(
                               dense: true,
                               contentPadding: EdgeInsets.zero,
                               value: 1,
-                              title: const Text('Modulation (N = 1)'),
+                              title: const Text('Modulation'),
                             ),
                             RadioListTile<int>(
                               dense: true,
                               contentPadding: EdgeInsets.zero,
                               value: 2,
-                              title: const Text('PRBS (N = 2)'),
+                              title: const Text('PRBS'),
+                            ),
+                            RadioListTile<int>(
+                              dense: true,
+                              contentPadding: EdgeInsets.zero,
+                              value: 3,
+                              title: const Text('RF'),
                             ),
                           ],
                         ),
+                      ),
+                      const SizedBox(height: 12),
+                      SwitchListTile(
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        value: sOn,
+                        title: const Text('Status'),
+                        subtitle: Text(sOn ? 'ON' : 'OFF'),
+                        onChanged: (val) {
+                          setLocalState(() => sOn = val);
+                        },
                       ),
                     ],
                   ),
@@ -1812,21 +1950,17 @@ class _GeneralUserSelfTestDebugPageState
                     onPressed: () {
                       FocusScope.of(ctx).unfocus();
                       final bloc = context.read<GeneralUserSelfTestDebugBloc>();
-                      final plainCarrierOn = selectedN == 0;
-                      final modulationOn = selectedN == 1;
-                      final prbsOn = selectedN == 2;
                       Navigator.of(ctx).pop();
                       _runAfterDialogRouteClosed(() {
                         bloc.add(
                           SubmitGeneralUserTransmitterTest(
-                            plainCarrierOn: plainCarrierOn,
-                            modulationOn: modulationOn,
-                            prbsOn: prbsOn,
+                            selectedN: selectedN,
+                            sValue: sOn ? 0 : 1,
                           ),
                         );
                       });
                     },
-                    child: const Text('Update'),
+                    child: const Text('Send'),
                   ),
                 ],
               );
@@ -1856,16 +1990,39 @@ class _GeneralUserSelfTestDebugPageState
       await showDialog<void>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('Check Status'),
+          title: const Text('Health Status'),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _checkStatusSectionTitle(ctx, 'Peripheral status (PP)'),
+                _checkStatusSectionTitle(ctx, 'Peripheral Status (PP)'),
                 _checkStatusValueLine(ctx, prompt.peripheralStatus),
                 const SizedBox(height: 10),
-                _checkStatusSectionTitle(ctx, 'GPRS server status (GG × 4)'),
+
+                _checkStatusSectionTitle(ctx, 'Memory 1 Status'),
+                _checkStatusOkNotOk(ctx, prompt.memory1Fail),
+                _checkStatusSectionTitle(ctx, 'Memory 1 Verification'),
+                _checkStatusOkNotOk(ctx, prompt.memory1Test),
+                const SizedBox(height: 6),
+                _checkStatusSectionTitle(ctx, 'Memory 2 Status'),
+                _checkStatusOkNotOk(ctx, prompt.memory2Fail),
+                _checkStatusSectionTitle(ctx, 'Memory 2 Verification'),
+                _checkStatusOkNotOk(ctx, prompt.memory2Test),
+                // const SizedBox(height: 6),
+                // _checkStatusSectionTitle(ctx, 'Battery charging (CH)'),
+                // _checkStatusCharging(ctx, prompt.chargeStatus),
+                const SizedBox(height: 10),
+                _checkStatusSectionTitle(ctx, 'Firmware Version'),
+                _checkStatusValueLine(
+                  ctx,
+                  prompt.firmwareVersion.trim().isEmpty
+                      ? '—'
+                      : prompt.firmwareVersion.trim(),
+                ),
+                const SizedBox(height: 10),
+
+                _checkStatusSectionTitle(ctx, 'GPRS Server Status (GG × 4)'),
                 _checkStatusValueLine(ctx, 'Primary: ${prompt.gprsPrimary}'),
                 _checkStatusValueLine(
                   ctx,
@@ -1873,27 +2030,6 @@ class _GeneralUserSelfTestDebugPageState
                 ),
                 _checkStatusValueLine(ctx, 'Third: ${prompt.gprsThird}'),
                 _checkStatusValueLine(ctx, 'Factory: ${prompt.gprsFactory}'),
-                const SizedBox(height: 10),
-                _checkStatusSectionTitle(ctx, 'Memory 1 fail (F1)'),
-                _checkStatusOkNotOk(ctx, prompt.memory1Fail),
-                _checkStatusSectionTitle(ctx, 'Memory 1 test (MT1)'),
-                _checkStatusOkNotOk(ctx, prompt.memory1Test),
-                const SizedBox(height: 6),
-                _checkStatusSectionTitle(ctx, 'Memory 2 fail (F2)'),
-                _checkStatusOkNotOk(ctx, prompt.memory2Fail),
-                _checkStatusSectionTitle(ctx, 'Memory 2 test (MT2)'),
-                _checkStatusOkNotOk(ctx, prompt.memory2Test),
-                const SizedBox(height: 6),
-                _checkStatusSectionTitle(ctx, 'Battery charging (CH)'),
-                _checkStatusCharging(ctx, prompt.chargeStatus),
-                const SizedBox(height: 10),
-                _checkStatusSectionTitle(ctx, 'Data logger firmware (DL)'),
-                _checkStatusValueLine(
-                  ctx,
-                  prompt.firmwareVersion.trim().isEmpty
-                      ? '—'
-                      : prompt.firmwareVersion.trim(),
-                ),
               ],
             ),
           ),
@@ -2205,7 +2341,7 @@ class _GeneralUserSelfTestDebugPageState
 
   static const Color _checkOkGreen = Color(0xFF1B5E20);
   static const Color _checkBadRed = Color(0xFFB3261E);
-  static const Color _checkWarnAmber = Color(0xFFBF360C);
+  // static const Color _checkWarnAmber = Color(0xFFBF360C);
 
   Widget _checkStatusSectionTitle(BuildContext ctx, String title) {
     return Padding(
@@ -2261,42 +2397,42 @@ class _GeneralUserSelfTestDebugPageState
     );
   }
 
-  Widget _checkStatusCharging(BuildContext ctx, String raw) {
-    final t = raw.trim();
-    if (t.isEmpty) {
-      return Text(
-        'Not reported (CH omitted before firmware in this response).',
-        style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-          color: const Color(0xFF5C6368),
-          fontSize: 13,
-        ),
-      );
-    }
-    final v = int.tryParse(t);
-    late final String line;
-    late final Color color;
-    if (v == 0) {
-      line = '0 — Charging ON';
-      color = _checkOkGreen;
-    } else if (v == 1) {
-      line = '1 — Charging OFF';
-      color = _checkWarnAmber;
-    } else if (v == 2) {
-      line = '2 — Fault';
-      color = _checkBadRed;
-    } else {
-      line = t;
-      color = const Color(0xFF5C6368);
-    }
-    return Text(
-      line,
-      style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-        color: color,
-        fontWeight: FontWeight.w600,
-        fontSize: 13,
-      ),
-    );
-  }
+  // Widget _checkStatusCharging(BuildContext ctx, String raw) {
+  //   final t = raw.trim();
+  //   if (t.isEmpty) {
+  //     return Text(
+  //       'Not reported (CH omitted before firmware in this response).',
+  //       style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+  //         color: const Color(0xFF5C6368),
+  //         fontSize: 13,
+  //       ),
+  //     );
+  //   }
+  //   final v = int.tryParse(t);
+  //   late final String line;
+  //   late final Color color;
+  //   if (v == 0) {
+  //     line = '0 — Charging ON';
+  //     color = _checkOkGreen;
+  //   } else if (v == 1) {
+  //     line = '1 — Charging OFF';
+  //     color = _checkWarnAmber;
+  //   } else if (v == 2) {
+  //     line = '2 — Fault';
+  //     color = _checkBadRed;
+  //   } else {
+  //     line = t;
+  //     color = const Color(0xFF5C6368);
+  //   }
+  //   return Text(
+  //     line,
+  //     style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+  //       color: color,
+  //       fontWeight: FontWeight.w600,
+  //       fontSize: 13,
+  //     ),
+  //   );
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -2721,11 +2857,20 @@ class _GeneralUserSelfTestDebugPageState
                     if (snap == null) {
                       return;
                     }
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) async {
                       if (!context.mounted) {
                         return;
                       }
-                      _showBleResponseSnapshotDialog(context, snap);
+                      if (snap.testName.toLowerCase() == 'erase memory') {
+                        await showDialog<void>(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (ctx) => const _EraseMemoryCountdownDialog(),
+                        );
+                      }
+                      if (context.mounted) {
+                        _showBleResponseSnapshotDialog(context, snap);
+                      }
                     });
                   },
                 ),
@@ -2875,26 +3020,86 @@ class _GeneralUserSelfTestDebugPageState
                                               state.status ==
                                                   GeneralUserSelfTestDebugStatus
                                                       .running;
+                                          final displayNum =
+                                              command.serialNumber > 0
+                                              ? command.serialNumber
+                                              : commandIndex + 1;
+                                          final des =
+                                              _selfTestCommandListDescription(
+                                                command,
+                                              );
+                                          final note =
+                                              _selfTestCommandListDescriptionNote(
+                                                command,
+                                              );
+                                          final List<String> subtitleParts = [];
+                                          if (des.isNotEmpty &&
+                                              des.toLowerCase() != 'na') {
+                                            subtitleParts.add('Des: $des');
+                                          }
+                                          if (note.isNotEmpty &&
+                                              note.toLowerCase() != 'na') {
+                                            subtitleParts.add('Note: $note');
+                                          }
+                                          final subtitleText = subtitleParts
+                                              .join('\n');
                                           return _ActionTile(
                                             title:
-                                                '${commandIndex + 1}-${command.testName.trim()}',
-                                            subtitle:
-                                                'Des: ${_selfTestCommandListDescription(
-                                                command,
-                                                )}\nNote: ${_selfTestCommandListDescriptionNote(command).isNotEmpty?_selfTestCommandListDescriptionNote(command):'NA'}',
-                                            running: false,
+                                                '$displayNum-${command.testName.trim()}',
+                                            subtitle: subtitleText,
+                                            running: running,
                                             onTap: running
                                                 ? null
                                                 : () {
-                                                    context
-                                                        .read<
-                                                          GeneralUserSelfTestDebugBloc
-                                                        >()
-                                                        .add(
-                                                          RunGeneralUserSelfTestDebugAction(
-                                                            commandIndex,
-                                                          ),
-                                                        );
+                                                    void onAction({
+                                                      String? overrideCommand,
+                                                    }) {
+                                                      context
+                                                          .read<
+                                                            GeneralUserSelfTestDebugBloc
+                                                          >()
+                                                          .add(
+                                                            RunGeneralUserSelfTestDebugAction(
+                                                              commandIndex,
+                                                              overrideCommand:
+                                                                  overrideCommand,
+                                                            ),
+                                                          );
+                                                    }
+
+                                                    if (command.id ==
+                                                        '6a04547227be228113206999') {
+                                                      _showManualFtpModeDialog(
+                                                        context: context,
+                                                        onProceed: (selectedCmd) {
+                                                          if (_pinProtectedCommandIds
+                                                              .contains(
+                                                                command.id,
+                                                              )) {
+                                                            _showCommandPinDialog(
+                                                              context: context,
+                                                              onProceed: () => onAction(
+                                                                overrideCommand:
+                                                                    selectedCmd,
+                                                              ),
+                                                            );
+                                                          } else {
+                                                            onAction(
+                                                              overrideCommand:
+                                                                  selectedCmd,
+                                                            );
+                                                          }
+                                                        },
+                                                      );
+                                                    } else if (_pinProtectedCommandIds
+                                                        .contains(command.id)) {
+                                                      _showCommandPinDialog(
+                                                        context: context,
+                                                        onProceed: onAction,
+                                                      );
+                                                    } else {
+                                                      onAction();
+                                                    }
                                                   },
                                           );
                                         },
@@ -4113,10 +4318,11 @@ class _SetAllGeneralParametersDialogState
                 TextFormField(
                   controller: _stationId,
                   maxLength: 8,
+                  readOnly: true,
                   validator: _validateSelfTestStationIdSetAllGeneral,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   decoration: const InputDecoration(
-                    labelText: 'Station id',
+                    labelText: 'Buoy ID',
                     helperText: 'Up to 8 characters',
                     border: OutlineInputBorder(),
                     counterText: '',
@@ -4365,7 +4571,7 @@ class _SetAllServerParametersDialogState
                   validator: _validateSelfTestSetAllServerStationId,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   decoration: const InputDecoration(
-                    labelText: 'Station id',
+                    labelText: 'Buoy ID',
                     helperText: 'Up to 8 characters',
                     border: OutlineInputBorder(),
                     counterText: '',
@@ -4702,7 +4908,7 @@ class _SetSensorAllParametersDialogState
   late final TextEditingController _senMin;
   late final TextEditingController _sensMax;
   late final TextEditingController _averagScheme;
-  late final TextEditingController _vactor;
+  late final TextEditingController _Vector;
   late final TextEditingController _startTime;
   late final TextEditingController _interval;
   late final TextEditingController _totalSample;
@@ -4724,7 +4930,7 @@ class _SetSensorAllParametersDialogState
     _senMin = TextEditingController(text: d.senMin);
     _sensMax = TextEditingController(text: d.sensMax);
     _averagScheme = TextEditingController(text: d.averagScheme);
-    _vactor = TextEditingController(text: d.vactor);
+    _Vector = TextEditingController(text: d.Vector);
     _startTime = TextEditingController(text: d.startTime);
     _interval = TextEditingController(text: d.interval);
     _totalSample = TextEditingController(text: d.totalSample);
@@ -4745,7 +4951,7 @@ class _SetSensorAllParametersDialogState
     _senMin.dispose();
     _sensMax.dispose();
     _averagScheme.dispose();
-    _vactor.dispose();
+    _Vector.dispose();
     _startTime.dispose();
     _interval.dispose();
     _totalSample.dispose();
@@ -4836,8 +5042,8 @@ class _SetSensorAllParametersDialogState
                     keyboardType: TextInputType.number,
                   ),
                   _buildSelfTestSensorSetInputField(
-                    controller: _vactor,
-                    label: 'Vactor',
+                    controller: _Vector,
+                    label: 'Vector',
                     hint: '00',
                     maxLength: 2,
                     keyboardType: TextInputType.number,
@@ -4909,7 +5115,7 @@ class _SetSensorAllParametersDialogState
               senMin: _senMin.text,
               sensMax: _sensMax.text,
               averagScheme: _averagScheme.text,
-              vactor: _vactor.text,
+              Vector: _Vector.text,
               startTime: _startTime.text,
               interval: _interval.text,
               totalSample: _totalSample.text,
@@ -5249,11 +5455,7 @@ class _SetSensorsParametersDialogState
   }
 }
 
-const String _setIndividualSensorParameterParaHelp =
-    'Sheet 1 (GET ?81): 1=F.G, 2=Factory off, 3=senG, 4=S.off, 5=Resolution, '
-    '6=Sen Min, 7=Sens Max, 8=Averag Scheme, 9=Vactor, 10=Start time, '
-    '11=Interval, 12=Total sample, 13=Mode, 14=Tx.G, 15=Tx.O. '
-    'Sheet 2 (GET ?83): 1=Unit, 2=SenSelStatus, 3=BaudRate, … (23 fields).';
+const String _setIndividualSensorParameterParaHelp = 'Two digits. 00-34';
 
 class _SetIndividualSensorParameterDialog extends StatefulWidget {
   const _SetIndividualSensorParameterDialog({required this.prompt});
@@ -5346,7 +5548,7 @@ class _SetIndividualSensorParameterDialogState
                 controller: _paraNo,
                 label: 'Para no',
                 hint: '01',
-                helper: '00–34. $_setIndividualSensorParameterParaHelp',
+                helper: _setIndividualSensorParameterParaHelp,
                 keyboardType: TextInputType.number,
                 validator: _validateParaNo,
               ),
@@ -5355,7 +5557,7 @@ class _SetIndividualSensorParameterDialogState
                 label: 'Value',
                 hint: '',
                 helper:
-                    'Sent exactly as entered (spaces, +, -). No comma allowed.',
+                    'The length of the parameter should be exact as per given information.',
                 validator: _validateSelfTestIndividualSensorParameterValue,
               ),
             ],
@@ -5460,4 +5662,169 @@ class _ActionTile extends StatelessWidget {
       ),
     );
   }
+}
+
+class _EraseMemoryCountdownDialog extends StatefulWidget {
+  const _EraseMemoryCountdownDialog();
+
+  @override
+  State<_EraseMemoryCountdownDialog> createState() =>
+      _EraseMemoryCountdownDialogState();
+}
+
+class _EraseMemoryCountdownDialogState
+    extends State<_EraseMemoryCountdownDialog> {
+  int _secondsRemaining = 300; // 5 minutes
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startTimer();
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_secondsRemaining > 0) {
+        if (mounted) {
+          setState(() {
+            _secondsRemaining--;
+          });
+        }
+      } else {
+        _timer?.cancel();
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  String _formatTime(int totalSeconds) {
+    final minutes = totalSeconds ~/ 60;
+    final seconds = totalSeconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = (300 - _secondsRemaining) / 300;
+
+    return PopScope(
+      canPop: false,
+      child: AlertDialog(
+        title: const Text('Erasing Memory'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'BUOY takes 5 minutes to erase full memory. Please do not close the app or perform any activity.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, color: Color(0xFF6A7178)),
+            ),
+            const SizedBox(height: 24),
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: 100,
+                  height: 100,
+                  child: CircularProgressIndicator(
+                    value: progress,
+                    strokeWidth: 6,
+                    color: const Color(0xFFB3261E),
+                    backgroundColor: Colors.grey[200],
+                  ),
+                ),
+                Text(
+                  _formatTime(_secondsRemaining),
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+Future<void> _showManualFtpModeDialog({
+  required BuildContext context,
+  required void Function(String selectedCommand) onProceed,
+}) async {
+  int selectedIndex = 0; // 0: GPRS, 1: UHF, 2: RF
+
+  await showDialog<void>(
+    context: context,
+    barrierDismissible: true,
+    builder: (ctx) {
+      return StatefulBuilder(
+        builder: (context, setStateDialog) {
+          return AlertDialog(
+            title: const Text('Select Transmission Mode'),
+            content: RadioGroup<int>(
+              groupValue: selectedIndex,
+              onChanged: (val) {
+                if (val != null) {
+                  setStateDialog(() => selectedIndex = val);
+                }
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  RadioListTile<int>(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    value: 0,
+                    title: Text('GPRS'),
+                  ),
+                  RadioListTile<int>(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    value: 1,
+                    title: Text('UHF'),
+                  ),
+                  RadioListTile<int>(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    value: 2,
+                    title: Text('RF'),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  final cmd = selectedIndex == 0
+                      ? '?92,0,#'
+                      : selectedIndex == 1
+                      ? '?92,1,#'
+                      : '?92,2,#';
+                  onProceed(cmd);
+                },
+                child: const Text('Send'),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
 }
