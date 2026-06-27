@@ -7,12 +7,40 @@ import 'package:drifter_buoy/core/utils/widgets/app_loader.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoy_setup/general_user_buoy_setup_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoy_setup/general_user_buoy_setup_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoy_setup/general_user_buoy_setup_state.dart';
+import 'package:drifter_buoy/core/bluetooth/ble_connection_service.dart';
+import 'package:drifter_buoy/core/utils/app_logger.dart';
+import 'package:drifter_buoy/core/utils/injection_container.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-class GeneralUserBuoySetupPage extends StatelessWidget {
+class GeneralUserBuoySetupPage extends StatefulWidget {
   const GeneralUserBuoySetupPage({super.key});
+
+  @override
+  State<GeneralUserBuoySetupPage> createState() =>
+      _GeneralUserBuoySetupPageState();
+}
+
+class _GeneralUserBuoySetupPageState extends State<GeneralUserBuoySetupPage> {
+  bool _hasSentInitialCommands = false;
+  late TextEditingController _stationIdController;
+  late TextEditingController _stationNameController;
+
+  @override
+  void initState() {
+    super.initState();
+    final state = context.read<GeneralUserBuoySetupBloc>().state;
+    _stationIdController = TextEditingController(text: state.stationId);
+    _stationNameController = TextEditingController(text: state.stationName);
+  }
+
+  @override
+  void dispose() {
+    _stationIdController.dispose();
+    _stationNameController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,8 +48,24 @@ class GeneralUserBuoySetupPage extends StatelessWidget {
       backgroundColor: const Color(0xFFDDE1E4),
       body: SafeArea(
         child: BlocListener<GeneralUserBuoySetupBloc, GeneralUserBuoySetupState>(
-          listenWhen: (p, c) => p.message != c.message,
+          listenWhen: (p, c) =>
+              p.message != c.message ||
+              p.status != c.status ||
+              p.stationId != c.stationId ||
+              p.stationName != c.stationName,
           listener: (context, state) {
+            if (state.status == GeneralUserBuoySetupStatus.loaded) {
+              if (!_hasSentInitialCommands) {
+                _hasSentInitialCommands = true;
+                _getInitialBuoySettings(context);
+              }
+              if (_stationIdController.text != state.stationId) {
+                _stationIdController.text = state.stationId;
+              }
+              if (_stationNameController.text != state.stationName) {
+                _stationNameController.text = state.stationName;
+              }
+            }
             if (state.message.isEmpty) {
               return;
             }
@@ -39,10 +83,6 @@ class GeneralUserBuoySetupPage extends StatelessWidget {
               }
 
               final saving = state.status == GeneralUserBuoySetupStatus.saving;
-              final fieldsMounted =
-                  state.status == GeneralUserBuoySetupStatus.loaded ||
-                  saving ||
-                  state.status == GeneralUserBuoySetupStatus.error;
               return Column(
                 children: [
                   const _Header(),
@@ -60,7 +100,7 @@ class GeneralUserBuoySetupPage extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Station Information',
+                              'Buoy Information',
                               style: Theme.of(context).textTheme.titleMedium
                                   ?.copyWith(
                                     color: const Color(0xFF2E3238),
@@ -70,13 +110,10 @@ class GeneralUserBuoySetupPage extends StatelessWidget {
                             const SizedBox(height: 12),
                             _Field(
                               label: 'Buoy ID',
-                              value: state.stationId,
-                              formFieldKey: ValueKey(
-                                'stationId-$fieldsMounted',
-                              ),
-                              onChanged: (v) => context
-                                  .read<GeneralUserBuoySetupBloc>()
-                                  .add(
+                              controller: _stationIdController,
+                              maxLength: 8,
+                              onChanged: (v) =>
+                                  context.read<GeneralUserBuoySetupBloc>().add(
                                     UpdateGeneralUserBuoySetupField(
                                       BuoySetupField.stationId,
                                       v,
@@ -84,50 +121,44 @@ class GeneralUserBuoySetupPage extends StatelessWidget {
                                   ),
                             ),
                             _Field(
-                              label: 'Station Name',
-                              value: state.stationName,
-                              formFieldKey: ValueKey(
-                                'stationName-$fieldsMounted',
-                              ),
-                              onChanged: (v) => context
-                                  .read<GeneralUserBuoySetupBloc>()
-                                  .add(
+                              label: 'Buoy Name',
+                              controller: _stationNameController,
+                              maxLength: 16,
+                              onChanged: (v) =>
+                                  context.read<GeneralUserBuoySetupBloc>().add(
                                     UpdateGeneralUserBuoySetupField(
                                       BuoySetupField.stationName,
                                       v,
                                     ),
                                   ),
                             ),
-                            _Field(
-                              label: 'Transmission Interval',
-                              value: state.transmissionInterval,
-                              formFieldKey: ValueKey(
-                                'txInterval-$fieldsMounted',
-                              ),
-                              onChanged: (v) => context
-                                  .read<GeneralUserBuoySetupBloc>()
-                                  .add(
-                                    UpdateGeneralUserBuoySetupField(
-                                      BuoySetupField.transmissionInterval,
-                                      v,
-                                    ),
-                                  ),
-                            ),
-                            _Field(
-                              label: 'Transmission Start Time',
-                              value: state.transmissionStartTime,
-                              formFieldKey: ValueKey(
-                                'txStart-$fieldsMounted',
-                              ),
-                              onChanged: (v) => context
-                                  .read<GeneralUserBuoySetupBloc>()
-                                  .add(
-                                    UpdateGeneralUserBuoySetupField(
-                                      BuoySetupField.transmissionStartTime,
-                                      v,
-                                    ),
-                                  ),
-                            ),
+                            //   formFieldKey: ValueKey(
+                            //     'txInterval-$fieldsMounted',
+                            //   ),
+                            //   onChanged: (v) => context
+                            //       .read<GeneralUserBuoySetupBloc>()
+                            //       .add(
+                            //         UpdateGeneralUserBuoySetupField(
+                            //           BuoySetupField.transmissionInterval,
+                            //           v,
+                            //         ),
+                            //       ),
+                            // ),
+                            // _Field(
+                            //   label: 'Transmission Start Time',
+                            //   value: state.transmissionStartTime,
+                            //   formFieldKey: ValueKey(
+                            //     'txStart-$fieldsMounted',
+                            //   ),
+                            //   onChanged: (v) => context
+                            //       .read<GeneralUserBuoySetupBloc>()
+                            //       .add(
+                            //         UpdateGeneralUserBuoySetupField(
+                            //           BuoySetupField.transmissionStartTime,
+                            //           v,
+                            //         ),
+                            //       ),
+                            // ),
                             const SizedBox(height: 16),
                             SizedBox(
                               width: double.infinity,
@@ -136,9 +167,17 @@ class GeneralUserBuoySetupPage extends StatelessWidget {
                                 loading: saving,
                                 onPressed: saving
                                     ? null
-                                    : () => context
-                                          .read<GeneralUserBuoySetupBloc>()
-                                          .add(const SaveGeneralUserBuoySetup()),
+                                    : () {
+                                        context
+                                            .read<GeneralUserBuoySetupBloc>()
+                                            .add(
+                                              const SaveGeneralUserBuoySetup(),
+                                            );
+                                        _sendBleSetupCommands(
+                                          _stationIdController.text,
+                                          _stationNameController.text,
+                                        );
+                                      },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFF206BBE),
                                   foregroundColor: Colors.white,
@@ -203,14 +242,18 @@ class _Header extends StatelessWidget {
 
 class _Field extends StatelessWidget {
   final String label;
-  final String value;
+  final String? value;
   final Key? formFieldKey;
+  final TextEditingController? controller;
+  final int? maxLength;
   final ValueChanged<String> onChanged;
 
   const _Field({
     required this.label,
-    required this.value,
+    this.value,
     this.formFieldKey,
+    this.controller,
+    this.maxLength,
     required this.onChanged,
   });
 
@@ -223,18 +266,20 @@ class _Field extends StatelessWidget {
         children: [
           Text(
             label,
-            style: Theme.of(context).textTheme.compactFieldLabel(
-              const Color(0xFF4A4A4A),
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.compactFieldLabel(const Color(0xFF4A4A4A)),
           ),
           const SizedBox(height: 6),
           TextFormField(
             key: formFieldKey,
-            initialValue: value,
+            controller: controller,
+            initialValue: controller == null ? value : null,
+            maxLength: maxLength,
             onChanged: onChanged,
-            style: Theme.of(context).textTheme.compactFieldInput(
-              const Color(0xFF2E3238),
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.compactFieldInput(const Color(0xFF2E3238)),
             decoration: InputDecoration(
               filled: true,
               fillColor: const Color(0xFFECECEC),
@@ -251,5 +296,83 @@ class _Field extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+void _sendBleSetupCommands(String stationId, String stationName) {
+  final ble = sl<BleConnectionService>();
+  if (ble.connectedRemoteId != null) {
+    Future.microtask(() async {
+      try {
+        final formattedId = stationId.trim().toUpperCase().padRight(8, ' ');
+        final formattedName = stationName.trim().padRight(16, ' ');
+        AppLogger.i('Sending BLE setup: ID=$formattedId, Name=$formattedName');
+        await ble.sendDrifterAsciiCommand(
+          '?06,$formattedId,#',
+          const Duration(seconds: 15),
+        );
+        await ble.sendDrifterAsciiCommand(
+          '?07,$formattedName,#',
+          const Duration(seconds: 15),
+        );
+        AppLogger.i('Sent BLE setup commands successfully');
+      } catch (e) {
+        AppLogger.e('Failed to send BLE setup commands: $e');
+      }
+    });
+  }
+}
+
+void _getInitialBuoySettings(BuildContext context) {
+  final ble = sl<BleConnectionService>();
+  if (ble.connectedRemoteId != null) {
+    Future.microtask(() async {
+      try {
+        AppLogger.i(
+          'Sending initially fetch ?04,,# general parameters command',
+        );
+        final response = await ble.sendDrifterAsciiCommand(
+          '?04,,#',
+          const Duration(seconds: 15),
+        );
+        AppLogger.i('Received ?04 response: $response');
+
+        final trimmed = response.trim();
+        final hash = trimmed.indexOf('#');
+        final noHash = hash >= 0 ? trimmed.substring(0, hash) : trimmed;
+        final parts = noHash.split(',').map((e) => e.trim()).toList();
+        if (parts.length > 2) {
+          final start =
+              (parts.first.startsWith(r'$') || parts.first.startsWith('?'))
+              ? 1
+              : 0;
+          if (start < parts.length) {
+            final stationId = parts[start].trim();
+            final stationName = (start + 1 < parts.length)
+                ? parts[start + 1].trim()
+                : '';
+
+            if (context.mounted && stationId.isNotEmpty) {
+              context.read<GeneralUserBuoySetupBloc>().add(
+                UpdateGeneralUserBuoySetupField(
+                  BuoySetupField.stationId,
+                  stationId,
+                ),
+              );
+            }
+            if (context.mounted && stationName.isNotEmpty) {
+              context.read<GeneralUserBuoySetupBloc>().add(
+                UpdateGeneralUserBuoySetupField(
+                  BuoySetupField.stationName,
+                  stationName,
+                ),
+              );
+            }
+          }
+        }
+      } catch (e) {
+        AppLogger.e('Failed to fetch initial buoy settings via ?04: $e');
+      }
+    });
   }
 }

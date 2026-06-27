@@ -276,7 +276,7 @@ class AppRouter {
           final extra = state.extra;
           final buoyId = extra is String && extra.trim().isNotEmpty
               ? extra.trim()
-              : 'DB-01';
+              : 'buyos123';
 
           return BlocProvider<GeneralUserBuoyOverviewBloc>(
             create: (_) =>
@@ -311,7 +311,7 @@ class AppRouter {
           final extra = state.extra;
           final buoyId = extra is String && extra.trim().isNotEmpty
               ? extra.trim()
-              : 'DB-01';
+              : 'buyos123';
 
           return MultiBlocProvider(
             providers: [
@@ -337,7 +337,7 @@ class AppRouter {
           final extra = state.extra;
           final buoyId = extra is String && extra.trim().isNotEmpty
               ? extra.trim()
-              : 'DB-01';
+              : 'buyos123';
 
           return BlocProvider<GeneralUserTrajectoryFiltersBloc>(
             create: (_) =>
@@ -352,8 +352,9 @@ class AppRouter {
         name: AppRoutes.exportName,
         builder: (context, state) {
           return BlocProvider<GeneralUserExportBloc>(
-            create: (_) => sl<GeneralUserExportBloc>()
-              ..add(LoadGeneralUserExport(routeExtra: state.extra)),
+            create: (_) =>
+                sl<GeneralUserExportBloc>()
+                  ..add(LoadGeneralUserExport(routeExtra: state.extra)),
             child: const GeneralUserExportPage(),
           );
         },
@@ -406,13 +407,10 @@ class AppRouter {
               ? extra.trim()
               : null;
           return BlocProvider<GeneralUserBuoySetupBloc>(
-            create: (_) =>
-                sl<GeneralUserBuoySetupBloc>()
-                  ..add(
-                    LoadGeneralUserBuoySetup(
-                      initialStationId: initialStationId,
-                    ),
-                  ),
+            create: (_) => sl<GeneralUserBuoySetupBloc>()
+              ..add(
+                LoadGeneralUserBuoySetup(initialStationId: initialStationId),
+              ),
             child: const GeneralUserBuoySetupPage(),
           );
         },
@@ -508,7 +506,8 @@ BuoyStatus _mapStatusFromDashboardItem(
 
 BuoyStatus _statusFromApi(String status) {
   final normalized = status.trim().toLowerCase();
-  if (normalized == 'active' || normalized == 'online') return BuoyStatus.online;
+  if (normalized == 'active' || normalized == 'online')
+    return BuoyStatus.online;
   if (normalized == 'battery low' || normalized == 'batterylow') {
     return BuoyStatus.batteryLow;
   }
@@ -521,7 +520,7 @@ BuoyStatus _statusFromApi(String status) {
   if (extra is GeneralUserMetricsRouteExtra) {
     final id = extra.buoyId.trim().replaceAll(' ', '');
     return (
-      buoyId: id.isNotEmpty ? id : 'DB-01',
+      buoyId: id.isNotEmpty ? id : 'buyos123',
       focusBatterySection: extra.focusBatterySection,
     );
   }
@@ -531,5 +530,5 @@ BuoyStatus _statusFromApi(String status) {
       return (buoyId: id, focusBatterySection: false);
     }
   }
-  return (buoyId: 'DB-01', focusBatterySection: false);
+  return (buoyId: 'buyos123', focusBatterySection: false);
 }

@@ -26,7 +26,7 @@ class GeneralUserTrajectoryViewState extends Equatable {
 
   GeneralUserTrajectoryViewState.initial()
     : status = GeneralUserTrajectoryViewStatus.initial,
-      buoyId = 'DB-01',
+      buoyId = 'buyos123',
       trajectoryPoints = const [],
       zoom = 10.3,
       fromDate = _today,

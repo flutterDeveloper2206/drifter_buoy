@@ -9,11 +9,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 class GeneralUserMetricsBloc
     extends Bloc<GeneralUserMetricsEvent, GeneralUserMetricsState> {
   GeneralUserMetricsBloc({required GeneralUserGetBuoyMetrics getBuoyMetrics})
-      : _getBuoyMetrics = getBuoyMetrics,
-        super(const GeneralUserMetricsState.initial()) {
+    : _getBuoyMetrics = getBuoyMetrics,
+      super(const GeneralUserMetricsState.initial()) {
     on<LoadGeneralUserMetrics>(_onLoadGeneralUserMetrics);
     on<ChangeGeneralUserMetricsDateRange>(_onChangeGeneralUserMetricsDateRange);
-    on<ApplyGeneralUserMetricsCustomRange>(_onApplyGeneralUserMetricsCustomRange);
+    on<ApplyGeneralUserMetricsCustomRange>(
+      _onApplyGeneralUserMetricsCustomRange,
+    );
   }
 
   final GeneralUserGetBuoyMetrics _getBuoyMetrics;
@@ -107,9 +109,7 @@ class GeneralUserMetricsBloc
             message: '',
           ),
         );
-        AppLogger.i(
-          'GetBuoyMetrics success: ${chart.points.length} points',
-        );
+        AppLogger.i('GetBuoyMetrics success: ${chart.points.length} points');
       },
     );
   }
@@ -204,8 +204,7 @@ List<String> _xAxisLabelsForTimes(List<DateTime> times) {
   const target = 6;
   final first = times.first;
   final sameDay = times.every(
-    (t) =>
-        t.year == first.year && t.month == first.month && t.day == first.day,
+    (t) => t.year == first.year && t.month == first.month && t.day == first.day,
   );
 
   String format(DateTime t) {
@@ -291,7 +290,7 @@ String _formatApiDate(DateTime d) {
 String _normalizeDisplayBuoyId(String raw) {
   final compact = raw.trim().toUpperCase().replaceAll(' ', '');
   if (compact.isEmpty) {
-    return 'DB-01';
+    return 'buyos123';
   }
 
   if (compact.contains('-')) {

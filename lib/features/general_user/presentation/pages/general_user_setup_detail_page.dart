@@ -296,11 +296,47 @@ class _GeneralUserSetupDetailPageState
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(height: 8),
 
-                                  if (state.enableConfiguration)
-                                    GestureDetector(
-                                      onTap: () {
+                                  // if (state.enableConfiguration)
+                                  //   GestureDetector(
+                                  //     onTap: () {
+                                  //       if (!state.enableConfiguration) {
+                                  //         AppFlushbar.info(
+                                  //           'Please enable configuration using the switch above.',
+                                  //           context: context,
+                                  //         );
+                                  //         return;
+                                  //       }
+                                  //       if (!bluetoothOn) {
+                                  //         AppFlushbar.error(
+                                  //           'Bluetooth is not connected. Please connect to a device first.',
+                                  //           context: context,
+                                  //         );
+                                  //         return;
+                                  //       }
+                                  //       context.push(
+                                  //         AppRoutes.buoySetupPath,
+                                  //         extra: state.contextBuoyId,
+                                  //       );
+                                  //     },
+                                  //     child: Text(
+                                  //       'Enable Configuration to Set Up Buoy',
+                                  //       style: Theme.of(context).textTheme
+                                  //           .compactSupportingText(
+                                  //             const Color.fromARGB(
+                                  //               255,
+                                  //               74,
+                                  //               159,
+                                  //               244,
+                                  //             ),
+                                  //           ),
+                                  //     ),
+                                  //   ),
+                                  if (state.enableConfiguration &&
+                                      bluetoothOn) ...[
+                                    const SizedBox(height: 8),
+                                    InkWell(
+                                      onTap: (){
                                         if (!state.enableConfiguration) {
                                           AppFlushbar.info(
                                             'Please enable configuration using the switch above.',
@@ -319,28 +355,12 @@ class _GeneralUserSetupDetailPageState
                                           AppRoutes.buoySetupPath,
                                           extra: state.contextBuoyId,
                                         );
-                                      },
-                                      child: Text(
-                                        'Enable Configuration to Set Up Buoy',
-                                        style: Theme.of(context).textTheme
-                                            .compactSupportingText(
-                                              const Color.fromARGB(
-                                                255,
-                                                74,
-                                                159,
-                                                244,
-                                              ),
-                                            ),
-                                      ),
-                                    ),
-                                  if (state.enableConfiguration &&
-                                      bluetoothOn) ...[
-                                    const SizedBox(height: 14),
-                                    InkWell(
-                                      onTap: () => context.push(
-                                        AppRoutes.buoySetupPath,
-                                        extra: state.contextBuoyId,
-                                      ),
+                                      }
+                                      // => context.push(
+                                      //   AppRoutes.buoySetupPath,
+                                      //   extra: state.contextBuoyId,
+                                      // )
+                                      ,
                                       borderRadius: BorderRadius.circular(8),
                                       child: Padding(
                                         padding: const EdgeInsets.symmetric(

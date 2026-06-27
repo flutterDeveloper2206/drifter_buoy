@@ -22,23 +22,23 @@ class DummyBuoy extends Equatable {
     Object? gps = '—',
     Object? signal = '—',
     Object? lastUpdate = '10:20 AM',
-  })  : id = _safeLabel(id, fallback: 'DB - --'),
-        battery = _safeLabel(battery, fallback: '—'),
-        gps = _safeLabel(gps, fallback: '—'),
-        signal = _safeLabel(signal, fallback: '—'),
-        lastUpdate = _safeLabel(lastUpdate, fallback: '—');
+  }) : id = _safeLabel(id, fallback: 'DB - --'),
+       battery = _safeLabel(battery, fallback: '—'),
+       gps = _safeLabel(gps, fallback: '—'),
+       signal = _safeLabel(signal, fallback: '—'),
+       lastUpdate = _safeLabel(lastUpdate, fallback: '—');
 
   @override
   List<Object> get props => [
-        id,
-        position.latitude,
-        position.longitude,
-        status,
-        battery,
-        gps,
-        signal,
-        lastUpdate,
-      ];
+    id,
+    position.latitude,
+    position.longitude,
+    status,
+    battery,
+    gps,
+    signal,
+    lastUpdate,
+  ];
 }
 
 class DummyBuoyMapView extends StatelessWidget {
@@ -181,17 +181,16 @@ class DummyBuoyMapView extends StatelessWidget {
   }
 }
 
-/// Matches buoy ids ignoring spaces (e.g. `DB-01` vs `DB - 01`).
+/// Matches buoy ids ignoring spaces (e.g. `buyos123` vs `DB - 01`).
 bool _isSameBuoy(DummyBuoy? selected, DummyBuoy buoy) {
   if (selected == null) {
     return false;
   }
   // IDs are not unique in our dummy data (many markers share the same `DB - 01`),
   // so we also compare the marker position to ensure only one buoy highlights.
-  final idMatch =
-      _normalizeBuoyId(selected.id) == _normalizeBuoyId(buoy.id);
-  final latMatch = (selected.position.latitude - buoy.position.latitude).abs() <
-      1e-9;
+  final idMatch = _normalizeBuoyId(selected.id) == _normalizeBuoyId(buoy.id);
+  final latMatch =
+      (selected.position.latitude - buoy.position.latitude).abs() < 1e-9;
   final lonMatch =
       (selected.position.longitude - buoy.position.longitude).abs() < 1e-9;
   return idMatch && latMatch && lonMatch;

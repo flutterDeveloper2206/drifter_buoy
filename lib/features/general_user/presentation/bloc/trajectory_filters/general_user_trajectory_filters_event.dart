@@ -15,7 +15,7 @@ class LoadGeneralUserTrajectoryFilters
   final int? intervalMinutes;
 
   const LoadGeneralUserTrajectoryFilters({
-    this.buoyId = 'DB-01',
+    this.buoyId = 'buyos123',
     this.fromDate,
     this.toDate,
     this.intervalMinutes,

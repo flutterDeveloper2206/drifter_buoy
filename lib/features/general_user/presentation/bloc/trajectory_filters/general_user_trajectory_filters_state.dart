@@ -27,7 +27,7 @@ class GeneralUserTrajectoryFiltersState extends Equatable {
 
   const GeneralUserTrajectoryFiltersState.initial()
     : status = GeneralUserTrajectoryFiltersStatus.initial,
-      buoyId = 'DB-01',
+      buoyId = 'buyos123',
       trajectoryPoints = const [],
       gpsCoordinatesEnabled = false,
       timestampsEnabled = false,

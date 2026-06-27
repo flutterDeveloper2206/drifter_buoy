@@ -28,7 +28,7 @@ class GeneralUserMetricsState extends Equatable {
 
   const GeneralUserMetricsState.initial()
     : status = GeneralUserMetricsStatus.initial,
-      buoyId = 'DB-01',
+      buoyId = 'buyos123',
       dateRange = GeneralUserMetricsDateRange.last24Hours,
       customStart = null,
       customEnd = null,

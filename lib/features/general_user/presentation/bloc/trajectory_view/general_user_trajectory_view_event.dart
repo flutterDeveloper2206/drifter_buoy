@@ -14,7 +14,7 @@ class LoadGeneralUserTrajectoryView extends GeneralUserTrajectoryViewEvent {
   final int? intervalMinutes;
 
   const LoadGeneralUserTrajectoryView({
-    this.buoyId = 'DB-01',
+    this.buoyId = 'buyos123',
     this.fromDate,
     this.toDate,
     this.intervalMinutes,

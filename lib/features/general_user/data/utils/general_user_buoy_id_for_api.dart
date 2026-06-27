@@ -5,7 +5,7 @@
 ///   the backend expects two-character ids.
 ///
 /// **Not** used for the trajectory-view API: that endpoint expects the full id
-/// (e.g. `DB-01`); stripping would send `01` and fail or return wrong data.
+/// (e.g. `buyos123`); stripping would send `01` and fail or return wrong data.
 String normalizeBuoyIdForGeneralUserApi(String raw) {
   final trimmed = raw.trim();
   if (trimmed.isEmpty) {
@@ -27,6 +27,6 @@ String normalizeBuoyIdForGeneralUserApi(String raw) {
 }
 
 /// `GetBuoyTrajectoryView` expects the same buoy id as the rest of the app
-/// (e.g. `DB-01`), not the normalized numeric tail from
+/// (e.g. `buyos123`), not the normalized numeric tail from
 /// [normalizeBuoyIdForGeneralUserApi].
 String buoyIdForTrajectoryApi(String raw) => raw.trim();

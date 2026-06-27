@@ -18,7 +18,7 @@ abstract class GeneralUserMetricsEvent extends Equatable {
 class LoadGeneralUserMetrics extends GeneralUserMetricsEvent {
   final String buoyId;
 
-  const LoadGeneralUserMetrics({this.buoyId = 'DB-01'});
+  const LoadGeneralUserMetrics({this.buoyId = 'buyos123'});
 
   @override
   List<Object> get props => [buoyId];

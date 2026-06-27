@@ -757,12 +757,7 @@ class _GeneralUserSelfTestDebugPageState
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '?07 — up to 16 characters (space-padded when sent).',
-                    style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                      color: const Color(0xFF6A7178),
-                    ),
-                  ),
+
                   if (prompt.prefetchWarning != null &&
                       prompt.prefetchWarning!.trim().isNotEmpty) ...[
                     const SizedBox(height: 8),

@@ -338,7 +338,7 @@ class GeneralUserSelfTestDebugBloc
   static const Duration _gprsRssiResponseTimeout = Duration(minutes: 5);
 
   /// Manual FTP (`?92,,#`) — FTP task can take several minutes.
-  static const Duration _manualFtpResponseTimeout = Duration(minutes: 5);
+  static const Duration _manualFtpResponseTimeout = Duration(minutes: 6);
 
   /// Modem Test (`?94,,#`) — modem check can take several minutes.
   static const Duration _modemTestResponseTimeout = Duration(minutes: 5);
@@ -2068,7 +2068,8 @@ class GeneralUserSelfTestDebugBloc
           : cmd.id == _manualRtcUpdateCommandId
           ? _manualRtcUpdateResponseTimeout
           : cmd.responseWaitTimeout;
-      final bleLine = event.overrideCommand ??
+      final bleLine =
+          event.overrideCommand ??
           (cmd.id == _batteryVoltageCommandId
               ? _batteryVoltageBleCommand
               : cmd.id == _gprsRssiCommandId
@@ -2630,8 +2631,7 @@ class GeneralUserSelfTestDebugBloc
       if (parsed != null) {
         initialTx = parsed;
       } else {
-        prefetchWarning =
-            '';
+        prefetchWarning = '';
       }
     } on TimeoutException catch (e) {
       AppLogger.e('Prefetch Tx interval timeout', error: e);
@@ -3524,9 +3524,7 @@ class GeneralUserSelfTestDebugBloc
     final n = event.transmitterType == 1 ? 1 : 0;
     String? frequency;
     if (event.sValue == 1) {
-      frequency = _normalizeTransmitterFrequencyDigits(
-        event.frequencyValue,
-      );
+      frequency = _normalizeTransmitterFrequencyDigits(event.frequencyValue);
       if (frequency == null) {
         emit(
           state.copyWith(
@@ -4783,8 +4781,8 @@ class GeneralUserSelfTestDebugBloc
       }
       if (index == 6) {
         return switch (v) {
-          '0' => '0 — Disable',
-          '1' => '1 — Enable',
+          '0' => 'Disable',
+          '1' => 'Enable',
           _ => v,
         };
       }
@@ -4981,16 +4979,16 @@ class GeneralUserSelfTestDebugBloc
     }
 
     final nLabel = switch (parsed.n) {
-      0 => '0 — UHF',
-      1 => '1 — Radio Sonde',
+      0 => 'UHF',
+      1 => 'Radio Sonde',
       _ => '${parsed.n}',
     };
     final sLabel = switch (parsed.s) {
-      '0' => '0 — Frequency set successful',
-      '1' => '1 — Checksum error',
-      '2' => '2 — Frequency not set',
-      '3' => '3 — Transmitter communication problem or not connected',
-      '4' => '4 — Get successful',
+      '0' => 'Frequency set successful',
+      '1' => 'Checksum error',
+      '2' => 'Frequency not set',
+      '3' => 'Transmitter communication problem or not connected',
+      '4' => 'Get successful',
       _ => parsed.s,
     };
     final frequencyLabel =
@@ -5084,13 +5082,13 @@ class GeneralUserSelfTestDebugBloc
     }
 
     final nLabel = switch (parsed.n) {
-      0 => '0 — UHF',
-      1 => '1 — Radio Sonde',
+      0 => 'UHF',
+      1 => 'Radio Sonde',
       _ => '${parsed.n}',
     };
     final sLabel = switch (parsed.s) {
-      '0' => '0 — Get',
-      '1' => '1 — Set',
+      '0' => 'Get',
+      '1' => 'Set',
       _ => parsed.s,
     };
     final xxLabel = _isSetAttenuationErrorXx(parsed.xx)
@@ -5186,8 +5184,8 @@ class GeneralUserSelfTestDebugBloc
     }
 
     final sLabel = switch (parsed.s) {
-      '0' => '0 — Success',
-      '1' => '1 — Failure',
+      '0' => 'Success',
+      '1' => 'Failure',
       _ => parsed.s,
     };
 
@@ -5228,10 +5226,10 @@ class GeneralUserSelfTestDebugBloc
 
   String _transmitterTestStatusText(int status) {
     if (status == 0) {
-      return 'S=0 Transmitter test OK';
+      return 'Transmitter test OK';
     }
     if (status == 1) {
-      return 'S=1 Transmitter test Not OK';
+      return 'Transmitter test Not OK';
     }
     return 'Unknown status=$status';
   }
@@ -6641,9 +6639,15 @@ class GeneralUserSelfTestDebugBloc
     return _joinLabeledBleSummary('Manual RTC update:', [
       MapEntry('Response code', parts[0]),
       MapEntry('Factory Station ID', factoryId),
-      MapEntry('GPS update status', _formatManualRtcGpsUpdateStatus(gpsStatus)),
+      MapEntry(
+        'GPS RTC Update Status',
+        _formatManualRtcGpsUpdateStatus(gpsStatus),
+      ),
       MapEntry('Last RTC date/time', dateTimeDisplay),
-      MapEntry('RTC update status', _formatManualRtcUpdateStatus(rtcStatus)),
+      MapEntry(
+        'GPRS RTC Update Status',
+        _formatManualRtcUpdateStatus(rtcStatus),
+      ),
     ]);
   }
 
@@ -6655,6 +6659,7 @@ class GeneralUserSelfTestDebugBloc
       _ => s.isEmpty ? '—' : s,
     };
   }
+
   static String _formatManualRtcGpsUpdateStatus(String raw) {
     final s = raw.trim();
     return switch (s) {
@@ -6760,8 +6765,8 @@ class GeneralUserSelfTestDebugBloc
     final station = parts[1];
     final status = parts[2];
     final statusLine = switch (status) {
-      '1' => '1 — Success',
-      '0' => '0 — Not success',
+      '1' => 'Success',
+      '0' => 'Not success',
       _ => dash(status),
     };
     return [
@@ -6848,8 +6853,8 @@ class GeneralUserSelfTestDebugBloc
   static String _formatSimSlotStatus(String raw) {
     final s = raw.trim();
     return switch (s) {
-      '0' => '0 — Success',
-      '1' => '1 — Failure',
+      '0' => 'Success',
+      '1' => 'Failure',
       _ => s.isEmpty ? '—' : s,
     };
   }
@@ -6940,8 +6945,8 @@ class GeneralUserSelfTestDebugBloc
   static String _formatModemTestStatus(String raw) {
     final s = raw.trim();
     return switch (s) {
-      '1' => '1 — Success',
-      '0' => '0 — Not success',
+      '1' => 'Success',
+      '0' => 'Not success',
       _ => s.isEmpty ? '—' : s,
     };
   }
@@ -6964,8 +6969,8 @@ class GeneralUserSelfTestDebugBloc
     final station = parts[1];
     final status = parts[2];
     final statusLine = switch (status) {
-      '1' => '1 — Success',
-      '0' => '0 — Not success',
+      '1' => 'Success',
+      '0' => 'Not success',
       _ => dash(status),
     };
     return [
@@ -7025,8 +7030,8 @@ class GeneralUserSelfTestDebugBloc
     final station = parts[1];
     final status = parts[2];
     final statusLine = switch (status) {
-      '1' => '1 — Success',
-      '0' => '0 — Not success',
+      '1' => 'Success',
+      '0' => 'Not success',
       _ => dash(status),
     };
     return [
@@ -7169,8 +7174,8 @@ class GeneralUserSelfTestDebugBloc
     }
     String dash(String s) => s.isEmpty ? '—' : s;
     final rText = switch (r) {
-      '0' => '0 — GSM and GPRS',
-      '1' => '1 — GSM if GPRS fail',
+      '0' => 'GSM and GPRS',
+      '1' => 'GSM if GPRS fail',
       _ => dash(r),
     };
     return [
@@ -7593,7 +7598,7 @@ class GeneralUserSelfTestDebugBloc
         return _formatSensorAllStyleFieldsBleSummary(
           fields: rawParts,
           valueStartIndex: 1,
-          heading: 'Updated parameter read-back (Sheet 1 — GET ?81 format):',
+          heading: 'Updated parameter read-back :',
         );
       }
       if (rawParts.length >= _getSensorParameter83FieldCount) {
@@ -7601,7 +7606,7 @@ class GeneralUserSelfTestDebugBloc
         if (fields83 != null) {
           return _formatSensorConfigFieldsBleSummary(
             fields: fields83,
-            heading: 'Updated parameter read-back (Sheet 2 — GET ?83 format):',
+            heading: 'Updated parameter read-back:',
           );
         }
       }
