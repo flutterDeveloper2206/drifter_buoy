@@ -329,7 +329,7 @@ class _GeneralUserProfilePageState extends State<GeneralUserProfilePage> {
                       valueListenable: _isChangingPasswordNotifier,
                       builder: (context, isChangingPassword, __) {
                         final title = isChangingPassword
-                            ? 'Update Password'
+                            ? 'Change Current Password'
                             : isEditing
                             ? 'Edit Profile'
                             : 'Profile';
@@ -427,6 +427,8 @@ class _GeneralUserProfilePageState extends State<GeneralUserProfilePage> {
 
                                         userId: data.userId,
 
+                                        userName: data.userName,
+
                                         firstNameController:
 
                                             _firstNameController,
@@ -489,11 +491,13 @@ class _GeneralUserProfilePageState extends State<GeneralUserProfilePage> {
 
                                                 GeneralUserProfileInfoTile(
 
-                                                  icon: Icons.badge_outlined,
+                                                  icon: Icons.person_outline_rounded,
 
-                                                  title: 'Full Name',
+                                                  title: 'User Name',
 
-                                                  value: data.fullName,
+                                                  value: data.userName.isNotEmpty
+                                                      ? data.userName
+                                                      : '—',
 
                                                 ),
 
@@ -629,7 +633,7 @@ class _GeneralUserProfilePageState extends State<GeneralUserProfilePage> {
 
                                             child: const Text(
 
-                                              'Update Password',
+                                              'Change Current Password',
 
                                             ),
 

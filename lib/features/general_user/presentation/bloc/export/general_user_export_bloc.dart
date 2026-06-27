@@ -3,8 +3,11 @@ import 'dart:typed_data';
 import 'package:drifter_buoy/core/utils/app_logger.dart';
 import 'package:drifter_buoy/core/utils/export_report_dynamic_codec.dart';
 import 'package:drifter_buoy/core/utils/report_export_date_format.dart';
+import 'package:drifter_buoy/core/utils/typedefs.dart';
+import 'package:drifter_buoy/features/general_user/data/models/user_report_get_buoy_distance_report_for_export_response.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_buoy_data_report_for_export.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_buoy_distance_report_for_export.dart';
+import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_search_by_lat_lon.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/export/general_user_export_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/export/general_user_export_state.dart';
 import 'package:drifter_buoy/features/general_user/presentation/navigation/general_user_export_route_extra.dart';
@@ -15,13 +18,23 @@ class GeneralUserExportBloc
   GeneralUserExportBloc({
     required GeneralUserGetBuoyDistanceReportForExport getBuoyDistanceReport,
     required GeneralUserGetBuoyDataReportForExport getBuoyDataReport,
+    required GeneralUserSearchByLatLon searchByLatLon,
   })  : _getBuoyDistanceReport = getBuoyDistanceReport,
         _getBuoyDataReport = getBuoyDataReport,
+        _searchByLatLon = searchByLatLon,
         super(const GeneralUserExportState.initial()) {
     on<LoadGeneralUserExport>(_onLoadGeneralUserExport);
     on<ChangeGeneralUserExportDateRange>(_onChangeDateRange);
     on<ApplyGeneralUserExportCustomRange>(_onApplyCustomRange);
     on<ChangeGeneralUserExportReportType>(_onChangeReportType);
+    on<ChangeGeneralUserExportDistanceStartPointType>(
+      _onChangeDistanceStartPointType,
+    );
+    on<UpdateGeneralUserExportDistanceFields>(_onUpdateDistanceFields);
+    on<SubmitGeneralUserExportDistanceStartPoint>(
+      _onSubmitDistanceStartPoint,
+    );
+    on<SearchGeneralUserExportByLatLon>(_onSearchByLatLon);
     on<ChangeGeneralUserExportFormat>(_onChangeFormat);
     on<ExportMultiBuoyDataSaveToDevice>(_onExportMultiDataSave);
     on<ExportMultiBuoyDataShare>(_onExportMultiDataShare);
@@ -29,10 +42,12 @@ class GeneralUserExportBloc
     on<ExportBuoyDistanceShare>(_onExportShare);
     on<ClearGeneralUserExportDeliverable>(_onClearDeliverable);
     on<ClearGeneralUserExportMessage>(_onClearMessage);
+    on<ClearGeneralUserExportStartPointLatLng>(_onClearStartPointLatLng);
   }
 
   final GeneralUserGetBuoyDistanceReportForExport _getBuoyDistanceReport;
   final GeneralUserGetBuoyDataReportForExport _getBuoyDataReport;
+  final GeneralUserSearchByLatLon _searchByLatLon;
 
   static String _pdfReportTitleFor(ExportReportType reportType) {
     return reportType == ExportReportType.buoyDistance
@@ -54,7 +69,7 @@ class GeneralUserExportBloc
         if (bid == null || bid.isEmpty) {
           return null;
         }
-        return '${s.mode.name}|$rt|${dates.$1}|${dates.$2}|$bid';
+        return '${s.mode.name}|$rt|${dates.$1}|${dates.$2}|$bid${_distanceKeySuffix(s)}';
       case GeneralUserExportMode.multiSelection:
         if (s.selectedBuoyIds.isEmpty) {
           return null;
@@ -66,7 +81,111 @@ class GeneralUserExportBloc
         final buoyKey = s.reportType == ExportReportType.buoyDistance
             ? s.selectedBuoyIds.first
             : s.selectedBuoyIds.join(',');
-        return '${s.mode.name}|$rt|${dates.$1}|${dates.$2}|$buoyKey';
+        return '${s.mode.name}|$rt|${dates.$1}|${dates.$2}|$buoyKey${_distanceKeySuffix(s)}';
+    }
+  }
+
+  static String _distanceKeySuffix(GeneralUserExportState s) {
+    if (s.reportType != ExportReportType.buoyDistance ||
+        !s.isDistanceStartPointComplete) {
+      return '';
+    }
+    switch (s.distanceStartPointType!) {
+      case ExportDistanceStartPointType.latLng:
+        return '|lat:${s.startLatitude.trim()}|lng:${s.startLongitude.trim()}';
+      case ExportDistanceStartPointType.time:
+        return '|time:${s.startTime.trim()}';
+    }
+  }
+
+  ({
+    String? startTime,
+    String? startLatitude,
+    String? startLongitude,
+  })? _startPointApiParams(GeneralUserExportState s) {
+    if (s.reportType != ExportReportType.buoyDistance ||
+        !s.isDistanceStartPointComplete) {
+      return null;
+    }
+    switch (s.distanceStartPointType!) {
+      case ExportDistanceStartPointType.latLng:
+        return (
+          startTime: null,
+          startLatitude: s.startLatitude.trim(),
+          startLongitude: s.startLongitude.trim(),
+        );
+      case ExportDistanceStartPointType.time:
+        return (
+          startTime: s.startTime.trim(),
+          startLatitude: null,
+          startLongitude: null,
+        );
+    }
+  }
+
+  ResultFuture<UserReportGetBuoyDistanceReportForExportResponse>
+      _callDistanceReport({
+    required String buoyId,
+    required String fromDate,
+    required String toDate,
+    required GeneralUserExportState s,
+  }) {
+    final params = _startPointApiParams(s);
+    return _getBuoyDistanceReport(
+      buoyId: buoyId,
+      fromDate: fromDate,
+      toDate: toDate,
+      startTime: params?.startTime,
+      startLatitude: params?.startLatitude,
+      startLongitude: params?.startLongitude,
+    );
+  }
+
+  ResultFuture<UserReportGetBuoyDistanceReportForExportResponse>
+      _callDataReport({
+    required String buoyIdsCsv,
+    required String fromDate,
+    required String toDate,
+  }) {
+    return _getBuoyDataReport(
+      buoyIdsCsv: buoyIdsCsv,
+      fromDate: fromDate,
+      toDate: toDate,
+    );
+  }
+
+  String? _distanceStartPointValidationMessage(GeneralUserExportState s) {
+    if (s.reportType != ExportReportType.buoyDistance) {
+      return null;
+    }
+    if (s.distanceStartPointType == null) {
+      return 'Please select Latitude & Longitude or Start Time.';
+    }
+    switch (s.distanceStartPointType!) {
+      case ExportDistanceStartPointType.latLng:
+        if (s.startLatitude.trim().isEmpty || s.startLongitude.trim().isEmpty) {
+          return 'Please enter Latitude and Longitude.';
+        }
+        return null;
+      case ExportDistanceStartPointType.time:
+        if (s.startTime.trim().isEmpty) {
+          return 'Please select Start Time.';
+        }
+        return null;
+    }
+  }
+
+  String? _resolveSearchBuoyId(GeneralUserExportState s) {
+    switch (s.mode) {
+      case GeneralUserExportMode.buoyDistance:
+        final id = s.buoyId?.trim() ?? '';
+        return id.isEmpty ? null : id;
+      case GeneralUserExportMode.multiSelection:
+        if (s.selectedBuoyIds.length != 1) {
+          return null;
+        }
+        final id = s.selectedBuoyIds.first.trim();
+        return id.isEmpty ? null : id;
     }
   }
 
@@ -153,6 +272,11 @@ class GeneralUserExportBloc
           customStart: null,
           customEnd: null,
           reportType: null,
+          distanceStartPointType: null,
+          startLatitude: '',
+          startLongitude: '',
+          startTime: '',
+          distanceStartPointSubmitted: false,
           format: null,
           message: '',
           isSuccessMessage: false,
@@ -160,6 +284,7 @@ class GeneralUserExportBloc
           reportRows: const [],
           reportDataSourceKey: null,
           isReportLoading: false,
+          isStartPointSearching: false,
           deliverable: null,
           buoyScreenNotice: '',
         ),
@@ -190,6 +315,7 @@ class GeneralUserExportBloc
       state.copyWith(
         reportType: event.reportType,
         assignReportType: true,
+        clearDistanceStartPoint: true,
         format: null,
         assignFormat: true,
         message: '',
@@ -197,9 +323,248 @@ class GeneralUserExportBloc
         clearDeliverable: true,
         assignBuoyScreenNotice: true,
         buoyScreenNotice: '',
+        reportColumns: const [],
+        reportRows: const [],
+        clearReportDataSourceKey: true,
+        distanceStartPointSubmitted: false,
       ),
     );
-    await _refetchReportIfNeeded(emit);
+    if (event.reportType == ExportReportType.buoyDistance &&
+        state.mode == GeneralUserExportMode.multiSelection &&
+        state.selectedBuoyIds.length != 1) {
+      emit(
+        state.copyWith(
+          assignBuoyScreenNotice: true,
+          buoyScreenNotice: GeneralUserExportState.multiBuoyDistanceReportError,
+        ),
+      );
+      return;
+    }
+
+    if (event.reportType == ExportReportType.buoyData) {
+      await _refetchReportIfNeeded(emit);
+    }
+  }
+
+  Future<void> _onChangeDistanceStartPointType(
+    ChangeGeneralUserExportDistanceStartPointType event,
+    Emitter<GeneralUserExportState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        distanceStartPointType: event.startPointType,
+        assignDistanceStartPointType: true,
+        startLatitude: '',
+        startLongitude: '',
+        startTime: '',
+        distanceStartPointSubmitted: false,
+        format: null,
+        assignFormat: true,
+        message: '',
+        isSuccessMessage: false,
+        clearDeliverable: true,
+        assignBuoyScreenNotice: true,
+        buoyScreenNotice: '',
+        reportColumns: const [],
+        reportRows: const [],
+        clearReportDataSourceKey: true,
+      ),
+    );
+  }
+
+  Future<void> _onUpdateDistanceFields(
+    UpdateGeneralUserExportDistanceFields event,
+    Emitter<GeneralUserExportState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        startLatitude: event.startLatitude ?? state.startLatitude,
+        startLongitude: event.startLongitude ?? state.startLongitude,
+        startTime: event.startTime ?? state.startTime,
+        distanceStartPointSubmitted: false,
+        format: null,
+        assignFormat: true,
+        message: '',
+        isSuccessMessage: false,
+        clearDeliverable: true,
+        assignBuoyScreenNotice: true,
+        buoyScreenNotice: '',
+        reportColumns: const [],
+        reportRows: const [],
+        clearReportDataSourceKey: true,
+      ),
+    );
+  }
+
+  Future<void> _onSubmitDistanceStartPoint(
+    SubmitGeneralUserExportDistanceStartPoint event,
+    Emitter<GeneralUserExportState> emit,
+  ) async {
+    await _applyDistanceStartPointAndFetchReport(
+      emit,
+      startLatitude: event.startLatitude,
+      startLongitude: event.startLongitude,
+      startTime: event.startTime,
+    );
+  }
+
+  Future<void> _onSearchByLatLon(
+    SearchGeneralUserExportByLatLon event,
+    Emitter<GeneralUserExportState> emit,
+  ) async {
+    final latLng = event.latLng.trim();
+
+    if (latLng.isEmpty) {
+      emit(
+        state.copyWith(
+          message: 'Please enter a value to search.',
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
+
+    final buoyId = _resolveSearchBuoyId(state);
+    if (buoyId == null) {
+      emit(
+        state.copyWith(
+          message: 'Select one buoy for Distance Report.',
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
+
+    final dates = _apiDateStrings(state);
+    if (dates == null) {
+      emit(
+        state.copyWith(
+          message: 'Please select a date range first.',
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
+
+    emit(
+      state.copyWith(
+        isStartPointSearching: true,
+        assignBuoyScreenNotice: true,
+        buoyScreenNotice: '',
+      ),
+    );
+
+    final result = await _searchByLatLon(
+      buoyId: buoyId,
+      fromDate: dates.$1,
+      toDate: dates.$2,
+      latLng: latLng,
+    );
+
+    await result.fold(
+      (failure) async {
+        emit(
+          state.copyWith(
+            isStartPointSearching: false,
+            assignBuoyScreenNotice: true,
+            buoyScreenNotice: failure.message,
+          ),
+        );
+      },
+      (response) async {
+        if (response.hasCoordinates) {
+          emit(
+            state.copyWith(
+              isStartPointSearching: false,
+              startLatitude: response.latitude.trim(),
+              startLongitude: response.longitude.trim(),
+              assignBuoyScreenNotice: true,
+              buoyScreenNotice: '',
+            ),
+          );
+          return;
+        }
+
+        emit(
+          state.copyWith(
+            isStartPointSearching: false,
+            startLatitude: '',
+            startLongitude: '',
+            assignBuoyScreenNotice: true,
+            buoyScreenNotice: response.message.isNotEmpty
+                ? response.message
+                : 'No data found for the given values.',
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _applyDistanceStartPointAndFetchReport(
+    Emitter<GeneralUserExportState> emit, {
+    required String startLatitude,
+    required String startLongitude,
+    required String startTime,
+  }) async {
+    emit(
+      state.copyWith(
+        startLatitude: startLatitude,
+        startLongitude: startLongitude,
+        startTime: startTime,
+        distanceStartPointSubmitted: false,
+        format: null,
+        assignFormat: true,
+        message: '',
+        isSuccessMessage: false,
+        clearDeliverable: true,
+        assignBuoyScreenNotice: true,
+        buoyScreenNotice: '',
+        reportColumns: const [],
+        reportRows: const [],
+        clearReportDataSourceKey: true,
+      ),
+    );
+
+    if (state.reportType != ExportReportType.buoyDistance) {
+      return;
+    }
+
+    if (state.isMultiBuoyDistanceReportBlocked) {
+      emit(
+        state.copyWith(
+          assignBuoyScreenNotice: true,
+          buoyScreenNotice: GeneralUserExportState.multiBuoyDistanceReportError,
+        ),
+      );
+      return;
+    }
+
+    final validation = _distanceStartPointValidationMessage(state);
+    if (validation != null) {
+      emit(
+        state.copyWith(
+          message: validation,
+          isSuccessMessage: false,
+        ),
+      );
+      return;
+    }
+
+    if (state.mode == GeneralUserExportMode.buoyDistance) {
+      await _fetchBuoyReport(emit);
+    } else if (state.mode == GeneralUserExportMode.multiSelection) {
+      await _fetchMultiBuoyDataReport(emit);
+    }
+
+    if (state.reportType != null &&
+        !state.isReportLoading &&
+        state.buoyScreenNotice.isEmpty) {
+      emit(
+        state.copyWith(
+          distanceStartPointSubmitted: true,
+        ),
+      );
+    }
   }
 
   _ParsedRouteExtra _parseRouteExtra(Object? extra) {
@@ -240,11 +605,19 @@ class GeneralUserExportBloc
       state.copyWith(
         dateRange: event.dateRange,
         assignDateRange: true,
+        assignReportType: true,
+        reportType: null,
+        assignFormat: true,
+        format: null,
+        clearDistanceStartPoint: true,
         message: '',
         isSuccessMessage: false,
         clearDeliverable: true,
         assignBuoyScreenNotice: true,
         buoyScreenNotice: '',
+        reportColumns: const [],
+        reportRows: const [],
+        clearReportDataSourceKey: true,
       ),
     );
     await _refetchReportIfNeeded(emit);
@@ -266,11 +639,19 @@ class GeneralUserExportBloc
         assignDateRange: true,
         customStart: a,
         customEnd: b,
+        assignReportType: true,
+        reportType: null,
+        assignFormat: true,
+        format: null,
+        clearDistanceStartPoint: true,
         message: '',
         isSuccessMessage: false,
         clearDeliverable: true,
         assignBuoyScreenNotice: true,
         buoyScreenNotice: '',
+        reportColumns: const [],
+        reportRows: const [],
+        clearReportDataSourceKey: true,
       ),
     );
     await _refetchReportIfNeeded(emit);
@@ -279,17 +660,17 @@ class GeneralUserExportBloc
   Future<void> _refetchReportIfNeeded(
     Emitter<GeneralUserExportState> emit,
   ) async {
+    if (state.reportType != ExportReportType.buoyData ||
+        state.dateRange == null) {
+      return;
+    }
     if (state.mode == GeneralUserExportMode.buoyDistance &&
-        state.dateRange != null &&
-        state.reportType != null &&
         state.buoyId != null &&
         state.buoyId!.isNotEmpty) {
       await _fetchBuoyReport(emit);
       return;
     }
     if (state.mode == GeneralUserExportMode.multiSelection &&
-        state.dateRange != null &&
-        state.reportType != null &&
         state.selectedBuoyIds.isNotEmpty) {
       await _fetchMultiBuoyDataReport(emit);
     }
@@ -350,6 +731,19 @@ class GeneralUserExportBloc
       );
       return;
     }
+    if (reportType == ExportReportType.buoyDistance) {
+      final distanceValidation = _distanceStartPointValidationMessage(state);
+      if (distanceValidation != null ||
+          !state.isDistanceStartPointReadyForExport) {
+        emit(
+          state.copyWith(
+            message: distanceValidation ?? 'Please submit start point details.',
+            isSuccessMessage: false,
+          ),
+        );
+        return;
+      }
+    }
     final format = state.format;
     if (format == null) {
       emit(
@@ -385,7 +779,7 @@ class GeneralUserExportBloc
       emit(
         state.copyWith(
           status: GeneralUserExportStatus.loaded,
-          message: 'Buoy Distance Report supports one buoy selection.',
+          message: GeneralUserExportState.multiBuoyDistanceReportError,
           isSuccessMessage: false,
         ),
       );
@@ -430,12 +824,13 @@ class GeneralUserExportBloc
 
     final idsCsv = state.selectedBuoyIds.join(',');
     final outcome = reportType == ExportReportType.buoyDistance
-        ? await _getBuoyDistanceReport(
+        ? await _callDistanceReport(
             buoyId: state.selectedBuoyIds.first,
             fromDate: dates.$1,
             toDate: dates.$2,
+            s: state,
           )
-        : await _getBuoyDataReport(
+        : await _callDataReport(
             buoyIdsCsv: idsCsv,
             fromDate: dates.$1,
             toDate: dates.$2,
@@ -521,6 +916,19 @@ class GeneralUserExportBloc
       );
       return;
     }
+    if (reportType == ExportReportType.buoyDistance) {
+      final distanceValidation = _distanceStartPointValidationMessage(state);
+      if (distanceValidation != null ||
+          !state.isDistanceStartPointReadyForExport) {
+        emit(
+          state.copyWith(
+            message: distanceValidation ?? 'Please submit start point details.',
+            isSuccessMessage: false,
+          ),
+        );
+        return;
+      }
+    }
     final format = state.format;
     if (format == null) {
       emit(
@@ -583,15 +991,16 @@ class GeneralUserExportBloc
     }
 
     final outcome = reportType == ExportReportType.buoyData
-        ? await _getBuoyDataReport(
+        ? await _callDataReport(
             buoyIdsCsv: bid,
             fromDate: dates.$1,
             toDate: dates.$2,
           )
-        : await _getBuoyDistanceReport(
+        : await _callDistanceReport(
             buoyId: bid,
             fromDate: dates.$1,
             toDate: dates.$2,
+            s: state,
           );
 
     await outcome.foldAsync(
@@ -680,15 +1089,16 @@ class GeneralUserExportBloc
     );
 
     final outcome = state.reportType == ExportReportType.buoyData
-        ? await _getBuoyDataReport(
+        ? await _callDataReport(
             buoyIdsCsv: bid,
             fromDate: dates.$1,
             toDate: dates.$2,
           )
-        : await _getBuoyDistanceReport(
+        : await _callDistanceReport(
             buoyId: bid,
             fromDate: dates.$1,
             toDate: dates.$2,
+            s: state,
           );
 
     await outcome.foldAsync(
@@ -764,7 +1174,7 @@ class GeneralUserExportBloc
           reportRows: const [],
           clearReportDataSourceKey: true,
           assignBuoyScreenNotice: true,
-          buoyScreenNotice: 'Select exactly one buoy for Distance Report.',
+          buoyScreenNotice: GeneralUserExportState.multiBuoyDistanceReportError,
         ),
       );
       return;
@@ -772,12 +1182,13 @@ class GeneralUserExportBloc
 
     final idsCsv = state.selectedBuoyIds.join(',');
     final outcome = state.reportType == ExportReportType.buoyDistance
-        ? await _getBuoyDistanceReport(
+        ? await _callDistanceReport(
             buoyId: state.selectedBuoyIds.first,
             fromDate: dates.$1,
             toDate: dates.$2,
+            s: state,
           )
-        : await _getBuoyDataReport(
+        : await _callDataReport(
             buoyIdsCsv: idsCsv,
             fromDate: dates.$1,
             toDate: dates.$2,
@@ -820,7 +1231,7 @@ class GeneralUserExportBloc
     switch (s.dateRange) {
       case null:
         return null;
-      case ExportDateRange.last24Hours:
+      case ExportDateRange.currentDay:
         return (formatReportApiDate(today), formatReportApiDate(today));
       case ExportDateRange.yesterday:
         final y = today.subtract(const Duration(days: 1));
@@ -848,6 +1259,20 @@ class GeneralUserExportBloc
     Emitter<GeneralUserExportState> emit,
   ) {
     emit(state.copyWith(message: '', isSuccessMessage: false));
+  }
+
+  void _onClearStartPointLatLng(
+    ClearGeneralUserExportStartPointLatLng event,
+    Emitter<GeneralUserExportState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        startLatitude: '',
+        startLongitude: '',
+        assignBuoyScreenNotice: true,
+        buoyScreenNotice: '',
+      ),
+    );
   }
 }
 

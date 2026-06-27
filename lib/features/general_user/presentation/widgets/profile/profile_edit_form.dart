@@ -11,6 +11,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 class GeneralUserProfileEditForm extends StatelessWidget {
   final String userId;
+  final String userName;
   final TextEditingController firstNameController;
   final TextEditingController middleNameController;
   final TextEditingController lastNameController;
@@ -21,6 +22,7 @@ class GeneralUserProfileEditForm extends StatelessWidget {
   const GeneralUserProfileEditForm({
     super.key,
     required this.userId,
+    required this.userName,
     required this.firstNameController,
     required this.middleNameController,
     required this.lastNameController,
@@ -51,6 +53,7 @@ class GeneralUserProfileEditForm extends StatelessWidget {
                     '${firstNameController.text.trim()} ${middleNameController.text.trim()} ${lastNameController.text.trim()}'
                         .replaceAll(RegExp(r'\s+'), ' ')
                         .trim(),
+                userName: userName,
                 email: emailController.text.trim(),
                 role: '',
                 phone: phoneController.text.trim(),

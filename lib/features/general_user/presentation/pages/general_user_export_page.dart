@@ -13,6 +13,7 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/export/gene
 import 'package:drifter_buoy/features/general_user/presentation/bloc/export/general_user_export_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/export/general_user_export_state.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
@@ -327,6 +328,19 @@ class _GeneralUserExportPageState extends State<GeneralUserExportPage> {
           listeners: [
             BlocListener<GeneralUserExportBloc, GeneralUserExportState>(
               listenWhen: (previous, current) =>
+                  previous.startLatitude != current.startLatitude ||
+                  previous.startLongitude != current.startLongitude ||
+                  previous.startTime != current.startTime,
+              listener: (context, state) {
+                if (state.reportType == ExportReportType.buoyDistance &&
+                    !state.isDistanceStartPointComplete &&
+                    _formatSelected) {
+                  setState(() => _formatSelected = false);
+                }
+              },
+            ),
+            BlocListener<GeneralUserExportBloc, GeneralUserExportState>(
+              listenWhen: (previous, current) =>
                   previous.message != current.message,
               listener: (context, state) {
                 if (state.message.isEmpty) {
@@ -503,160 +517,81 @@ class _GeneralUserExportPageState extends State<GeneralUserExportPage> {
                     return Column(
                       children: [
                         Expanded(
-                          child: SingleChildScrollView(
-                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                            child: Column(
-                              children: [
-                                _DateRangeCard(
-                                  mode: state.mode,
-                                  selected: state.dateRange,
-                                  customStart: state.customStart,
-                                  customEnd: state.customEnd,
-                                  onChanged: isExporting
-                                      ? null
-                                      : (range) async {
-                                          if (range == null) {
-                                            return;
-                                          }
-                                          if (range == ExportDateRange.custom) {
-                                            final picked =
-                                                await showExportThemedDateRangePicker(
-                                                  context: context,
-                                                  initialDateRange:
-                                                      state.customStart !=
-                                                              null &&
-                                                          state.customEnd !=
-                                                              null
-                                                      ? DateTimeRange(
-                                                          start: state
-                                                              .customStart!,
-                                                          end: state.customEnd!,
-                                                        )
-                                                      : DateTimeRange(
-                                                          start: DateTime.now()
-                                                              .subtract(
-                                                                const Duration(
-                                                                  days: 7,
-                                                                ),
-                                                              ),
-                                                          end: DateTime.now(),
-                                                        ),
-                                                );
-                                            if (!context.mounted ||
-                                                picked == null) {
-                                              return;
-                                            }
-                                            context
-                                                .read<GeneralUserExportBloc>()
-                                                .add(
-                                                  ApplyGeneralUserExportCustomRange(
-                                                    start: picked.start,
-                                                    end: picked.end,
-                                                  ),
-                                                );
-                                            _markDateRangeSelected();
-                                            return;
-                                          }
-                                          if (!context.mounted) {
-                                            return;
-                                          }
-                                          context
-                                              .read<GeneralUserExportBloc>()
-                                              .add(
-                                                ChangeGeneralUserExportDateRange(
-                                                  range,
-                                                ),
-                                              );
-                                          _markDateRangeSelected();
-                                        },
-                                ),
-                                if (_dateRangeSelected) ...[
-                                  const SizedBox(height: 10),
-                                  _ReportTypeCard(
-                                    selected: state.reportType,
-                                    onChanged: isExporting
-                                        ? null
-                                        : (type) {
-                                            context
-                                                .read<GeneralUserExportBloc>()
-                                                .add(
-                                                  ChangeGeneralUserExportReportType(
-                                                    type,
-                                                  ),
-                                                );
-                                            _markReportTypeSelected();
-                                          },
-                                  ),
-                                ],
-                                if ((state.mode ==
-                                            GeneralUserExportMode
-                                                .buoyDistance ||
-                                        (state.mode ==
-                                                GeneralUserExportMode
-                                                    .multiSelection &&
-                                            state
-                                                .selectedBuoyIds
-                                                .isNotEmpty)) &&
-                                    state.isReportLoading) ...[
-                                  const SizedBox(height: 24),
-                                  const Center(
-                                    child: SizedBox(
-                                      width: 32,
-                                      height: 32,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2.5,
+                          child: _shouldShowExportNotice(state)
+                              ? Column(
+                                  children: [
+                                    SingleChildScrollView(
+                                      padding: const EdgeInsets.fromLTRB(
+                                        16,
+                                        8,
+                                        16,
+                                        16,
+                                      ),
+                                      child: Column(
+                                        children: [
+                                          ..._buildExportFormCards(
+                                            context: context,
+                                            state: state,
+                                            isExporting: isExporting,
+                                            hideExportControls:
+                                                hideExportControls,
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                  ),
-                                ],
-                                if ((state.mode ==
-                                            GeneralUserExportMode
-                                                .buoyDistance ||
-                                        (state.mode ==
-                                                GeneralUserExportMode
-                                                    .multiSelection &&
-                                            state
-                                                .selectedBuoyIds
-                                                .isNotEmpty)) &&
-                                    state.buoyScreenNotice.isNotEmpty) ...[
-                                  const SizedBox(height: 20),
-                                  Text(
-                                    state.buoyScreenNotice,
-                                    textAlign: TextAlign.center,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium
-                                        ?.copyWith(
-                                          color: const Color(0xFF5C5C5C),
-                                          fontWeight: FontWeight.w600,
+                                    Expanded(
+                                      child: Padding(
+                                        padding: const EdgeInsets.fromLTRB(
+                                          24,
+                                          8,
+                                          24,
+                                          24,
                                         ),
+                                        child: Center(
+                                          child: Text(
+                                            state.buoyScreenNotice,
+                                            textAlign: TextAlign.center,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleMedium
+                                                ?.copyWith(
+                                                  color:
+                                                      const Color(0xFF5C5C5C),
+                                                  fontWeight: FontWeight.w600,
+                                                  height: 1.35,
+                                                ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : SingleChildScrollView(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    16,
+                                    8,
+                                    16,
+                                    16,
                                   ),
-                                ],
-                                if (!hideExportControls &&
-                                    _dateRangeSelected &&
-                                    _reportTypeSelected) ...[
-                                  const SizedBox(height: 18),
-                                  _ExportFormatCardSection(
-                                    selectedFormat: state.format,
-                                    reportColumns: state.reportColumns,
-                                    reportRows: state.reportRows,
-                                    enabled: !isExporting,
-                                    onFormatChanged: (format) {
-                                      context.read<GeneralUserExportBloc>().add(
-                                        ChangeGeneralUserExportFormat(format),
-                                      );
-                                      _markFormatSelected();
-                                    },
+                                  child: Column(
+                                    children: [
+                                      ..._buildExportFormCards(
+                                        context: context,
+                                        state: state,
+                                        isExporting: isExporting,
+                                        hideExportControls: hideExportControls,
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ],
-                            ),
-                          ),
+                                ),
                         ),
                         if (!hideExportControls &&
                             _dateRangeSelected &&
                             _reportTypeSelected &&
-                            _formatSelected)
+                            _formatSelected &&
+                            _shouldShowExportFormatSection(state) &&
+                            (state.reportType == ExportReportType.buoyData ||
+                                state.isDistanceStartPointReadyForExport))
                           Padding(
                             padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
                             child: SizedBox(
@@ -725,6 +660,149 @@ class _GeneralUserExportPageState extends State<GeneralUserExportPage> {
     );
   }
 
+  List<Widget> _buildExportFormCards({
+    required BuildContext context,
+    required GeneralUserExportState state,
+    required bool isExporting,
+    required bool hideExportControls,
+  }) {
+    return [
+      _DateRangeCard(
+        mode: state.mode,
+        selected: state.dateRange,
+        customStart: state.customStart,
+        customEnd: state.customEnd,
+        onChanged: isExporting
+            ? null
+            : (range) async {
+                if (range == null) {
+                  return;
+                }
+                if (range == ExportDateRange.custom) {
+                  final picked = await showExportThemedDateRangePicker(
+                    context: context,
+                    initialDateRange: state.customStart != null &&
+                            state.customEnd != null
+                        ? DateTimeRange(
+                            start: state.customStart!,
+                            end: state.customEnd!,
+                          )
+                        : DateTimeRange(
+                            start: DateTime.now().subtract(
+                              const Duration(days: 7),
+                            ),
+                            end: DateTime.now(),
+                          ),
+                  );
+                  if (!context.mounted || picked == null) {
+                    return;
+                  }
+                  context.read<GeneralUserExportBloc>().add(
+                        ApplyGeneralUserExportCustomRange(
+                          start: picked.start,
+                          end: picked.end,
+                        ),
+                      );
+                  _markDateRangeSelected();
+                  return;
+                }
+                if (!context.mounted) {
+                  return;
+                }
+                context.read<GeneralUserExportBloc>().add(
+                      ChangeGeneralUserExportDateRange(range),
+                    );
+                _markDateRangeSelected();
+              },
+      ),
+      if (_dateRangeSelected) ...[
+        const SizedBox(height: 10),
+        _ReportTypeCard(
+          selected: state.reportType,
+          onChanged: isExporting
+              ? null
+              : (type) {
+                  context.read<GeneralUserExportBloc>().add(
+                        ChangeGeneralUserExportReportType(type),
+                      );
+                  _markReportTypeSelected();
+                },
+        ),
+      ],
+      if (_reportTypeSelected &&
+          state.reportType == ExportReportType.buoyDistance &&
+          !state.isMultiBuoyDistanceReportBlocked) ...[
+        const SizedBox(height: 10),
+        _DistanceStartPointCard(
+          enabled: !isExporting,
+          isLoading: state.isReportLoading,
+          isSearching: state.isStartPointSearching,
+          startPointType: state.distanceStartPointType,
+          startLatitude: state.startLatitude,
+          startLongitude: state.startLongitude,
+          startTime: state.startTime,
+        ),
+      ],
+      if ((state.mode == GeneralUserExportMode.buoyDistance ||
+              (state.mode == GeneralUserExportMode.multiSelection &&
+                  state.selectedBuoyIds.isNotEmpty)) &&
+          state.isReportLoading) ...[
+        const SizedBox(height: 24),
+        const Center(
+          child: SizedBox(
+            width: 32,
+            height: 32,
+            child: CircularProgressIndicator(
+              strokeWidth: 2.5,
+            ),
+          ),
+        ),
+      ],
+      if (!hideExportControls &&
+          _dateRangeSelected &&
+          _reportTypeSelected &&
+          _shouldShowExportFormatSection(state)) ...[
+        const SizedBox(height: 18),
+        _ExportFormatCardSection(
+          selectedFormat: state.format,
+          reportColumns: state.reportColumns,
+          reportRows: state.reportRows,
+          enabled: !isExporting,
+          onFormatChanged: (format) {
+            context.read<GeneralUserExportBloc>().add(
+                  ChangeGeneralUserExportFormat(format),
+                );
+            _markFormatSelected();
+          },
+        ),
+      ],
+    ];
+  }
+
+  bool _shouldShowExportFormatSection(GeneralUserExportState state) {
+    if (state.reportType == ExportReportType.buoyData) {
+      return true;
+    }
+    if (state.reportType != ExportReportType.buoyDistance) {
+      return false;
+    }
+    if (state.isMultiBuoyDistanceReportBlocked) {
+      return false;
+    }
+    return state.isDistanceStartPointComplete;
+  }
+
+  bool _shouldShowExportNotice(GeneralUserExportState state) {
+    if (state.buoyScreenNotice.isEmpty) {
+      return false;
+    }
+
+    return state.mode == GeneralUserExportMode.buoyDistance ||
+        (state.mode == GeneralUserExportMode.multiSelection &&
+            (state.selectedBuoyIds.isNotEmpty ||
+                state.isMultiBuoyDistanceReportBlocked));
+  }
+
   bool _exportButtonDisabled(GeneralUserExportState state) {
     if (state.mode == GeneralUserExportMode.buoyDistance) {
       if (state.buoyId == null || state.buoyId!.isEmpty) {
@@ -740,6 +818,10 @@ class _GeneralUserExportPageState extends State<GeneralUserExportPage> {
       return true;
     }
     if (state.dateRange == null || state.reportType == null || state.format == null) {
+      return true;
+    }
+    if (state.reportType == ExportReportType.buoyDistance &&
+        !state.isDistanceStartPointReadyForExport) {
       return true;
     }
     return false;
@@ -764,8 +846,8 @@ class _DateRangeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = const [
+      ExportDateRange.currentDay,
       ExportDateRange.yesterday,
-      ExportDateRange.last24Hours,
       ExportDateRange.custom,
     ];
 
@@ -840,11 +922,10 @@ class _DateRangeCard extends StatelessWidget {
 
   String _dateRangeLabel(ExportDateRange range) {
     switch (range) {
-      case ExportDateRange.last24Hours:
-        return 'Last 24 Hrs';
+      case ExportDateRange.currentDay:
+        return 'Current day';
       case ExportDateRange.yesterday:
         return 'Yesterday';
-
       case ExportDateRange.custom:
         return 'Custom Range';
     }
@@ -959,6 +1040,540 @@ class _ExportFormatCardSection extends StatelessWidget {
   }
 }
 
+class _DistanceStartPointCard extends StatefulWidget {
+  const _DistanceStartPointCard({
+    required this.enabled,
+    required this.isLoading,
+    required this.isSearching,
+    required this.startPointType,
+    required this.startLatitude,
+    required this.startLongitude,
+    required this.startTime,
+  });
+
+  final bool enabled;
+  final bool isLoading;
+  final bool isSearching;
+  final ExportDistanceStartPointType? startPointType;
+  final String startLatitude;
+  final String startLongitude;
+  final String startTime;
+
+  @override
+  State<_DistanceStartPointCard> createState() =>
+      _DistanceStartPointCardState();
+}
+
+class _DistanceStartPointCardState extends State<_DistanceStartPointCard> {
+  late final TextEditingController _searchController;
+  late final TextEditingController _latController;
+  late final TextEditingController _lngController;
+  String _selectedTime = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+    _latController = TextEditingController(text: widget.startLatitude);
+    _lngController = TextEditingController(text: widget.startLongitude);
+    _selectedTime = widget.startTime;
+  }
+
+  @override
+  void didUpdateWidget(covariant _DistanceStartPointCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.startPointType != widget.startPointType) {
+      _searchController.clear();
+      _latController.text = '';
+      _lngController.text = '';
+      _selectedTime = '';
+    } else {
+      var synced = false;
+      if (_latController.text != widget.startLatitude) {
+        _latController.text = widget.startLatitude;
+        synced = true;
+      }
+      if (_lngController.text != widget.startLongitude) {
+        _lngController.text = widget.startLongitude;
+        synced = true;
+      }
+      if (synced) {
+        setState(() {});
+      }
+      if (widget.startTime.isNotEmpty && _selectedTime != widget.startTime) {
+        _selectedTime = widget.startTime;
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _latController.dispose();
+    _lngController.dispose();
+    super.dispose();
+  }
+
+  bool get _isBusy => widget.isLoading || widget.isSearching;
+
+  bool get _canSubmit {
+    final type = widget.startPointType;
+    if (type == null || !widget.enabled || _isBusy) {
+      return false;
+    }
+    switch (type) {
+      case ExportDistanceStartPointType.latLng:
+        return _latController.text.trim().isNotEmpty &&
+            _lngController.text.trim().isNotEmpty;
+      case ExportDistanceStartPointType.time:
+        return _selectedTime.trim().isNotEmpty;
+    }
+  }
+
+  bool get _canSearch {
+    if (!widget.enabled || _isBusy) {
+      return false;
+    }
+    if (widget.startPointType != ExportDistanceStartPointType.latLng) {
+      return false;
+    }
+    return _searchController.text.trim().isNotEmpty;
+  }
+
+  void _onSearchFieldChanged(String value) {
+    if (value.trim().isNotEmpty) {
+      setState(() {});
+      return;
+    }
+
+    _latController.clear();
+    _lngController.clear();
+    context.read<GeneralUserExportBloc>().add(
+          const ClearGeneralUserExportStartPointLatLng(),
+        );
+    setState(() {});
+  }
+
+  void _search() {
+    FocusScope.of(context).unfocus();
+
+    final query = _searchController.text.trim();
+    if (query.isEmpty) {
+      _onSearchFieldChanged('');
+      return;
+    }
+
+    context.read<GeneralUserExportBloc>().add(
+          SearchGeneralUserExportByLatLon(latLng: query),
+        );
+  }
+
+  void _submit() {
+    final type = widget.startPointType;
+    if (type == null) {
+      return;
+    }
+
+    FocusScope.of(context).unfocus();
+
+    switch (type) {
+      case ExportDistanceStartPointType.latLng:
+        final lat = _latController.text.trim();
+        final lng = _lngController.text.trim();
+        if (lat.isEmpty || lng.isEmpty) {
+          AppFlushbar.error(
+            'Please enter Latitude and Longitude.',
+            context: context,
+          );
+          return;
+        }
+        context.read<GeneralUserExportBloc>().add(
+              SubmitGeneralUserExportDistanceStartPoint(
+                startLatitude: lat,
+                startLongitude: lng,
+                startTime: '',
+              ),
+            );
+      case ExportDistanceStartPointType.time:
+        final time = _selectedTime.trim();
+        if (time.isEmpty) {
+          AppFlushbar.error('Please select Start Time.', context: context);
+          return;
+        }
+        context.read<GeneralUserExportBloc>().add(
+              SubmitGeneralUserExportDistanceStartPoint(
+                startLatitude: '',
+                startLongitude: '',
+                startTime: time,
+              ),
+            );
+    }
+  }
+
+  Future<void> _pickStartTime() async {
+    if (!widget.enabled || _isBusy) {
+      return;
+    }
+    TimeOfDay initial = TimeOfDay.now();
+    if (_selectedTime.trim().isNotEmpty) {
+      final parts = _selectedTime.trim().split(':');
+      if (parts.length == 2) {
+        final hour = int.tryParse(parts[0]);
+        final minute = int.tryParse(parts[1]);
+        if (hour != null && minute != null) {
+          initial = TimeOfDay(hour: hour, minute: minute);
+        }
+      }
+    }
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: initial,
+    );
+    if (picked == null || !mounted) {
+      return;
+    }
+    setState(() {
+      _selectedTime =
+          '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final type = widget.startPointType;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF2F2F2),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Start Point',
+            style: textTheme.titleMedium?.copyWith(
+              color: const Color(0xFF30353A),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Required for Buoy Distance Report',
+            style: textTheme.bodySmall?.copyWith(
+              color: const Color(0xFF616870),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 10),
+          RadioListTile<ExportDistanceStartPointType>(
+            value: ExportDistanceStartPointType.latLng,
+            groupValue: type,
+            onChanged: widget.enabled
+                ? (value) {
+                    if (value == null) {
+                      return;
+                    }
+                    context.read<GeneralUserExportBloc>().add(
+                          ChangeGeneralUserExportDistanceStartPointType(value),
+                        );
+                  }
+                : null,
+            contentPadding: EdgeInsets.zero,
+            dense: true,
+            title: Text(
+              'Latitude & Longitude',
+              style: textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF2A2F34),
+              ),
+            ),
+          ),
+          if (type == ExportDistanceStartPointType.latLng) ...[
+            const SizedBox(height: 4),
+            Text(
+              'Search',
+              style: textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF3F4750),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    enabled: widget.enabled && !_isBusy,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    inputFormatters: const [
+                      _DecimalDigitInputFormatter(),
+                    ],
+                    textInputAction: TextInputAction.search,
+                    onSubmitted: (_) {
+                      if (_canSearch) {
+                        _search();
+                      }
+                    },
+                    onChanged: _onSearchFieldChanged,
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: const Color(0xFF23282D),
+                      fontWeight: FontWeight.w600,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Enter latitude or longitude',
+                      hintStyle: textTheme.bodyMedium?.copyWith(
+                        color: const Color(0xFF8A9095),
+                        fontWeight: FontWeight.w500,
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 14,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFFC2C7CC)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: Color(0xFF3A86D1),
+                          width: 1.1,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                SizedBox(
+                  width: 52,
+                  height: 48,
+                  child: AppElevatedButton(
+                    loading: widget.isSearching,
+                    onPressed: _canSearch ? _search : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF256BBB),
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor:
+                          const Color(0xFF256BBB).withValues(alpha: 0.45),
+                      padding: EdgeInsets.zero,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: widget.isSearching
+                        ? const SizedBox.shrink()
+                        : const Icon(Icons.search_rounded, size: 22),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            _DistanceCoordinateField(
+              label: 'Latitude',
+              controller: _latController,
+              enabled: widget.enabled && !_isBusy,
+              readOnly: true,
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: 10),
+            _DistanceCoordinateField(
+              label: 'Longitude',
+              controller: _lngController,
+              enabled: widget.enabled && !_isBusy,
+              readOnly: true,
+              onChanged: (_) => setState(() {}),
+            ),
+            if (_canSubmit) ...[
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: AppElevatedButton(
+                  loading: widget.isLoading,
+                  onPressed: widget.isLoading ? null : _submit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF256BBB),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('Submit'),
+                ),
+              ),
+            ],
+          ],
+          RadioListTile<ExportDistanceStartPointType>(
+            value: ExportDistanceStartPointType.time,
+            groupValue: type,
+            onChanged: widget.enabled
+                ? (value) {
+                    if (value == null) {
+                      return;
+                    }
+                    context.read<GeneralUserExportBloc>().add(
+                          ChangeGeneralUserExportDistanceStartPointType(value),
+                        );
+                  }
+                : null,
+            contentPadding: EdgeInsets.zero,
+            dense: true,
+            title: Text(
+              'Start Time',
+              style: textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF2A2F34),
+              ),
+            ),
+          ),
+          if (type == ExportDistanceStartPointType.time) ...[
+            const SizedBox(height: 8),
+            InkWell(
+              onTap: widget.enabled ? _pickStartTime : null,
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 14,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFC2C7CC)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.access_time_rounded,
+                      color: Color(0xFF356EA7),
+                      size: 20,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        _selectedTime.trim().isNotEmpty
+                            ? _selectedTime.trim()
+                            : 'Select start time (HH:mm)',
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: _selectedTime.trim().isNotEmpty
+                              ? const Color(0xFF2A2F34)
+                              : const Color(0xFF8A9095),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      color: Color(0xFF8A9095),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (_canSubmit) ...[
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: AppElevatedButton(
+                  loading: widget.isLoading,
+                  onPressed: widget.isLoading ? null : _submit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF256BBB),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('Submit'),
+                ),
+              ),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _DistanceCoordinateField extends StatelessWidget {
+  const _DistanceCoordinateField({
+    required this.label,
+    required this.controller,
+    required this.enabled,
+    required this.onChanged,
+    this.readOnly = false,
+  });
+
+  final String label;
+  final TextEditingController controller;
+  final bool enabled;
+  final bool readOnly;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: textTheme.bodySmall?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF3F4750),
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          enabled: enabled,
+          readOnly: readOnly,
+          controller: controller,
+          keyboardType: const TextInputType.numberWithOptions(
+            decimal: true,
+            signed: true,
+          ),
+          onChanged: onChanged,
+          style: textTheme.bodyMedium?.copyWith(
+            color: const Color(0xFF23282D),
+            fontWeight: FontWeight.w600,
+          ),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 14,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFC2C7CC)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: Color(0xFF3A86D1),
+                width: 1.1,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _ReportTypeCard extends StatelessWidget {
   const _ReportTypeCard({required this.selected, required this.onChanged});
 
@@ -1052,6 +1667,26 @@ String _formatApproxFileSize(int bytes) {
     return '~${kb.toStringAsFixed(1)} KB';
   }
   return '~${(kb / 1024).toStringAsFixed(1)} MB';
+}
+
+class _DecimalDigitInputFormatter extends TextInputFormatter {
+  const _DecimalDigitInputFormatter();
+
+  static final RegExp _allowedPattern = RegExp(r'^\d*\.?\d*');
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.text.isEmpty) {
+      return newValue;
+    }
+    if (_allowedPattern.hasMatch(newValue.text)) {
+      return newValue;
+    }
+    return oldValue;
+  }
 }
 
 class _ExportingDataDialog extends StatelessWidget {

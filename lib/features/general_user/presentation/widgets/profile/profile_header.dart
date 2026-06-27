@@ -37,7 +37,10 @@ class GeneralUserProfileHeader extends StatelessWidget {
             child: Center(
               child: Text(
                 title,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                maxLines: 2,
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: const Color(0xFF262C31),
                       fontWeight: FontWeight.w700,
                     ),

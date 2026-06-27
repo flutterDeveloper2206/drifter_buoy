@@ -1,6 +1,7 @@
 import 'package:drifter_buoy/core/utils/typedefs.dart';
 import 'package:drifter_buoy/features/general_user/data/datasources/general_user_report_remote_data_source.dart';
 import 'package:drifter_buoy/features/general_user/data/models/user_report_get_buoy_distance_report_for_export_response.dart';
+import 'package:drifter_buoy/features/general_user/data/models/user_report_search_by_lat_lon_response.dart';
 import 'package:drifter_buoy/features/general_user/domain/repositories/general_user_report_repository.dart';
 
 class GeneralUserReportRepositoryImpl implements GeneralUserReportRepository {
@@ -16,11 +17,17 @@ class GeneralUserReportRepositoryImpl implements GeneralUserReportRepository {
     required String buoyId,
     required String fromDate,
     required String toDate,
+    String? startTime,
+    String? startLatitude,
+    String? startLongitude,
   }) {
     return _remoteDataSource.getBuoyDistanceReportForExport(
       buoyId: buoyId,
       fromDate: fromDate,
       toDate: toDate,
+      startTime: startTime,
+      startLatitude: startLatitude,
+      startLongitude: startLongitude,
     );
   }
 
@@ -30,11 +37,32 @@ class GeneralUserReportRepositoryImpl implements GeneralUserReportRepository {
     required String buoyIdsCsv,
     required String fromDate,
     required String toDate,
+    String? startTime,
+    String? startLatitude,
+    String? startLongitude,
   }) {
     return _remoteDataSource.getBuoyDataReportForExport(
       buoyIdsCsv: buoyIdsCsv,
       fromDate: fromDate,
       toDate: toDate,
+      startTime: startTime,
+      startLatitude: startLatitude,
+      startLongitude: startLongitude,
+    );
+  }
+
+  @override
+  ResultFuture<UserReportSearchByLatLonResponse> searchByLatLon({
+    required String buoyId,
+    required String fromDate,
+    required String toDate,
+    required String latLng,
+  }) {
+    return _remoteDataSource.searchByLatLon(
+      buoyId: buoyId,
+      fromDate: fromDate,
+      toDate: toDate,
+      latLng: latLng,
     );
   }
 }

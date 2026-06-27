@@ -62,6 +62,7 @@ import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_all_buoys_status_for_export.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_buoy_data_report_for_export.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_buoy_distance_report_for_export.dart';
+import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_search_by_lat_lon.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_all_buoys_data_overview_view.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_buoy_data_overview.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_buoy_metrics.dart';
@@ -297,11 +298,18 @@ Future<void> initDependencies() async {
     );
   }
 
+  if (!sl.isRegistered<GeneralUserSearchByLatLon>()) {
+    sl.registerLazySingleton<GeneralUserSearchByLatLon>(
+      () => GeneralUserSearchByLatLon(repository: sl()),
+    );
+  }
+
   if (!sl.isRegistered<GeneralUserExportBloc>()) {
     sl.registerFactory<GeneralUserExportBloc>(
       () => GeneralUserExportBloc(
         getBuoyDistanceReport: sl(),
         getBuoyDataReport: sl(),
+        searchByLatLon: sl(),
       ),
     );
   }
