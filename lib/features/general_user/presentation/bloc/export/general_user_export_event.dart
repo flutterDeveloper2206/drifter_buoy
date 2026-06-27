@@ -1,9 +1,11 @@
 import 'package:equatable/equatable.dart';
 
-enum ExportDateRange { last24Hours, yesterday,  custom }
+enum ExportDateRange { currentDay, yesterday, custom }
 
 enum ExportFormat { csv, pdf }
 enum ExportReportType { buoyData, buoyDistance }
+
+enum ExportDistanceStartPointType { latLng, time }
 
 abstract class GeneralUserExportEvent extends Equatable {
   const GeneralUserExportEvent();
@@ -61,6 +63,56 @@ class ChangeGeneralUserExportReportType extends GeneralUserExportEvent {
   List<Object?> get props => [reportType];
 }
 
+class ChangeGeneralUserExportDistanceStartPointType
+    extends GeneralUserExportEvent {
+  const ChangeGeneralUserExportDistanceStartPointType(this.startPointType);
+
+  final ExportDistanceStartPointType startPointType;
+
+  @override
+  List<Object?> get props => [startPointType];
+}
+
+class UpdateGeneralUserExportDistanceFields extends GeneralUserExportEvent {
+  const UpdateGeneralUserExportDistanceFields({
+    this.startLatitude,
+    this.startLongitude,
+    this.startTime,
+  });
+
+  final String? startLatitude;
+  final String? startLongitude;
+  final String? startTime;
+
+  @override
+  List<Object?> get props => [startLatitude, startLongitude, startTime];
+}
+
+class SubmitGeneralUserExportDistanceStartPoint
+    extends GeneralUserExportEvent {
+  const SubmitGeneralUserExportDistanceStartPoint({
+    required this.startLatitude,
+    required this.startLongitude,
+    required this.startTime,
+  });
+
+  final String startLatitude;
+  final String startLongitude;
+  final String startTime;
+
+  @override
+  List<Object?> get props => [startLatitude, startLongitude, startTime];
+}
+
+class SearchGeneralUserExportByLatLon extends GeneralUserExportEvent {
+  const SearchGeneralUserExportByLatLon({required this.latLng});
+
+  final String latLng;
+
+  @override
+  List<Object?> get props => [latLng];
+}
+
 class ExportMultiBuoyDataSaveToDevice extends GeneralUserExportEvent {
   const ExportMultiBuoyDataSaveToDevice();
 }
@@ -83,4 +135,8 @@ class ClearGeneralUserExportDeliverable extends GeneralUserExportEvent {
 
 class ClearGeneralUserExportMessage extends GeneralUserExportEvent {
   const ClearGeneralUserExportMessage();
+}
+
+class ClearGeneralUserExportStartPointLatLng extends GeneralUserExportEvent {
+  const ClearGeneralUserExportStartPointLatLng();
 }

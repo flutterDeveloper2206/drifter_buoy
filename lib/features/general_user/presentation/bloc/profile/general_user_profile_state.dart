@@ -6,6 +6,7 @@ class GeneralUserProfileData extends Equatable {
   final String middleName;
   final String lastName;
   final String fullName;
+  final String userName;
   final String email;
   final String role;
   final String phone;
@@ -16,6 +17,7 @@ class GeneralUserProfileData extends Equatable {
     required this.middleName,
     required this.lastName,
     required this.fullName,
+    required this.userName,
     required this.email,
     required this.role,
     required this.phone,
@@ -34,7 +36,7 @@ class GeneralUserProfileData extends Equatable {
 
   @override
   List<Object> get props =>
-      [userId, firstName, middleName, lastName, fullName, email, role, phone];
+      [userId, firstName, middleName, lastName, fullName, userName, email, role, phone];
 }
 
 abstract class GeneralUserProfileState extends Equatable {

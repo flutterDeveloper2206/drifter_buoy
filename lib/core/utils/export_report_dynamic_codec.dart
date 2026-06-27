@@ -365,21 +365,26 @@ List<pw.Widget> _pdfTableWidgets(
     );
   }
 
-  pw.Widget tableForSlice(List<List<String>> slice) => pw.TableHelper.fromTextArray(
-    headers: p.columnOrder,
-    data: slice,
-    headerStyle: pw.TextStyle(
-      fontWeight: pw.FontWeight.bold,
-      fontSize: 8,
-    ),
-    cellStyle: const pw.TextStyle(fontSize: 7),
-    headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
-    cellHeight: 16,
-    cellAlignments: {
-      for (var i = 0; i < p.columnOrder.length; i++)
-        i: pw.Alignment.centerLeft,
-    },
-  );
+  pw.Widget tableForSlice(List<List<String>> slice) {
+    final columnCount = p.columnOrder.length;
+    return pw.TableHelper.fromTextArray(
+      headers: p.columnOrder,
+      data: slice,
+      headerStyle: pw.TextStyle(
+        fontWeight: pw.FontWeight.bold,
+        fontSize: 8,
+      ),
+      cellStyle: const pw.TextStyle(fontSize: 7),
+      headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
+      cellHeight: 16,
+      columnWidths: {
+        for (var i = 0; i < columnCount; i++) i: const pw.FlexColumnWidth(1),
+      },
+      cellAlignments: {
+        for (var i = 0; i < columnCount; i++) i: pw.Alignment.center,
+      },
+    );
+  }
 
   if (tableData.isEmpty) {
     widgets.add(tableForSlice(const []));

@@ -13,11 +13,17 @@ class GeneralUserGetBuoyDataReportForExport {
     required String buoyIdsCsv,
     required String fromDate,
     required String toDate,
+    String? startTime,
+    String? startLatitude,
+    String? startLongitude,
   }) {
     return _repository.getBuoyDataReportForExport(
       buoyIdsCsv: buoyIdsCsv.trim(),
       fromDate: fromDate,
       toDate: toDate,
+      startTime: startTime,
+      startLatitude: startLatitude,
+      startLongitude: startLongitude,
     );
   }
 }

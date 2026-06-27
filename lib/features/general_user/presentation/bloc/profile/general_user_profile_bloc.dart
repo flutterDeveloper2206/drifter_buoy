@@ -41,6 +41,7 @@ class GeneralUserProfileBloc
             middleName: result.middleName,
             lastName: result.lastName,
             fullName: result.fullName,
+            userName: result.userName,
             email: result.emailAddress,
             role: result.roleName,
             phone: result.mobileNumber,

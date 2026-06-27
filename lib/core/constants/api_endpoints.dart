@@ -52,6 +52,9 @@ class ApiEndpoints {
   static String get getBuoyDataReportForExportUrl =>
       '${_base}api/Report/Report/GetBuoyDataReportForExport';
 
+  static String get searchByLatLonUrl =>
+      '${_base}api/Report/Report/SearchByLatLon';
+
   static String get registerDeviceTokenUrl =>
       '${_base}api/admin/DeviceToken/register';
 

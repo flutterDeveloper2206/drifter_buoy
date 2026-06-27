@@ -13,11 +13,17 @@ class GeneralUserGetBuoyDistanceReportForExport {
     required String buoyId,
     required String fromDate,
     required String toDate,
+    String? startTime,
+    String? startLatitude,
+    String? startLongitude,
   }) {
     return _repository.getBuoyDistanceReportForExport(
       buoyId: buoyId,
       fromDate: fromDate,
       toDate: toDate,
+      startTime: startTime,
+      startLatitude: startLatitude,
+      startLongitude: startLongitude,
     );
   }
 }

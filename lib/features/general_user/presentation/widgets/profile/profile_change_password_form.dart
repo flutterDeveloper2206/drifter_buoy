@@ -69,149 +69,196 @@ class _GeneralUserProfileChangePasswordFormState
       builder: (context, changeState) {
         final isLoading = changeState is GeneralUserChangePasswordLoading;
 
-        return SingleChildScrollView(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: EdgeInsets.only(bottom: bottomInset + 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _ChangePasswordHeaderCard(userEmail: widget.userEmail),
-              const SizedBox(height: 14),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF2F2F2),
-                  borderRadius: BorderRadius.circular(14),
-                ),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: EdgeInsets.only(bottom: bottomInset > 0 ? 12 : 0),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      'Update Password',
-                      style: textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF23282D),
+                    _ChangePasswordHeaderCard(userEmail: widget.userEmail),
+                    const SizedBox(height: 14),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF2F2F2),
+                        borderRadius: BorderRadius.circular(14),
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Use at least 6 characters. Your new password must be '
-                      'different from the current one.',
-                      style: textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFF616870),
-                        fontWeight: FontWeight.w500,
-                        height: 1.35,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    ValueListenableBuilder<bool>(
-                      valueListenable: _obscureCurrentPasswordNotifier,
-                      builder: (context, obscure, _) {
-                        return GeneralUserProfilePasswordField(
-                          label: 'Current Password',
-                          controller: _currentPasswordController,
-                          enabled: !isLoading,
-                          obscureText: obscure,
-                          textInputAction: TextInputAction.next,
-                          onToggleVisibility: () {
-                            _obscureCurrentPasswordNotifier.value = !obscure;
-                          },
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    ValueListenableBuilder<bool>(
-                      valueListenable: _obscureNewPasswordNotifier,
-                      builder: (context, obscure, _) {
-                        return GeneralUserProfilePasswordField(
-                          label: 'New Password',
-                          controller: _newPasswordController,
-                          enabled: !isLoading,
-                          obscureText: obscure,
-                          textInputAction: TextInputAction.next,
-                          onToggleVisibility: () {
-                            _obscureNewPasswordNotifier.value = !obscure;
-                          },
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    ValueListenableBuilder<bool>(
-                      valueListenable: _obscureConfirmPasswordNotifier,
-                      builder: (context, obscure, _) {
-                        return GeneralUserProfilePasswordField(
-                          label: 'Confirm New Password',
-                          controller: _confirmPasswordController,
-                          enabled: !isLoading,
-                          obscureText: obscure,
-                          textInputAction: TextInputAction.done,
-                          onSubmitted: (_) {
-                            if (!isLoading) {
-                              _onSubmit(context);
-                            }
-                          },
-                          onToggleVisibility: () {
-                            _obscureConfirmPasswordNotifier.value = !obscure;
-                          },
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: SizedBox(
-                            height: 52,
-                            child: AppElevatedButton(
-                              loading: false,
-                              onPressed: isLoading
-                                  ? null
-                                  : () {
-                                      _clearFields();
-                                      widget.isChangingPasswordNotifier.value =
-                                          false;
-                                    },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: const Color(0xFF23282D),
-                                disabledForegroundColor: const Color(
-                                  0xFF23282D,
-                                ).withValues(alpha: 0.65),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: const Text('Cancel'),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'New password',
+                            style: textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF23282D),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: SizedBox(
-                            height: 52,
-                            child: AppElevatedButton(
-                              loading: isLoading,
-                              onPressed:
-                                  isLoading ? null : () => _onSubmit(context),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF256BBB),
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
+                          const SizedBox(height: 10),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE8F2FB),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: const Color(0xFF206BBE)
+                                    .withValues(alpha: 0.22),
                               ),
-                              child: const Text('Update Password'),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Icon(
+                                  Icons.info_outline_rounded,
+                                  size: 18,
+                                  color: Color(0xFF206BBE),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Use at least 6 characters. Your new password '
+                                    'must be different from the current one.',
+                                    style: textTheme.bodySmall?.copyWith(
+                                      color: const Color(0xFF3F4750),
+                                      fontWeight: FontWeight.w500,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 18),
+                          ValueListenableBuilder<bool>(
+                            valueListenable: _obscureCurrentPasswordNotifier,
+                            builder: (context, obscure, _) {
+                              return GeneralUserProfilePasswordField(
+                                label: 'Current Password',
+                                controller: _currentPasswordController,
+                                enabled: !isLoading,
+                                obscureText: obscure,
+                                textInputAction: TextInputAction.next,
+                                onToggleVisibility: () {
+                                  _obscureCurrentPasswordNotifier.value =
+                                      !obscure;
+                                },
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 14),
+                          ValueListenableBuilder<bool>(
+                            valueListenable: _obscureNewPasswordNotifier,
+                            builder: (context, obscure, _) {
+                              return GeneralUserProfilePasswordField(
+                                label: 'New Password',
+                                controller: _newPasswordController,
+                                enabled: !isLoading,
+                                obscureText: obscure,
+                                textInputAction: TextInputAction.next,
+                                onToggleVisibility: () {
+                                  _obscureNewPasswordNotifier.value =
+                                      !obscure;
+                                },
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 14),
+                          ValueListenableBuilder<bool>(
+                            valueListenable: _obscureConfirmPasswordNotifier,
+                            builder: (context, obscure, _) {
+                              return GeneralUserProfilePasswordField(
+                                label: 'Confirm New Password',
+                                controller: _confirmPasswordController,
+                                enabled: !isLoading,
+                                obscureText: obscure,
+                                textInputAction: TextInputAction.done,
+                                onSubmitted: (_) {
+                                  if (!isLoading) {
+                                    _onSubmit(context);
+                                  }
+                                },
+                                onToggleVisibility: () {
+                                  _obscureConfirmPasswordNotifier.value =
+                                      !obscure;
+                                },
+                              );
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: AppElevatedButton(
+                loading: isLoading,
+                onPressed: isLoading ? null : () => _onSubmit(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1F88D1),
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor:
+                      const Color(0xFF1F88D1).withValues(alpha: 0.65),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                child: Text(
+                  'Save Password',
+                  style: textTheme.titleMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: AppElevatedButton(
+                loading: false,
+                onPressed: isLoading
+                    ? null
+                    : () {
+                        _clearFields();
+                        widget.isChangingPasswordNotifier.value = false;
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFF23282D),
+                  disabledForegroundColor:
+                      const Color(0xFF23282D).withValues(alpha: 0.65),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: const BorderSide(color: Color(0xFFC2C7CC)),
+                  ),
+                  elevation: 0,
+                ),
+                child: Text(
+                  'Cancel',
+                  style: textTheme.titleMedium?.copyWith(
+                    color: const Color(0xFF23282D),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          ],
         );
       },
     );
@@ -278,6 +325,7 @@ class _ChangePasswordHeaderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final email = userEmail.trim();
 
     return Container(
       width: double.infinity,
@@ -287,40 +335,39 @@ class _ChangePasswordHeaderCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: const Color(0xFF206BBE).withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-            ),
+          CircleAvatar(
+            radius: 28,
+            backgroundColor: const Color(0xFF206BBE).withValues(alpha: 0.12),
             child: const Icon(
               Icons.lock_outline_rounded,
               color: Color(0xFF206BBE),
-              size: 28,
+              size: 26,
             ),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   'Account Security',
-                  style: textTheme.titleLarge?.copyWith(
+                  style: textTheme.titleMedium?.copyWith(
                     color: const Color(0xFF2A2F34),
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  userEmail.trim().isNotEmpty
-                      ? userEmail.trim()
-                      : 'Update your sign-in password',
-                  style: textTheme.bodyMedium?.copyWith(
+                  email.isNotEmpty ? email : 'Update your sign-in password',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: textTheme.bodySmall?.copyWith(
                     color: const Color(0xFF616870),
                     fontWeight: FontWeight.w600,
+                    height: 1.3,
                   ),
                 ),
               ],

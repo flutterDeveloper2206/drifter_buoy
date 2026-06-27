@@ -81,6 +81,7 @@ class ApiService {
     Map<String, dynamic>? queryParameters,
     Duration? connectTimeout,
     Duration? receiveTimeout,
+    bool requireApiSuccess = true,
     required T Function(dynamic data) parser,
   }) {
     return _request<T>(
@@ -90,6 +91,7 @@ class ApiService {
       queryParameters: queryParameters,
       connectTimeout: connectTimeout,
       receiveTimeout: receiveTimeout,
+      requireApiSuccess: requireApiSuccess,
       parser: parser,
     );
   }
@@ -140,6 +142,7 @@ class ApiService {
     Map<String, dynamic>? queryParameters,
     Duration? connectTimeout,
     Duration? receiveTimeout,
+    bool requireApiSuccess = true,
     required T Function(dynamic data) parser,
   }) async {
     final requestUrl = path;
@@ -171,7 +174,10 @@ class ApiService {
           );
       }
 
-      final failure = _validateResponse(response);
+      final failure = _validateResponse(
+        response,
+        requireApiSuccess: requireApiSuccess,
+      );
       if (failure != null) {
         AppLogger.w(
           'API RESPONSE\nURL: ${response.requestOptions.uri}\nSTATUS: ${response.statusCode}\nRESPONSE: ${_formatResponseBody(response.data)}\nERROR: ${failure.message}',
@@ -213,12 +219,15 @@ class ApiService {
     }
   }
 
-  Failure? _validateResponse(Response<dynamic> response) {
+  Failure? _validateResponse(
+    Response<dynamic> response, {
+    bool requireApiSuccess = true,
+  }) {
     final statusCode = response.statusCode ?? 0;
     if (statusCode >= 200 && statusCode < 300) {
       // Some backends return HTTP 200 but include `"isSuccess": false`.
       final apiError = ApiErrorResponse.fromJson(response.data);
-      if (!apiError.isSuccess) {
+      if (requireApiSuccess && !apiError.isSuccess) {
         final message = apiError.message.trim();
         final effectiveStatusCode = apiError.statusCode > 0
             ? apiError.statusCode
