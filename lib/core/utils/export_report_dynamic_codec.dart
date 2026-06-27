@@ -15,7 +15,8 @@ const String _kPdfLeadingLogoAsset = 'assets/icons/ic_logo.png';
 const String _kPdfTrailingLogoAsset = 'assets/icons/azista_logo.png';
 
 /// Bundled Unicode fonts (same files as `printing`’s Google Fonts URLs).
-const String _kBundledNotoSansRegular = 'assets/google_fonts/NotoSans-Regular.ttf';
+const String _kBundledNotoSansRegular =
+    'assets/google_fonts/NotoSans-Regular.ttf';
 const String _kBundledNotoSansBold = 'assets/google_fonts/NotoSans-Bold.ttf';
 
 /// Safety cap for the `pdf` package's `MultiPage` widget. The library defaults
@@ -243,10 +244,7 @@ Future<Uint8List> _renderDynamicPdf(_PdfBuildPayload p) async {
         decoration: pw.BoxDecoration(
           color: PdfColors.grey50,
           borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
-          border: pw.Border.all(
-            color: PdfColor.fromInt(0xFFCBD5E1),
-            width: 1,
-          ),
+          border: pw.Border.all(color: PdfColor.fromInt(0xFFCBD5E1), width: 1),
         ),
         child: pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.stretch,
@@ -370,10 +368,7 @@ List<pw.Widget> _pdfTableWidgets(
     return pw.TableHelper.fromTextArray(
       headers: p.columnOrder,
       data: slice,
-      headerStyle: pw.TextStyle(
-        fontWeight: pw.FontWeight.bold,
-        fontSize: 8,
-      ),
+      headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8),
       cellStyle: const pw.TextStyle(fontSize: 7),
       headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
       cellHeight: 16,
