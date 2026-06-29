@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drifter_buoy/core/utils/app_logger.dart';
 import 'package:drifter_buoy/core/storage/app_database.dart';
 import 'package:drifter_buoy/features/general_user/data/datasources/general_user_self_test_remote_data_source.dart';
@@ -16,12 +18,16 @@ class GeneralUserDashboardBloc
     required GeneralUserGetBuoyDashboard getBuoyDashboard,
     required GeneralUserGetBuoyMapDashboard getBuoyMapDashboard,
     required GeneralUserSelfTestRemoteDataSource remoteDataSource,
-  })  : _getBuoyDashboard = getBuoyDashboard,
-        _getBuoyMapDashboard = getBuoyMapDashboard,
-        _remote = remoteDataSource,
-        super(const GeneralUserDashboardInitial()) {
+  }) : _getBuoyDashboard = getBuoyDashboard,
+       _getBuoyMapDashboard = getBuoyMapDashboard,
+       _remote = remoteDataSource,
+       super(const GeneralUserDashboardInitial()) {
     on<LoadGeneralUserDashboard>(_onLoadGeneralUserDashboard);
   }
+
+  static const Duration _commandSetupOverlayMinDuration = Duration(
+    milliseconds: 700,
+  );
 
   final GeneralUserGetBuoyDashboard _getBuoyDashboard;
   final GeneralUserGetBuoyMapDashboard _getBuoyMapDashboard;
@@ -32,7 +38,14 @@ class GeneralUserDashboardBloc
     Emitter<GeneralUserDashboardState> emit,
   ) async {
     AppLogger.i('LoadGeneralUserDashboard event triggered');
-    emit(GeneralUserDashboardLoading(isAdmin: event.isAdmin));
+    final keepCurrentUi =
+        event.silent &&
+        (state is GeneralUserDashboardLoaded ||
+            state is GeneralUserDashboardSyncingCommands);
+
+    if (!keepCurrentUi) {
+      emit(GeneralUserDashboardLoading(isAdmin: event.isAdmin));
+    }
 
     final hasInternet = await NetworkConnectionChecker.hasInternetConnection();
     if (!hasInternet) {
@@ -75,7 +88,19 @@ class GeneralUserDashboardBloc
           ),
           (mapResponse) async {
             try {
-              // Emit Syncing state first
+              final hasCachedCommands = await _hasCachedCommands();
+              final loaded = GeneralUserDashboardLoaded(
+                isAdmin: event.isAdmin,
+                data: dashboardResponse.result,
+                mapData: mapResponse.result,
+              );
+
+              if (hasCachedCommands) {
+                emit(loaded);
+                unawaited(_syncCommandsInBackground());
+                return;
+              }
+
               emit(
                 GeneralUserDashboardSyncingCommands(
                   isAdmin: event.isAdmin,
@@ -84,48 +109,66 @@ class GeneralUserDashboardBloc
                 ),
               );
 
-              // Fetch commands
-              final remoteResult = await _remote.getAllDrifterBuoyCommands();
-              await remoteResult.fold(
-                (remoteFailure) async {
-                  AppLogger.w('Failed to sync commands: ${remoteFailure.message}');
-                  emit(
-                    GeneralUserDashboardLoaded(
-                      isAdmin: event.isAdmin,
-                      data: dashboardResponse.result,
-                      mapData: mapResponse.result,
-                    ),
-                  );
-                },
-                (remoteData) async {
-                  final processed = GeneralUserSelfTestDebugBloc.processAndSortApiCommands(remoteData.result);
-                  await AppDatabase.instance.saveCommands(processed);
-                  AppLogger.i('Synced commands successfully in bloc');
-                  emit(
-                    GeneralUserDashboardLoaded(
-                      isAdmin: event.isAdmin,
-                      data: dashboardResponse.result,
-                      mapData: mapResponse.result,
-                    ),
-                  );
-                },
-              );
-              return;
+              final overlayStarted = DateTime.now();
+              await _syncCommandsFromRemote();
+              await _waitForMinimumOverlayDuration(overlayStarted);
+              emit(loaded);
             } catch (e) {
               AppLogger.e('Error checking/syncing commands: $e');
+              emit(
+                GeneralUserDashboardLoaded(
+                  isAdmin: event.isAdmin,
+                  data: dashboardResponse.result,
+                  mapData: mapResponse.result,
+                ),
+              );
             }
-
-            // Normal loaded state
-            emit(
-              GeneralUserDashboardLoaded(
-                isAdmin: event.isAdmin,
-                data: dashboardResponse.result,
-                mapData: mapResponse.result,
-              ),
-            );
           },
         );
       },
     );
+  }
+
+  Future<bool> _hasCachedCommands() async {
+    try {
+      final localCommands = await AppDatabase.instance.getCommands();
+      return localCommands.isNotEmpty;
+    } catch (e) {
+      AppLogger.w('Failed to read cached commands: $e');
+      return false;
+    }
+  }
+
+  Future<void> _syncCommandsInBackground() async {
+    try {
+      await _syncCommandsFromRemote();
+    } catch (e) {
+      AppLogger.w('Background command sync failed: $e');
+    }
+  }
+
+  Future<void> _syncCommandsFromRemote() async {
+    final remoteResult = await _remote.getAllDrifterBuoyCommands();
+    await remoteResult.fold(
+      (remoteFailure) async {
+        AppLogger.w('Failed to sync commands: ${remoteFailure.message}');
+      },
+      (remoteData) async {
+        final processed =
+            GeneralUserSelfTestDebugBloc.processAndSortApiCommands(
+              remoteData.result,
+            );
+        await AppDatabase.instance.saveCommands(processed);
+        AppLogger.i('Synced commands successfully in bloc');
+      },
+    );
+  }
+
+  Future<void> _waitForMinimumOverlayDuration(DateTime started) async {
+    final elapsed = DateTime.now().difference(started);
+    final remaining = _commandSetupOverlayMinDuration - elapsed;
+    if (remaining > Duration.zero) {
+      await Future.delayed(remaining);
+    }
   }
 }

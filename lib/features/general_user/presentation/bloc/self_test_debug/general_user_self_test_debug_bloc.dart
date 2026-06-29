@@ -137,6 +137,9 @@ class GeneralUserSelfTestDebugBloc
   final BleConnectionService _ble;
   StreamSubscription<String>? _disconnectSub;
 
+  static String _commandCatalogNote(DrifterBuoyCommandModel cmd) =>
+      (cmd.note ?? '').trim();
+
   /// Command document ids — source: Command reposne BLE sheet CSV.
   /// Order matches [_staticCommands].
   static const String _manualRtcUpdateCommandId = '6a04547227be22811320699c';
@@ -1848,7 +1851,9 @@ class GeneralUserSelfTestDebugBloc
         state.copyWith(
           status: GeneralUserSelfTestDebugStatus.loaded,
           clearRunningCommandIndex: true,
-          transmitterTestPrompt: const SelfTestTransmitterTestPrompt(),
+          transmitterTestPrompt: SelfTestTransmitterTestPrompt(
+            note: _commandCatalogNote(cmd),
+          ),
           message: '',
           isSuccessMessage: false,
           clearLastSnapshot: true,
@@ -1921,6 +1926,7 @@ class GeneralUserSelfTestDebugBloc
                 commandId: cmd.id,
                 testName: cmd.testName,
                 catalogHelpText: cmd.requestCommandDescription,
+                note: _commandCatalogNote(cmd),
               ),
           clearLastSnapshot: true,
           message: '',
@@ -1942,6 +1948,7 @@ class GeneralUserSelfTestDebugBloc
             commandId: cmd.id,
             testName: cmd.testName,
             catalogHelpText: cmd.requestCommandDescription,
+            note: _commandCatalogNote(cmd),
           ),
           clearLastSnapshot: true,
           message: '',
@@ -1963,6 +1970,7 @@ class GeneralUserSelfTestDebugBloc
             testName: cmd.testName,
             initial: const SelfTestSetSensorAllParametersDraft(),
             catalogHelpText: cmd.requestCommandDescription,
+            note: _commandCatalogNote(cmd),
           ),
           clearLastSnapshot: true,
           message: '',
@@ -1980,6 +1988,7 @@ class GeneralUserSelfTestDebugBloc
             testName: cmd.testName,
             initial: const SelfTestSetSensorsParametersDraft(),
             catalogHelpText: cmd.requestCommandDescription,
+            note: _commandCatalogNote(cmd),
           ),
           clearLastSnapshot: true,
           message: '',
@@ -1998,6 +2007,7 @@ class GeneralUserSelfTestDebugBloc
                 testName: cmd.testName,
                 initial: const SelfTestSetIndividualSensorParameterDraft(),
                 catalogHelpText: cmd.requestCommandDescription,
+                note: _commandCatalogNote(cmd),
               ),
           clearLastSnapshot: true,
           message: '',
@@ -2019,6 +2029,7 @@ class GeneralUserSelfTestDebugBloc
             fieldKind: parameterizedKind,
             requestCommand: cmd.requestCommand,
             requestHelpText: cmd.requestCommandDescription,
+            note: _commandCatalogNote(cmd),
           ),
           clearLastSnapshot: true,
           message: '',
@@ -2255,7 +2266,10 @@ class GeneralUserSelfTestDebugBloc
         state.copyWith(
           status: GeneralUserSelfTestDebugStatus.loaded,
           clearRunningCommandIndex: true,
-          stationIdPrompt: SelfTestStationIdPrompt(currentStationId: stationId),
+          stationIdPrompt: SelfTestStationIdPrompt(
+            currentStationId: stationId,
+            note: _commandCatalogNote(cmd),
+          ),
           clearLastSnapshot: true,
           message: '',
           isSuccessMessage: false,
@@ -2331,6 +2345,7 @@ class GeneralUserSelfTestDebugBloc
         stationNamePrompt: SelfTestStationNamePrompt(
           currentStationName: initialName,
           prefetchWarning: prefetchWarning,
+          note: _commandCatalogNote(cmd),
         ),
         clearLastSnapshot: true,
         message: '',
@@ -2596,6 +2611,7 @@ class GeneralUserSelfTestDebugBloc
         clearRunningCommandIndex: true,
         transmissionTimePrompt: SelfTestTransmissionTimePrompt(
           testName: cmd.testName,
+          note: _commandCatalogNote(cmd),
         ),
         clearLastSnapshot: true,
         message: '',
@@ -2652,6 +2668,7 @@ class GeneralUserSelfTestDebugBloc
           currentTxInterval: initialTx,
           prefetchWarning: prefetchWarning,
           catalogHelpText: cmd.requestCommandDescription,
+          note: _commandCatalogNote(cmd),
         ),
         clearLastSnapshot: true,
         message: '',
@@ -2714,6 +2731,7 @@ class GeneralUserSelfTestDebugBloc
           currentMeasurementInterval: initialMi,
           prefetchWarning: prefetchWarning,
           catalogHelpText: cmd.requestCommandDescription,
+          note: _commandCatalogNote(cmd),
         ),
         clearLastSnapshot: true,
         message: '',
@@ -2774,6 +2792,7 @@ class GeneralUserSelfTestDebugBloc
           initialSim2Apn: sim2,
           prefetchWarning: prefetchWarning,
           catalogHelpText: cmd.requestCommandDescription,
+          note: _commandCatalogNote(cmd),
         ),
         clearLastSnapshot: true,
         message: '',
@@ -2792,6 +2811,7 @@ class GeneralUserSelfTestDebugBloc
         clearRunningCommandIndex: true,
         measurementTimePrompt: SelfTestMeasurementTimePrompt(
           testName: cmd.testName,
+          note: _commandCatalogNote(cmd),
         ),
         clearLastSnapshot: true,
         message: '',
@@ -3401,6 +3421,7 @@ class GeneralUserSelfTestDebugBloc
           enabled: enabled,
           prefetchWarning: prefetchWarning,
           catalogHelpText: cmd.requestCommandDescription,
+          note: _commandCatalogNote(cmd),
         ),
         clearLastSnapshot: true,
         message: '',
@@ -3495,9 +3516,10 @@ class GeneralUserSelfTestDebugBloc
     emit(
       state.copyWith(
         status: GeneralUserSelfTestDebugStatus.loaded,
-        transmitterFrequencyPrompt: const SelfTestTransmitterFrequencyPrompt(
+        transmitterFrequencyPrompt: SelfTestTransmitterFrequencyPrompt(
           transmitterType: 0,
           frequencyValue: '000402500',
+          note: _commandCatalogNote(cmd),
         ),
         clearLastSnapshot: true,
         message: '',
@@ -3648,6 +3670,7 @@ class GeneralUserSelfTestDebugBloc
           setAttenuationPrompt: SelfTestSetAttenuationPrompt(
             transmitterType: parsed.$1,
             attenuationValue: parsed.$2,
+            note: _commandCatalogNote(cmd),
           ),
           clearLastSnapshot: true,
           message: '',
@@ -3835,6 +3858,7 @@ class GeneralUserSelfTestDebugBloc
           clearRunningCommandIndex: true,
           radioSondeTransmitterIdPrompt: SelfTestRadioSondeTransmitterIdPrompt(
             currentTransmitterId: id,
+            note: _commandCatalogNote(cmd),
           ),
           clearLastSnapshot: true,
           message: '',
@@ -3978,6 +4002,7 @@ class GeneralUserSelfTestDebugBloc
           uhfIntervalTime: '00:00:00',
           sondeStartTime: '00:00:00',
           sondeIntervalTime: '00:00:00',
+          note: _commandCatalogNote(cmd),
         ),
         clearLastSnapshot: true,
         message: '',
@@ -4201,6 +4226,7 @@ class GeneralUserSelfTestDebugBloc
           initialMobileNumber: initialMobile,
           prefetchWarning: prefetchWarning,
           catalogHelpText: cmd.requestCommandDescription,
+          note: _commandCatalogNote(cmd),
         ),
         clearLastSnapshot: true,
         message: '',
@@ -5382,6 +5408,7 @@ class GeneralUserSelfTestDebugBloc
           initial: draft,
           prefetchWarning: prefetchWarning,
           catalogHelpText: cmd.requestCommandDescription,
+          note: _commandCatalogNote(cmd),
         ),
       ),
     );
@@ -5572,6 +5599,7 @@ class GeneralUserSelfTestDebugBloc
           initial: draft,
           prefetchWarning: prefetchWarning,
           catalogHelpText: cmd.requestCommandDescription,
+          note: _commandCatalogNote(cmd),
         ),
       ),
     );

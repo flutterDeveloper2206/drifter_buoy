@@ -18,7 +18,6 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/map_filters/general_user_map_filters_event.dart';
 
-
 class GeneralUserDashboardPage extends StatelessWidget {
   const GeneralUserDashboardPage({super.key});
 
@@ -30,7 +29,8 @@ class GeneralUserDashboardPage extends StatelessWidget {
       builder: (context, state) {
         Widget body;
         final isSyncing = state is GeneralUserDashboardSyncingCommands;
-        if (state is GeneralUserDashboardLoaded || state is GeneralUserDashboardSyncingCommands) {
+        if (state is GeneralUserDashboardLoaded ||
+            state is GeneralUserDashboardSyncingCommands) {
           final dynamic loadedState = state;
           final dashboardData = loadedState.data;
           final summary = dashboardData.summary;
@@ -38,7 +38,12 @@ class GeneralUserDashboardPage extends StatelessWidget {
             color: const Color(0xFF1F88D1),
             onRefresh: () async {
               final bloc = context.read<GeneralUserDashboardBloc>();
-              bloc.add(LoadGeneralUserDashboard(isAdmin: loadedState.isAdmin));
+              bloc.add(
+                LoadGeneralUserDashboard(
+                  isAdmin: loadedState.isAdmin,
+                  silent: true,
+                ),
+              );
               await bloc.stream.firstWhere(
                 (s) => s is! GeneralUserDashboardLoading,
               );
@@ -253,7 +258,7 @@ class GeneralUserDashboardPage extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               CircularProgressIndicator(),
-                              SizedBox(width: 10),
+                              SizedBox(height: 12),
                               Text(
                                 'Setting up commands. Please wait...',
                                 style: TextStyle(
@@ -363,11 +368,7 @@ class _MapPreviewCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: const [
-            Icon(
-              Icons.map_outlined,
-              size: 48,
-              color: Color(0xFF8B9196),
-            ),
+            Icon(Icons.map_outlined, size: 48, color: Color(0xFF8B9196)),
             SizedBox(height: 12),
             Text(
               'Map preview is not available offline',

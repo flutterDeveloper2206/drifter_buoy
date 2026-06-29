@@ -10,8 +10,15 @@ abstract class GeneralUserDashboardEvent extends Equatable {
 class LoadGeneralUserDashboard extends GeneralUserDashboardEvent {
   final bool isAdmin;
 
-  const LoadGeneralUserDashboard({required this.isAdmin});
+  /// When true, keeps the current dashboard visible while refreshing (no
+  /// full-screen shimmer or command-setup overlay when commands are cached).
+  final bool silent;
+
+  const LoadGeneralUserDashboard({
+    required this.isAdmin,
+    this.silent = false,
+  });
 
   @override
-  List<Object> get props => [isAdmin];
+  List<Object> get props => [isAdmin, silent];
 }

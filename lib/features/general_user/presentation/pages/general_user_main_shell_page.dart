@@ -8,6 +8,7 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/buoys/gener
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoys/general_user_buoys_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/dashboard/general_user_dashboard_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/dashboard/general_user_dashboard_event.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/dashboard/general_user_dashboard_state.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/export_selection/general_user_export_selection_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/export_selection/general_user_export_selection_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/setup_devices/general_user_setup_devices_bloc.dart';
@@ -75,7 +76,14 @@ class _GeneralUserMainShellPageState extends State<GeneralUserMainShellPage> {
       case 0:
         _registerDeviceTokenForHomeDashboard();
         context.read<GeneralUserDashboardBloc>().add(
-              LoadGeneralUserDashboard(isAdmin: isAdmin),
+              LoadGeneralUserDashboard(
+                isAdmin: isAdmin,
+                silent:
+                    context.read<GeneralUserDashboardBloc>().state
+                        is GeneralUserDashboardLoaded ||
+                    context.read<GeneralUserDashboardBloc>().state
+                        is GeneralUserDashboardSyncingCommands,
+              ),
             );
         return;
       case 1:

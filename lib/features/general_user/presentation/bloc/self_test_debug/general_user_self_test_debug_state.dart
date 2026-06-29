@@ -34,12 +34,16 @@ class SelfTestBleResponseSnapshot extends Equatable {
 }
 
 class SelfTestStationIdPrompt extends Equatable {
-  const SelfTestStationIdPrompt({required this.currentStationId});
+  const SelfTestStationIdPrompt({
+    required this.currentStationId,
+    this.note = '',
+  });
 
   final String currentStationId;
+  final String note;
 
   @override
-  List<Object?> get props => [currentStationId];
+  List<Object?> get props => [currentStationId, note];
 }
 
 /// `?07` — station name field is 16 characters (space-padded on send).
@@ -47,35 +51,45 @@ class SelfTestStationNamePrompt extends Equatable {
   const SelfTestStationNamePrompt({
     required this.currentStationName,
     this.prefetchWarning,
+    this.note = '',
   });
 
   final String currentStationName;
 
   /// Non-fatal hint when `?04` prefetch did not yield a name.
   final String? prefetchWarning;
+  final String note;
 
   @override
-  List<Object?> get props => [currentStationName, prefetchWarning];
+  List<Object?> get props => [currentStationName, prefetchWarning, note];
 }
 
 /// `?61,HH:MM:SS,#` — dialog only (no `?04` prefetch); user enters time, then BLE send.
 class SelfTestMeasurementTimePrompt extends Equatable {
-  const SelfTestMeasurementTimePrompt({required this.testName});
+  const SelfTestMeasurementTimePrompt({
+    required this.testName,
+    this.note = '',
+  });
 
   final String testName;
+  final String note;
 
   @override
-  List<Object?> get props => [testName];
+  List<Object?> get props => [testName, note];
 }
 
 /// `?08,HH:MM:SS,#` — dialog only (no `?04` prefetch); user picks time, then BLE send.
 class SelfTestTransmissionTimePrompt extends Equatable {
-  const SelfTestTransmissionTimePrompt({required this.testName});
+  const SelfTestTransmissionTimePrompt({
+    required this.testName,
+    this.note = '',
+  });
 
   final String testName;
+  final String note;
 
   @override
-  List<Object?> get props => [testName];
+  List<Object?> get props => [testName, note];
 }
 
 /// `?09,HH:MM:SS,#` — Tx interval from `?04,,#` (3rd field), then user confirms/edits.
@@ -85,12 +99,14 @@ class SelfTestTransmissionIntervalPrompt extends Equatable {
     required this.currentTxInterval,
     this.prefetchWarning,
     this.catalogHelpText = '',
+    this.note = '',
   });
 
   final String testName;
   final String currentTxInterval;
   final String? prefetchWarning;
   final String catalogHelpText;
+  final String note;
 
   @override
   List<Object?> get props => [
@@ -98,6 +114,7 @@ class SelfTestTransmissionIntervalPrompt extends Equatable {
     currentTxInterval,
     prefetchWarning,
     catalogHelpText,
+    note,
   ];
 }
 
@@ -108,12 +125,14 @@ class SelfTestMeasurementIntervalPrompt extends Equatable {
     required this.currentMeasurementInterval,
     this.prefetchWarning,
     this.catalogHelpText = '',
+    this.note = '',
   });
 
   final String testName;
   final String currentMeasurementInterval;
   final String? prefetchWarning;
   final String catalogHelpText;
+  final String note;
 
   @override
   List<Object?> get props => [
@@ -121,6 +140,7 @@ class SelfTestMeasurementIntervalPrompt extends Equatable {
     currentMeasurementInterval,
     prefetchWarning,
     catalogHelpText,
+    note,
   ];
 }
 
@@ -132,6 +152,7 @@ class SelfTestSetApnPrompt extends Equatable {
     required this.initialSim2Apn,
     this.prefetchWarning,
     this.catalogHelpText = '',
+    this.note = '',
   });
 
   final String testName;
@@ -141,6 +162,7 @@ class SelfTestSetApnPrompt extends Equatable {
   final String initialSim2Apn;
   final String? prefetchWarning;
   final String catalogHelpText;
+  final String note;
 
   @override
   List<Object?> get props => [
@@ -149,6 +171,7 @@ class SelfTestSetApnPrompt extends Equatable {
     initialSim2Apn,
     prefetchWarning,
     catalogHelpText,
+    note,
   ];
 }
 
@@ -159,6 +182,7 @@ class SelfTestFastSmsCheckPrompt extends Equatable {
     required this.enabled,
     this.prefetchWarning,
     this.catalogHelpText = '',
+    this.note = '',
   });
 
   final String testName;
@@ -167,6 +191,7 @@ class SelfTestFastSmsCheckPrompt extends Equatable {
   final bool enabled;
   final String? prefetchWarning;
   final String catalogHelpText;
+  final String note;
 
   @override
   List<Object?> get props => [
@@ -174,6 +199,7 @@ class SelfTestFastSmsCheckPrompt extends Equatable {
     enabled,
     prefetchWarning,
     catalogHelpText,
+    note,
   ];
 }
 
@@ -185,6 +211,7 @@ class SelfTestAdminSmsCellPrompt extends Equatable {
     required this.initialMobileNumber,
     this.prefetchWarning,
     this.catalogHelpText = '',
+    this.note = '',
   });
 
   final String commandId;
@@ -192,6 +219,7 @@ class SelfTestAdminSmsCellPrompt extends Equatable {
   final String initialMobileNumber;
   final String? prefetchWarning;
   final String catalogHelpText;
+  final String note;
 
   @override
   List<Object?> get props => [
@@ -200,6 +228,7 @@ class SelfTestAdminSmsCellPrompt extends Equatable {
     initialMobileNumber,
     prefetchWarning,
     catalogHelpText,
+    note,
   ];
 }
 
@@ -207,37 +236,43 @@ class SelfTestTransmitterFrequencyPrompt extends Equatable {
   const SelfTestTransmitterFrequencyPrompt({
     required this.transmitterType,
     required this.frequencyValue,
+    this.note = '',
   });
 
   final int transmitterType;
   final String frequencyValue;
+  final String note;
 
   @override
-  List<Object?> get props => [transmitterType, frequencyValue];
+  List<Object?> get props => [transmitterType, frequencyValue, note];
 }
 
 class SelfTestSetAttenuationPrompt extends Equatable {
   const SelfTestSetAttenuationPrompt({
     required this.transmitterType,
     required this.attenuationValue,
+    this.note = '',
   });
 
   final int transmitterType;
   final String attenuationValue;
+  final String note;
 
   @override
-  List<Object?> get props => [transmitterType, attenuationValue];
+  List<Object?> get props => [transmitterType, attenuationValue, note];
 }
 
 class SelfTestRadioSondeTransmitterIdPrompt extends Equatable {
   const SelfTestRadioSondeTransmitterIdPrompt({
     required this.currentTransmitterId,
+    this.note = '',
   });
 
   final String currentTransmitterId;
+  final String note;
 
   @override
-  List<Object?> get props => [currentTransmitterId];
+  List<Object?> get props => [currentTransmitterId, note];
 }
 
 /// `?99,N,HH:MM:SS,#` — UHF / Sonde transmission times (N 1–4).
@@ -249,6 +284,7 @@ class SelfTestUhfSondeTxInTimePrompt extends Equatable {
     required this.sondeStartTime,
     required this.sondeIntervalTime,
     this.prefetchWarning,
+    this.note = '',
   });
 
   final String testName;
@@ -257,6 +293,7 @@ class SelfTestUhfSondeTxInTimePrompt extends Equatable {
   final String sondeStartTime;
   final String sondeIntervalTime;
   final String? prefetchWarning;
+  final String note;
 
   @override
   List<Object?> get props => [
@@ -266,6 +303,7 @@ class SelfTestUhfSondeTxInTimePrompt extends Equatable {
     sondeStartTime,
     sondeIntervalTime,
     prefetchWarning,
+    note,
   ];
 }
 
@@ -274,14 +312,16 @@ class SelfTestTransmitterTestPrompt extends Equatable {
     this.plainCarrierOn = false,
     this.modulationOn = false,
     this.prbsOn = false,
+    this.note = '',
   });
 
   final bool plainCarrierOn;
   final bool modulationOn;
   final bool prbsOn;
+  final String note;
 
   @override
-  List<Object?> get props => [plainCarrierOn, modulationOn, prbsOn];
+  List<Object?> get props => [plainCarrierOn, modulationOn, prbsOn, note];
 }
 
 /// Field shape for primary/secondary server BLE commands from the command catalog.
@@ -349,6 +389,7 @@ class SelfTestParameterizedCommandPrompt extends Equatable {
     required this.fieldKind,
     this.requestCommand = '',
     this.requestHelpText = '',
+    this.note = '',
   });
 
   final String commandId;
@@ -360,6 +401,7 @@ class SelfTestParameterizedCommandPrompt extends Equatable {
 
   /// Full request / field rules from the command catalog.
   final String requestHelpText;
+  final String note;
 
   @override
   List<Object?> get props => [
@@ -368,6 +410,7 @@ class SelfTestParameterizedCommandPrompt extends Equatable {
     fieldKind,
     requestCommand,
     requestHelpText,
+    note,
   ];
 }
 
@@ -417,6 +460,7 @@ class SelfTestSetAllGeneralParametersPrompt extends Equatable {
     required this.initial,
     this.prefetchWarning,
     this.catalogHelpText = '',
+    this.note = '',
   });
 
   final String commandId;
@@ -428,6 +472,7 @@ class SelfTestSetAllGeneralParametersPrompt extends Equatable {
 
   /// Catalog `requestCommandDescription` / example line for this row.
   final String catalogHelpText;
+  final String note;
 
   @override
   List<Object?> get props => [
@@ -436,6 +481,7 @@ class SelfTestSetAllGeneralParametersPrompt extends Equatable {
     initial,
     prefetchWarning,
     catalogHelpText,
+    note,
   ];
 }
 
@@ -482,6 +528,7 @@ class SelfTestSetAllServerParametersPrompt extends Equatable {
     required this.initial,
     this.prefetchWarning,
     this.catalogHelpText = '',
+    this.note = '',
   });
 
   final String commandId;
@@ -489,6 +536,7 @@ class SelfTestSetAllServerParametersPrompt extends Equatable {
   final SelfTestSetAllServerParametersDraft initial;
   final String? prefetchWarning;
   final String catalogHelpText;
+  final String note;
 
   @override
   List<Object?> get props => [
@@ -497,6 +545,7 @@ class SelfTestSetAllServerParametersPrompt extends Equatable {
     initial,
     prefetchWarning,
     catalogHelpText,
+    note,
   ];
 }
 
@@ -506,14 +555,16 @@ class SelfTestRestoreDefaultParametersPrompt extends Equatable {
     required this.commandId,
     required this.testName,
     this.catalogHelpText = '',
+    this.note = '',
   });
 
   final String commandId;
   final String testName;
   final String catalogHelpText;
+  final String note;
 
   @override
-  List<Object?> get props => [commandId, testName, catalogHelpText];
+  List<Object?> get props => [commandId, testName, catalogHelpText, note];
 }
 
 /// Opens a confirmation dialog before restore commands `?54`–`?57`.
@@ -522,14 +573,16 @@ class SelfTestRestoreServerParametersPrompt extends Equatable {
     required this.commandId,
     required this.testName,
     this.catalogHelpText = '',
+    this.note = '',
   });
 
   final String commandId;
   final String testName;
   final String catalogHelpText;
+  final String note;
 
   @override
-  List<Object?> get props => [commandId, testName, catalogHelpText];
+  List<Object?> get props => [commandId, testName, catalogHelpText, note];
 }
 
 /// Field values for **SET Sensor ALL parameter** (`?80`).
@@ -600,14 +653,16 @@ class SelfTestSetSensorAllParametersPrompt extends Equatable {
     required this.testName,
     required this.initial,
     this.catalogHelpText = '',
+    this.note = '',
   });
 
   final String testName;
   final SelfTestSetSensorAllParametersDraft initial;
   final String catalogHelpText;
+  final String note;
 
   @override
-  List<Object?> get props => [testName, initial, catalogHelpText];
+  List<Object?> get props => [testName, initial, catalogHelpText, note];
 }
 
 /// Field values for **SET sensors parameters** (`?82`).
@@ -693,14 +748,16 @@ class SelfTestSetSensorsParametersPrompt extends Equatable {
     required this.testName,
     required this.initial,
     this.catalogHelpText = '',
+    this.note = '',
   });
 
   final String testName;
   final SelfTestSetSensorsParametersDraft initial;
   final String catalogHelpText;
+  final String note;
 
   @override
-  List<Object?> get props => [testName, initial, catalogHelpText];
+  List<Object?> get props => [testName, initial, catalogHelpText, note];
 }
 
 /// Field values for **Set individual sensor parameter** (`?86`).
@@ -725,14 +782,16 @@ class SelfTestSetIndividualSensorParameterPrompt extends Equatable {
     required this.testName,
     required this.initial,
     this.catalogHelpText = '',
+    this.note = '',
   });
 
   final String testName;
   final SelfTestSetIndividualSensorParameterDraft initial;
   final String catalogHelpText;
+  final String note;
 
   @override
-  List<Object?> get props => [testName, initial, catalogHelpText];
+  List<Object?> get props => [testName, initial, catalogHelpText, note];
 }
 
 class SelfTestCheckStatusPrompt extends Equatable {

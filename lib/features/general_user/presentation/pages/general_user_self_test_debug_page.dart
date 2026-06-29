@@ -145,6 +145,39 @@ String _selfTestCommandListDescriptionNote(DrifterBuoyCommandModel command) {
   return command.note?.trim() ?? '';
 }
 
+Widget? _buildSelfTestDialogNote(BuildContext context, String? note) {
+  final t = note?.trim() ?? '';
+  if (t.isEmpty || t.toLowerCase() == 'na') {
+    return null;
+  }
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: Text(
+      'Note: $t',
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+        color: const Color(0xFF6A7178),
+      ),
+    ),
+  );
+}
+
+Widget? _buildSelfTestDialogPrefetchWarning(BuildContext context, String? warn) {
+  final w = warn?.trim() ?? '';
+  if (w.isEmpty) {
+    return null;
+  }
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: Text(
+      w,
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+        color: const Color(0xFFBF360C),
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+  );
+}
+
 String? _validateSelfTestParameterizedFtp20(String? value) {
   final t = value?.trim() ?? '';
   if (t.isEmpty) {
@@ -660,13 +693,13 @@ class _GeneralUserSelfTestDebugPageState
 
   Future<void> _showSetStationIdDialog(
     BuildContext context,
-    String currentStationId,
+    SelfTestStationIdPrompt prompt,
   ) async {
     if (_isSetStationIdDialogOpen) {
       return;
     }
     _isSetStationIdDialogOpen = true;
-    var draftStationId = currentStationId;
+    var draftStationId = prompt.currentStationId;
     try {
       await showDialog<void>(
         context: context,
@@ -679,16 +712,11 @@ class _GeneralUserSelfTestDebugPageState
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Enter 8-character Buoy ID',
-                    style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                      color: const Color(0xFF6A7178),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
+                  if (_buildSelfTestDialogNote(ctx, prompt.note) case final note?)
+                    note,
                   TextFormField(
-                    key: ValueKey('set-station-id-$currentStationId'),
-                    initialValue: currentStationId,
+                    key: ValueKey('set-station-id-${prompt.currentStationId}'),
+                    initialValue: prompt.currentStationId,
                     maxLength: 8,
                     readOnly: true,
                     textCapitalization: TextCapitalization.characters,
@@ -757,18 +785,14 @@ class _GeneralUserSelfTestDebugPageState
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-
-                  if (prompt.prefetchWarning != null &&
-                      prompt.prefetchWarning!.trim().isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      prompt.prefetchWarning!,
-                      style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFFBF360C),
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 10),
+                  if (_buildSelfTestDialogPrefetchWarning(
+                        ctx,
+                        prompt.prefetchWarning,
+                      )
+                      case final warn?)
+                    warn,
+                  if (_buildSelfTestDialogNote(ctx, prompt.note) case final note?)
+                    note,
                   TextFormField(
                     key: ValueKey(
                       'set-station-name-${prompt.currentStationName}',
@@ -851,13 +875,8 @@ class _GeneralUserSelfTestDebugPageState
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '?61 — enter measurement start time as HH:MM:SS (e.g. 00:15:10).',
-                      style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFF6A7178),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
+                    if (_buildSelfTestDialogNote(ctx, prompt.note) case final note?)
+                      note,
                     TextFormField(
                       initialValue: '00:00:00',
                       keyboardType: TextInputType.datetime,
@@ -938,13 +957,8 @@ class _GeneralUserSelfTestDebugPageState
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '?08 — enter transmission time as HH:MM:SS (e.g. 00:01:10).',
-                      style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFF6A7178),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
+                    if (_buildSelfTestDialogNote(ctx, prompt.note) case final note?)
+                      note,
                     TextFormField(
                       initialValue: '00:00:00',
                       keyboardType: TextInputType.datetime,
@@ -1020,7 +1034,6 @@ class _GeneralUserSelfTestDebugPageState
         context: context,
         barrierDismissible: false,
         builder: (ctx) {
-          final hint = prompt.catalogHelpText.trim();
           return AlertDialog(
             title: Text(prompt.testName),
             content: SingleChildScrollView(
@@ -1030,27 +1043,14 @@ class _GeneralUserSelfTestDebugPageState
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-
-                    if (hint.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        hint,
-                        style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                          color: const Color(0xFF2A2F34),
-                        ),
-                      ),
-                    ],
-                    if (prompt.prefetchWarning != null &&
-                        prompt.prefetchWarning!.trim().isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        prompt.prefetchWarning!,
-                        style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                          color: const Color(0xFFBF360C),
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 12),
+                    if (_buildSelfTestDialogPrefetchWarning(
+                          ctx,
+                          prompt.prefetchWarning,
+                        )
+                        case final warn?)
+                      warn,
+                    if (_buildSelfTestDialogNote(ctx, prompt.note) case final note?)
+                      note,
                     TextFormField(
                       initialValue: initialInterval,
                       keyboardType: TextInputType.datetime,
@@ -1127,7 +1127,6 @@ class _GeneralUserSelfTestDebugPageState
         context: context,
         barrierDismissible: false,
         builder: (ctx) {
-          final hint = prompt.catalogHelpText.trim();
           return AlertDialog(
             title: Text(prompt.testName),
             content: SingleChildScrollView(
@@ -1137,32 +1136,14 @@ class _GeneralUserSelfTestDebugPageState
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '?10 — enter measurement interval as HH:MM:SS.',
-                      style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFF6A7178),
-                      ),
-                    ),
-                    if (hint.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        hint,
-                        style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                          color: const Color(0xFF2A2F34),
-                        ),
-                      ),
-                    ],
-                    if (prompt.prefetchWarning != null &&
-                        prompt.prefetchWarning!.trim().isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        prompt.prefetchWarning!,
-                        style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                          color: const Color(0xFFBF360C),
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 12),
+                    if (_buildSelfTestDialogPrefetchWarning(
+                          ctx,
+                          prompt.prefetchWarning,
+                        )
+                        case final warn?)
+                      warn,
+                    if (_buildSelfTestDialogNote(ctx, prompt.note) case final note?)
+                      note,
                     TextFormField(
                       initialValue: initialInterval,
                       keyboardType: TextInputType.datetime,
@@ -1238,8 +1219,6 @@ class _GeneralUserSelfTestDebugPageState
         builder: (ctx) {
           return StatefulBuilder(
             builder: (ctx, setLocalState) {
-              final hint = prompt.catalogHelpText.trim();
-              final warn = prompt.prefetchWarning?.trim();
               return AlertDialog(
                 title: Text(prompt.testName),
                 content: SingleChildScrollView(
@@ -1247,32 +1226,15 @@ class _GeneralUserSelfTestDebugPageState
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (warn != null && warn.isNotEmpty) ...[
-                        Text(
-                          warn,
-                          style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                            color: const Color(0xFFBF360C),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                      ],
-                      if (hint.isNotEmpty) ...[
-                        SelectableText(
-                          hint,
-                          style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                            color: const Color(0xFF6A7178),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                      ],
-                      Text(
-                        'N = 0 disable, N = 1 enable. Sends ?58,N,#',
-                        style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                          color: const Color(0xFF6A7178),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
+                      if (_buildSelfTestDialogPrefetchWarning(
+                            ctx,
+                            prompt.prefetchWarning,
+                          )
+                          case final warn?)
+                        warn,
+                      if (_buildSelfTestDialogNote(ctx, prompt.note)
+                          case final note?)
+                        note,
                       SwitchListTile(
                         contentPadding: EdgeInsets.zero,
                         title: const Text('Fast SMS check'),
@@ -1383,15 +1345,14 @@ class _GeneralUserSelfTestDebugPageState
 
   Future<void> _showTransmitterFrequencyDialog(
     BuildContext context,
-    int currentType,
-    String currentFfff,
+    SelfTestTransmitterFrequencyPrompt prompt,
   ) async {
     if (_isTransmitterFrequencyDialogOpen) {
       return;
     }
     _isTransmitterFrequencyDialogOpen = true;
-    var draftType = currentType == 1 ? 1 : 0;
-    var draftFfff = currentFfff;
+    var draftType = prompt.transmitterType == 1 ? 1 : 0;
+    var draftFfff = prompt.frequencyValue;
     var selectedAction = 0; // 0 for GET, 1 for SET
 
     try {
@@ -1408,6 +1369,9 @@ class _GeneralUserSelfTestDebugPageState
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      if (_buildSelfTestDialogNote(ctx, prompt.note)
+                          case final note?)
+                        note,
                       DropdownButtonFormField<int>(
                         initialValue: draftType,
                         items: const [
@@ -1447,7 +1411,7 @@ class _GeneralUserSelfTestDebugPageState
                       if (selectedAction == 1) ...[
                         const SizedBox(height: 12),
                         TextFormField(
-                          initialValue: currentFfff,
+                          initialValue: prompt.frequencyValue,
                           maxLength: 9,
                           keyboardType: TextInputType.number,
                           onChanged: (v) => draftFfff = v,
@@ -1509,15 +1473,14 @@ class _GeneralUserSelfTestDebugPageState
 
   Future<void> _showSetAttenuationDialog(
     BuildContext context,
-    int currentType,
-    String currentXx,
+    SelfTestSetAttenuationPrompt prompt,
   ) async {
     if (_isSetAttenuationDialogOpen) {
       return;
     }
     _isSetAttenuationDialogOpen = true;
-    var draftType = currentType == 1 ? 1 : 0;
-    var draftXx = currentXx;
+    var draftType = prompt.transmitterType == 1 ? 1 : 0;
+    var draftXx = prompt.attenuationValue;
 
     try {
       await showDialog<void>(
@@ -1533,6 +1496,9 @@ class _GeneralUserSelfTestDebugPageState
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      if (_buildSelfTestDialogNote(ctx, prompt.note)
+                          case final note?)
+                        note,
                       DropdownButtonFormField<int>(
                         initialValue: draftType,
                         items: const [
@@ -1554,7 +1520,7 @@ class _GeneralUserSelfTestDebugPageState
                       ),
                       const SizedBox(height: 12),
                       TextFormField(
-                        initialValue: currentXx,
+                        initialValue: prompt.attenuationValue,
                         maxLength: 2,
                         keyboardType: TextInputType.number,
                         onChanged: (v) => draftXx = v,
@@ -1612,13 +1578,13 @@ class _GeneralUserSelfTestDebugPageState
 
   Future<void> _showRadioSondeTransmitterIdDialog(
     BuildContext context,
-    String currentId,
+    SelfTestRadioSondeTransmitterIdPrompt prompt,
   ) async {
     if (_isRadioSondeTransmitterIdDialogOpen) {
       return;
     }
     _isRadioSondeTransmitterIdDialogOpen = true;
-    var draftId = currentId;
+    var draftId = prompt.currentTransmitterId;
 
     try {
       await showDialog<void>(
@@ -1632,15 +1598,10 @@ class _GeneralUserSelfTestDebugPageState
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Enter 3-character transmitter station id',
-                    style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                      color: const Color(0xFF6A7178),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
+                  if (_buildSelfTestDialogNote(ctx, prompt.note) case final note?)
+                    note,
                   TextFormField(
-                    initialValue: currentId,
+                    initialValue: prompt.currentTransmitterId,
                     maxLength: 3,
                     textCapitalization: TextCapitalization.characters,
                     onChanged: (v) => draftId = v,
@@ -1730,22 +1691,15 @@ class _GeneralUserSelfTestDebugPageState
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (prompt.prefetchWarning != null) ...[
-                          Text(
-                            prompt.prefetchWarning!,
-                            style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                              color: const Color(0xFFB3261E),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                        ],
-                        Text(
-                          'N = 1 UHF start, 2 UHF interval, 3 Sonde start, 4 Sonde interval.',
-                          style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                            color: const Color(0xFF6A7178),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
+                        if (_buildSelfTestDialogPrefetchWarning(
+                              ctx,
+                              prompt.prefetchWarning,
+                            )
+                            case final warn?)
+                          warn,
+                        if (_buildSelfTestDialogNote(ctx, prompt.note)
+                            case final note?)
+                          note,
                         DropdownButtonFormField<int>(
                           initialValue: draftN,
                           items: const [
@@ -1875,13 +1829,9 @@ class _GeneralUserSelfTestDebugPageState
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Choose one test mode (N) and specify status (S).',
-                        style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                          color: const Color(0xFF6A7178),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
+                      if (_buildSelfTestDialogNote(ctx, prompt.note)
+                          case final note?)
+                        note,
                       RadioGroup<int>(
                         groupValue: selectedN,
                         onChanged: (v) {
@@ -2581,11 +2531,7 @@ class _GeneralUserSelfTestDebugPageState
                     if (prompt == null || _isTransmitterFrequencyDialogOpen) {
                       return;
                     }
-                    _showTransmitterFrequencyDialog(
-                      context,
-                      prompt.transmitterType,
-                      prompt.frequencyValue,
-                    );
+                    _showTransmitterFrequencyDialog(context, prompt);
                   },
                 ),
                 BlocListener<
@@ -2600,11 +2546,7 @@ class _GeneralUserSelfTestDebugPageState
                     if (prompt == null || _isSetAttenuationDialogOpen) {
                       return;
                     }
-                    _showSetAttenuationDialog(
-                      context,
-                      prompt.transmitterType,
-                      prompt.attenuationValue,
-                    );
+                    _showSetAttenuationDialog(context, prompt);
                   },
                 ),
                 BlocListener<
@@ -2621,10 +2563,7 @@ class _GeneralUserSelfTestDebugPageState
                         _isRadioSondeTransmitterIdDialogOpen) {
                       return;
                     }
-                    _showRadioSondeTransmitterIdDialog(
-                      context,
-                      prompt.currentTransmitterId,
-                    );
+                    _showRadioSondeTransmitterIdDialog(context, prompt);
                   },
                 ),
                 BlocListener<
@@ -2672,7 +2611,7 @@ class _GeneralUserSelfTestDebugPageState
                     if (_isSetStationIdDialogOpen) {
                       return;
                     }
-                    _showSetStationIdDialog(context, prompt.currentStationId);
+                    _showSetStationIdDialog(context, prompt);
                   },
                 ),
                 BlocListener<
@@ -3228,8 +3167,6 @@ class _AdminSmsCellAlertDialogState extends State<_AdminSmsCellAlertDialog> {
   @override
   Widget build(BuildContext context) {
     final prompt = widget.prompt;
-    final hint = prompt.catalogHelpText.trim();
-    final warn = prompt.prefetchWarning?.trim();
     return AlertDialog(
       title: Text(prompt.testName),
       content: SingleChildScrollView(
@@ -3239,25 +3176,14 @@ class _AdminSmsCellAlertDialogState extends State<_AdminSmsCellAlertDialog> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (warn != null && warn.isNotEmpty) ...[
-                Text(
-                  warn,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: const Color(0xFFBF360C),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 12),
-              ],
-              if (hint.isNotEmpty) ...[
-                SelectableText(
-                  hint,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: const Color(0xFF6A7178),
-                  ),
-                ),
-                const SizedBox(height: 12),
-              ],
+              if (_buildSelfTestDialogPrefetchWarning(
+                    context,
+                    prompt.prefetchWarning,
+                  )
+                  case final warn?)
+                warn,
+              if (_buildSelfTestDialogNote(context, prompt.note) case final note?)
+                note,
               TextFormField(
                 controller: _mobileController,
                 keyboardType: TextInputType.phone,
@@ -3420,7 +3346,6 @@ class _SetApnAlertDialogState extends State<_SetApnAlertDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final hint = _prompt.catalogHelpText.trim();
     return AlertDialog(
       title: Text(_prompt.testName),
       content: SingleChildScrollView(
@@ -3428,47 +3353,14 @@ class _SetApnAlertDialogState extends State<_SetApnAlertDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              '?11 — Type the APN name for Para 1 (max 31 chars). Only what you enter here is sent, like ?11,jionet,0,2,#.',
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: const Color(0xFF6A7178)),
-            ),
-            if (_prompt.initialSim1Apn.isNotEmpty ||
-                _prompt.initialSim2Apn.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                [
-                  if (_prompt.initialSim1Apn.isNotEmpty)
-                    'Read-only (SIM1 on device): ${_prompt.initialSim1Apn}',
-                  if (_prompt.initialSim2Apn.isNotEmpty)
-                    'Read-only (SIM2 on device): ${_prompt.initialSim2Apn}',
-                ].join('\n'),
-                style: Theme.of(
+            if (_buildSelfTestDialogPrefetchWarning(
                   context,
-                ).textTheme.bodySmall?.copyWith(color: const Color(0xFF6A7178)),
-              ),
-            ],
-            if (hint.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                hint,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: const Color(0xFF2A2F34)),
-              ),
-            ],
-            if (_prompt.prefetchWarning != null &&
-                _prompt.prefetchWarning!.trim().isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                _prompt.prefetchWarning!,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: const Color(0xFFBF360C)),
-              ),
-            ],
-            const SizedBox(height: 16),
+                  _prompt.prefetchWarning,
+                )
+                case final warn?)
+              warn,
+            if (_buildSelfTestDialogNote(context, _prompt.note) case final note?)
+              note,
             Form(
               key: _formKey,
               child: Column(
@@ -3685,31 +3577,8 @@ class _ParameterizedServerCommandDialogState
   Widget build(BuildContext context) {
     final p = widget.prompt;
     final header = <Widget>[];
-
-    final reqTemplate = p.requestCommand.trim();
-    if (reqTemplate.isNotEmpty) {
-      header.add(
-        SelectableText(
-          'Command: $reqTemplate',
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: const Color(0xFF2A2F34)),
-        ),
-      );
-      header.add(const SizedBox(height: 8));
-    }
-
-    final help = p.requestHelpText.trim();
-    if (help.isNotEmpty && help.toUpperCase() != 'NA') {
-      header.add(
-        SelectableText(
-          help,
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: const Color(0xFF6A7178)),
-        ),
-      );
-      header.add(const SizedBox(height: 12));
+    if (_buildSelfTestDialogNote(context, p.note) case final noteWidget?) {
+      header.add(noteWidget);
     }
 
     late final Widget field;
@@ -4265,37 +4134,14 @@ class _SetAllGeneralParametersDialogState
   @override
   Widget build(BuildContext context) {
     final p = widget.prompt;
-    final hintStyle = Theme.of(
-      context,
-    ).textTheme.bodySmall?.copyWith(color: const Color(0xFF6A7178));
 
     final header = <Widget>[];
-    final warn = p.prefetchWarning?.trim();
-    if (warn != null && warn.isNotEmpty) {
-      header.add(
-        Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: Text(
-            warn,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: const Color(0xFFBF360C),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      );
+    if (_buildSelfTestDialogPrefetchWarning(context, p.prefetchWarning)
+        case final warn?) {
+      header.add(warn);
     }
-    final cat = p.catalogHelpText.trim();
-    if (cat.isNotEmpty) {
-      header.addAll([
-        SelectableText(cat, style: hintStyle),
-        const SizedBox(height: 8),
-        Text(
-          'Values are padded on send (station id 8 chars, name 16, APN 31).',
-          style: hintStyle,
-        ),
-        const SizedBox(height: 16),
-      ]);
+    if (_buildSelfTestDialogNote(context, p.note) case final note?) {
+      header.add(note);
     }
 
     return AlertDialog(
@@ -4515,37 +4361,14 @@ class _SetAllServerParametersDialogState
   @override
   Widget build(BuildContext context) {
     final p = widget.prompt;
-    final hintStyle = Theme.of(
-      context,
-    ).textTheme.bodySmall?.copyWith(color: const Color(0xFF6A7178));
 
     final header = <Widget>[];
-    final warn = p.prefetchWarning?.trim();
-    if (warn != null && warn.isNotEmpty) {
-      header.add(
-        Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: Text(
-            warn,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: const Color(0xFFBF360C),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      );
+    if (_buildSelfTestDialogPrefetchWarning(context, p.prefetchWarning)
+        case final warn?) {
+      header.add(warn);
     }
-    final cat = p.catalogHelpText.trim();
-    if (cat.isNotEmpty) {
-      header.addAll([
-        SelectableText(cat, style: hintStyle),
-        const SizedBox(height: 8),
-        Text(
-          'FTP fields are sent as fixed 20 chars. Port is sent as 5 digits.',
-          style: hintStyle,
-        ),
-        const SizedBox(height: 16),
-      ]);
+    if (_buildSelfTestDialogNote(context, p.note) case final note?) {
+      header.add(note);
     }
 
     return AlertDialog(
@@ -4732,39 +4555,14 @@ class _RestoreDefaultParametersDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hint = prompt.catalogHelpText.trim();
+    final noteWidget = _buildSelfTestDialogNote(context, prompt.note);
     return AlertDialog(
       title: Text(prompt.testName),
-      content: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'This will restore factory default general system parameters on the device.',
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: const Color(0xFF6A7178)),
+      content: noteWidget == null
+          ? null
+          : SingleChildScrollView(
+              child: noteWidget,
             ),
-            const SizedBox(height: 8),
-            SelectableText(
-              'Command: ?03,,#',
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: const Color(0xFF2A2F34)),
-            ),
-            if (hint.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              SelectableText(
-                hint,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: const Color(0xFF2A2F34)),
-              ),
-            ],
-          ],
-        ),
-      ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
@@ -4795,32 +4593,14 @@ class _RestoreServerParametersDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hint = prompt.catalogHelpText.trim();
+    final noteWidget = _buildSelfTestDialogNote(context, prompt.note);
     return AlertDialog(
       title: Text(prompt.testName),
-      content: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'This will send the restore command to the device for this server profile.',
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: const Color(0xFF6A7178)),
+      content: noteWidget == null
+          ? null
+          : SingleChildScrollView(
+              child: noteWidget,
             ),
-            if (hint.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              SelectableText(
-                hint,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: const Color(0xFF2A2F34)),
-              ),
-            ],
-          ],
-        ),
-      ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
@@ -4972,14 +4752,9 @@ class _SetSensorAllParametersDialogState
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    'Enter all parameters below. Command is sent as ?80,...,# '
-                    '(BLE writes in chunks).',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: const Color(0xFF6A7178),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
+                  if (_buildSelfTestDialogNote(context, widget.prompt.note)
+                      case final note?)
+                    note,
                   _buildSelfTestSensorSetInputField(
                     controller: _sensorNo,
                     label: 'Sensor no',
@@ -5237,14 +5012,9 @@ class _SetSensorsParametersDialogState
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    'Enter all parameters below. Command is sent as ?82,...,# '
-                    '(RequestString 17 chars, Sensor name 16 chars, padded; BLE chunks).',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: const Color(0xFF6A7178),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
+                  if (_buildSelfTestDialogNote(context, widget.prompt.note)
+                      case final note?)
+                    note,
                   _buildSelfTestSensorSetInputField(
                     controller: _sensorNo,
                     label: 'Sensor no',
@@ -5511,7 +5281,6 @@ class _SetIndividualSensorParameterDialogState
 
   @override
   Widget build(BuildContext context) {
-    final catalogHelp = widget.prompt.catalogHelpText.trim();
     return AlertDialog(
       title: Text(widget.prompt.testName),
       content: SingleChildScrollView(
@@ -5521,16 +5290,9 @@ class _SetIndividualSensorParameterDialogState
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (catalogHelp.isNotEmpty && catalogHelp.toUpperCase() != 'NA')
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Text(
-                    catalogHelp,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: const Color(0xFF70757A),
-                    ),
-                  ),
-                ),
+              if (_buildSelfTestDialogNote(context, widget.prompt.note)
+                  case final note?)
+                note,
               _buildSelfTestSensorSetInputField(
                 controller: _sensorNo,
                 label: 'Sensor no',
