@@ -11,12 +11,12 @@ import 'package:drifter_buoy/features/general_user/data/models/drifter_buoy_comm
 
 class GeneralUserSelfTestRemoteDataSource {
   const GeneralUserSelfTestRemoteDataSource({required ApiService apiService})
-      : _apiService = apiService;
+    : _apiService = apiService;
 
   final ApiService _apiService;
 
   ResultFuture<GetAllDrifterBuoyCommandsResponse>
-      getAllDrifterBuoyCommands() async {
+  getAllDrifterBuoyCommands() async {
     const maxAttempts = AppConstants.drifterCommandsCatalogMaxAttempts;
     Failure? lastFailure;
 
@@ -28,13 +28,10 @@ class GeneralUserSelfTestRemoteDataSource {
         parser: _parseGetAllDrifterBuoyCommandsResponse,
       );
 
-      final succeeded = result.fold(
-        (failure) {
-          lastFailure = failure;
-          return false;
-        },
-        (_) => true,
-      );
+      final succeeded = result.fold((failure) {
+        lastFailure = failure;
+        return false;
+      }, (_) => true);
 
       if (succeeded) {
         if (attempt > 1) {
@@ -57,14 +54,12 @@ class GeneralUserSelfTestRemoteDataSource {
     }
 
     return Left(
-      lastFailure ??
-          const UnknownFailure('Failed to load self-test commands.'),
+      lastFailure ?? const UnknownFailure('Failed to load self-test commands.'),
     );
   }
 
-  static GetAllDrifterBuoyCommandsResponse _parseGetAllDrifterBuoyCommandsResponse(
-    dynamic data,
-  ) {
+  static GetAllDrifterBuoyCommandsResponse
+  _parseGetAllDrifterBuoyCommandsResponse(dynamic data) {
     if (data is String) {
       final decoded = jsonDecode(data);
       if (decoded is Map<String, dynamic>) {

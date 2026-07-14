@@ -693,7 +693,7 @@ class _BleTimingSettingsCardState extends State<_BleTimingSettingsCard> {
                 validator: _validateChunkMs,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
                 decoration: const InputDecoration(
-                  labelText: 'Chunk write interval (ms)',
+                  labelText: 'Chunk Write Interval (ms)',
                   helperText:
                       'Delay between 20-character BLE chunks (default 3000).',
                   border: OutlineInputBorder(),

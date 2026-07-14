@@ -59,7 +59,7 @@ class AppFlushbar {
       message: message,
       icon: Icons.error_outline,
       backgroundColor: const Color(0xFFC62828),
-      duration: const Duration(seconds: 4),
+      duration: const Duration(seconds: 6),
     );
   }
 

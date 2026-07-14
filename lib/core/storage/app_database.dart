@@ -40,16 +40,15 @@ class AppDatabase {
 
   Future<void> saveCommands(List<DrifterBuoyCommandModel> commands) async {
     final db = await instance.database;
-    final batch = db.batch();
+    final uniqueCommands = DrifterBuoyCommandModel.dedupeByIdForStorage(
+      commands,
+    );
 
-    // Clear existing commands
-    batch.delete('buoy_commands');
-
-    final seenIds = <String>{};
-    for (final cmd in commands) {
-      if (seenIds.add(cmd.id)) {
-        batch.insert('buoy_commands', {
-          'id': cmd.id,
+    await db.transaction((txn) async {
+      await txn.delete('buoy_commands');
+      for (final cmd in uniqueCommands) {
+        await txn.insert('buoy_commands', {
+          'id': cmd.id.trim(),
           'testName': cmd.testName,
           'requestCommand': cmd.requestCommand,
           'waitingPeriodSecondsRaw': cmd.waitingPeriodSecondsRaw,
@@ -61,9 +60,7 @@ class AppDatabase {
           'serialNumber': cmd.serialNumber,
         }, conflictAlgorithm: ConflictAlgorithm.replace);
       }
-    }
-
-    await batch.commit(noResult: true);
+    });
   }
 
   Future<List<DrifterBuoyCommandModel>> getCommands() async {

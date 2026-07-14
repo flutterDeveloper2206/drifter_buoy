@@ -1,3 +1,4 @@
+import 'package:drifter_buoy/features/general_user/data/models/drifter_buoy_command_model.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/self_test_debug/general_user_self_test_debug_state.dart';
 import 'package:equatable/equatable.dart';
 
@@ -199,13 +200,15 @@ class SubmitGeneralUserSetAttenuation extends GeneralUserSelfTestDebugEvent {
   const SubmitGeneralUserSetAttenuation({
     required this.transmitterType,
     required this.attenuationValue,
+    required this.sValue,
   });
 
   final int transmitterType;
   final String attenuationValue;
+  final int sValue;
 
   @override
-  List<Object> get props => [transmitterType, attenuationValue];
+  List<Object> get props => [transmitterType, attenuationValue, sValue];
 }
 
 class ClearGeneralUserSetAttenuationPrompt
@@ -251,13 +254,15 @@ class SubmitGeneralUserTransmitterTest extends GeneralUserSelfTestDebugEvent {
   const SubmitGeneralUserTransmitterTest({
     required this.selectedN,
     required this.sValue,
+    this.suppressResponseDialog = false,
   });
 
   final int selectedN;
   final int sValue;
+  final bool suppressResponseDialog;
 
   @override
-  List<Object> get props => [selectedN, sValue];
+  List<Object> get props => [selectedN, sValue, suppressResponseDialog];
 }
 
 class ClearGeneralUserTransmitterTestPrompt
@@ -372,4 +377,14 @@ class SubmitGeneralUserSetIndividualSensorParameter
 class ClearGeneralUserSetIndividualSensorParameterPrompt
     extends GeneralUserSelfTestDebugEvent {
   const ClearGeneralUserSetIndividualSensorParameterPrompt();
+}
+
+/// Applies API command list after a background sync (must run in its own handler).
+class ApplyRefreshedSelfTestCommands extends GeneralUserSelfTestDebugEvent {
+  const ApplyRefreshedSelfTestCommands(this.apiCommands);
+
+  final List<DrifterBuoyCommandModel> apiCommands;
+
+  @override
+  List<Object> get props => [apiCommands];
 }

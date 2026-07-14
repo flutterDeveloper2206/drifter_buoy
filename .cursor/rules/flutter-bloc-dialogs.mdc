@@ -1,0 +1,44 @@
+---
+description: Avoid ProviderNotFoundException when dialogs use Bloc/Cubit from showDialog routes
+globs: lib/**/*.dart
+alwaysApply: false
+---
+
+# Flutter Bloc in Dialogs
+
+`showDialog` (and `showModalBottomSheet`) creates a **new route** whose `BuildContext` is **not** a descendant of the page's `BlocProvider`. Any dialog widget that uses `BlocListener`, `BlocBuilder`, `BlocConsumer`, or `context.read<MyBloc>()` inside the dialog tree will throw:
+
+`ProviderNotFoundException: Could not find the correct Provider<MyBloc>`
+
+## Required pattern
+
+When opening a dialog that needs bloc access, capture the bloc from the **caller context** (under the provider) and re-provide it in the dialog route:
+
+```dart
+final bloc = context.read<MyBloc>();
+await showDialog<void>(
+  context: context,
+  builder: (dialogContext) => BlocProvider.value(
+    value: bloc,
+    child: MyDialog(...),
+  ),
+);
+```
+
+Use `dialogContext` only for dialog-local UI (theme, navigator). Use the outer `context` (or `bloc.add(...)`) for actions that must run after the dialog closes on the page tree.
+
+## Alternatives (also valid)
+
+- Pass `MyBloc bloc` into the dialog constructor and call `bloc.add(...)` directly (no `BlocListener` in dialog unless wrapped with `BlocProvider.value`).
+- Wrap with `RepositoryProvider.value` / `Provider.value` for non-bloc dependencies the same way.
+
+## Do not
+
+- Put `BlocListener` / `context.read<MyBloc>()` inside a dialog `builder` without `BlocProvider.value` above it.
+- Assume hot-reload fixes this; a full restart may be needed after provider tree changes.
+
+## Checklist before adding bloc to a new dialog
+
+1. Does the dialog widget use `BlocListener`, `BlocBuilder`, `BlocConsumer`, or `context.read/watch`?
+2. If yes, wrap the dialog child with `BlocProvider.value(value: context.read<MyBloc>())` in `showDialog`.
+3. Run the dialog once on device/emulator to confirm no `ProviderNotFoundException`.

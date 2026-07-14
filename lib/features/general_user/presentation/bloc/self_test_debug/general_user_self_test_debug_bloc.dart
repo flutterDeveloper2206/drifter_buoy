@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:drifter_buoy/core/bluetooth/ble_connection_service.dart';
+import 'package:drifter_buoy/core/bluetooth/drifter_ble_line_utils.dart';
 import 'package:drifter_buoy/core/storage/app_database.dart';
 import 'package:drifter_buoy/core/error/failure.dart';
 import 'package:drifter_buoy/core/utils/app_logger.dart';
@@ -20,6 +21,7 @@ class GeneralUserSelfTestDebugBloc
        _ble = ble,
        super(const GeneralUserSelfTestDebugState.initial()) {
     on<LoadGeneralUserSelfTestDebug>(_onLoadGeneralUserSelfTestDebug);
+    on<ApplyRefreshedSelfTestCommands>(_onApplyRefreshedSelfTestCommands);
     on<RunGeneralUserSelfTestDebugAction>(_onRunGeneralUserSelfTestDebugAction);
     on<ClearGeneralUserSelfTestDebugMessage>(
       _onClearGeneralUserSelfTestDebugMessage,
@@ -251,6 +253,46 @@ class GeneralUserSelfTestDebugBloc
       '6a04547227be228113206974';
   static const String _factoryServerTxMediaRedundancyCommandId =
       '6a04547227be228113206975';
+  static const Set<String> _individualServerSettingsCommandIds = {
+    _primaryServerHttpWebsiteAddressCommandId,
+    _primaryServerFtpAddressCommandId,
+    _primaryServerFtpPortCommandId,
+    _primaryServerFtpPathCommandId,
+    _primaryServerFtpUsernameCommandId,
+    _primaryServerFtpPasswordCommandId,
+    _primaryServerSmsCellNoCommandId,
+    _primaryServerTxMediaRedundancyCommandId,
+    _secondaryServerHttpWebsiteAddressCommandId,
+    _secondaryServerFtpAddressCommandId,
+    _secondaryServerFtpPortCommandId,
+    _secondaryServerFtpPathCommandId,
+    _secondaryServerFtpUsernameCommandId,
+    _secondaryServerFtpPasswordCommandId,
+    _secondaryServerSmsCellNoCommandId,
+    _secondaryServerTxMediaRedundancyCommandId,
+    _thirdServerHttpWebsiteAddressCommandId,
+    _thirdServerFtpAddressCommandId,
+    _thirdServerFtpPortNoCommandId,
+    _thirdServerFtpPathCommandId,
+    _thirdServerFtpUsernameCommandId,
+    _thirdServerFtpPasswordCommandId,
+    _setThirdServerSmsCellNoCommandId,
+    _thirdServerTxMediaRedundancyCommandId,
+    _factoryServerHttpWebsiteAddressCommandId,
+    _factoryServerFtpAddressCommandId,
+    _factoryServerFtpPortNoCommandId,
+    _factoryServerFtpPathCommandId,
+    _factoryServerFtpUsernameCommandId,
+    _factoryServerFtpPasswordCommandId,
+    _setFactoryServerSmsCellNoCommandId,
+    _factoryServerTxMediaRedundancyCommandId,
+  };
+  static const Set<String> _httpWebsiteAddressCommandIds = {
+    _primaryServerHttpWebsiteAddressCommandId,
+    _secondaryServerHttpWebsiteAddressCommandId,
+    _thirdServerHttpWebsiteAddressCommandId,
+    _factoryServerHttpWebsiteAddressCommandId,
+  };
   static const String _setPrimaryServerAllFtpHttpParametersCommandId =
       '6a04547227be228113206976';
   static const String _setSecondaryServerAllFtpHttpParametersCommandId =
@@ -317,6 +359,7 @@ class GeneralUserSelfTestDebugBloc
   static const String _setDlCellNoCommandId = '6a04547227be22811320698c';
   static const String _testModeCommandId = '6a04547227be22811320698d';
   static const String _powerSwitchingCommandId = '6a04547227be22811320698e';
+  static const String _setBuoyOffsetCommandId = '6a4f614acff2cb88f40a9455';
   static const String _simCardTestCommandId = '6a04547227be22811320698f';
   static const String _sleepCurrentTestCommandId = '6a04547227be228113206990';
   static const String _setSensorAllParameterCommandId =
@@ -440,6 +483,8 @@ class GeneralUserSelfTestDebugBloc
     _testModeCommandId: SelfTestParameterizedCommandFieldKind.testModeValue01,
     _powerSwitchingCommandId:
         SelfTestParameterizedCommandFieldKind.powerSwitchingValueN,
+    _setBuoyOffsetCommandId:
+        SelfTestParameterizedCommandFieldKind.setBuoyOffsetSignedFourDigits,
     _setHttpPasswordCommandId:
         SelfTestParameterizedCommandFieldKind.setHttpPasswordIndex1to4And64,
     _setHttpPortCommandId:
@@ -497,7 +542,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _manualDataAcquistionPollCommandId,
-      testName: 'Manual Data Acquistion/poll',
+      testName: 'Manual Data Acquisition/Poll',
       requestCommand: '?93,,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription: 'NA',
@@ -552,7 +597,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _setMeasurementIntervalCommandId,
-      testName: 'Set measurement interval',
+      testName: 'Set Measurement Interval',
       requestCommand: '?10,HH:MM:SS,#',
       waitingPeriodSecondsRaw: 'NA',
       requestCommandDescription:
@@ -587,7 +632,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _setAllGeneralSystemParametersCommandId,
-      testName: 'Set all general system parameters',
+      testName: 'Set All General System Parameters',
       requestCommand: '?05,<nine comma-separated fields>,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
@@ -603,7 +648,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _getAllGeneralSystemParametersCommandId,
-      testName: 'Get all general system parameters',
+      testName: 'Get All General System Parameters',
       requestCommand: '?04,,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription: 'returns list of general parameters',
@@ -614,7 +659,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _setStationIdCommandId,
-      testName: 'Set Station Id',
+      testName: 'Set Station ID',
       requestCommand: '?06,XXXXXXXX,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription: 'Sets 8 char station id',
@@ -625,7 +670,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _setStationNameCommandId,
-      testName: 'Set station name',
+      testName: 'Set Station Name',
       requestCommand: '?07,NNNNNNNNNNNNNNNN,#',
       waitingPeriodSecondsRaw: 'NA',
       requestCommandDescription: 'NNNNNNNNNNNNNNNN (New value of station name)',
@@ -636,7 +681,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _setTransmissionIntervalCommandId,
-      testName: 'Set transmission interval',
+      testName: 'Set Transmission Interval',
       requestCommand: '?09,HH:MM:SS,#',
       waitingPeriodSecondsRaw: 'NA',
       requestCommandDescription: 'Allowed minimum interval = 00:10:00',
@@ -657,7 +702,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _setRtcServerHttpWebsiteAddressCommandId,
-      testName: 'Set RTC server HTTP website address',
+      testName: 'Set RTC Server HTTP Website Address',
       requestCommand: '?12,xxxx…,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
@@ -668,7 +713,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _setRtcServerHttpWebsiteKeyCommandId,
-      testName: 'Set RTC server HTTP website key',
+      testName: 'Set RTC Server HTTP Website Key',
       requestCommand: '?13,xxxx…,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
@@ -679,7 +724,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _primaryServerHttpWebsiteAddressCommandId,
-      testName: 'Primary server HTTP website address',
+      testName: 'Primary Server HTTP Website Address',
       requestCommand: '?14,N,xxx...,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
@@ -691,7 +736,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _primaryServerFtpAddressCommandId,
-      testName: 'Primary server FTP address',
+      testName: 'Primary Server FTP Address',
       requestCommand: '?15,xxxx..,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
@@ -703,7 +748,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _primaryServerFtpPortCommandId,
-      testName: 'Primary server FTP port no.',
+      testName: 'Primary Server FTP Port No.',
       requestCommand: '?16,PPPPP,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
@@ -715,7 +760,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _primaryServerFtpPathCommandId,
-      testName: 'Primary server FTP path',
+      testName: 'Primary Server FTP Path',
       requestCommand: '?17,xxxx..,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
@@ -727,7 +772,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _primaryServerFtpUsernameCommandId,
-      testName: 'Primary server FTP username',
+      testName: 'Primary Server FTP Username',
       requestCommand: '?18,xxxx..,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
@@ -739,7 +784,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _primaryServerFtpPasswordCommandId,
-      testName: 'Primary server FTP password',
+      testName: 'Primary Server FTP Password',
       requestCommand: '?19,xxxx..,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
@@ -751,7 +796,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _primaryServerSmsCellNoCommandId,
-      testName: 'Set primary server SMS cell no',
+      testName: 'Set Primary Server SMS Cell No',
       requestCommand: '?20,+91nnnnnnnnnn,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription: '(nnnnnnnnnn: Cellular no. – 10 digit long)',
@@ -762,7 +807,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _primaryServerTxMediaRedundancyCommandId,
-      testName: 'Primary server tx media redundancy',
+      testName: 'Primary Server TX Media Redundancy',
       requestCommand: '?21,n,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription: 'n = 0-GSM and GPRS, 1-GSM if GPRS Fail',
@@ -773,7 +818,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _secondaryServerHttpWebsiteAddressCommandId,
-      testName: 'Secondary server HTTP website address',
+      testName: 'Secondary Server HTTP Website Address',
       requestCommand: '?22,N,xxx..,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
@@ -785,7 +830,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _secondaryServerFtpAddressCommandId,
-      testName: 'Secondary server FTP address',
+      testName: 'Secondary Server FTP Address',
       requestCommand: '?23,xxxx..,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
@@ -797,7 +842,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _secondaryServerFtpPortCommandId,
-      testName: 'Secondary server FTP port no.',
+      testName: 'Secondary Server FTP Port No.',
       requestCommand: '?24,PPPPP,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
@@ -809,7 +854,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _secondaryServerFtpPathCommandId,
-      testName: 'Secondary server FTP path',
+      testName: 'Secondary Server FTP Path',
       requestCommand: '?25,xxxx..,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
@@ -821,7 +866,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _secondaryServerFtpUsernameCommandId,
-      testName: 'Secondary server FTP user name',
+      testName: 'Secondary Server FTP Username',
       requestCommand: '?26,xxxx..,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
@@ -833,7 +878,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _secondaryServerFtpPasswordCommandId,
-      testName: 'Secondary server FTP password',
+      testName: 'Secondary Server FTP Password',
       requestCommand: '?27,xxxx..,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
@@ -845,7 +890,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _secondaryServerSmsCellNoCommandId,
-      testName: 'Set secondary server SMS cell no',
+      testName: 'Set Secondary Server SMS Cell No',
       requestCommand: '?28,+91nnnnnnnnnn,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
@@ -857,7 +902,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _secondaryServerTxMediaRedundancyCommandId,
-      testName: 'Secondary server tx media redundancy',
+      testName: 'Secondary Server TX Media Redundancy',
       requestCommand: '?29,n,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription: 'n = 0-GSM and GPRS, 1-GSM if GPRS Fail',
@@ -868,7 +913,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _thirdServerHttpWebsiteAddressCommandId,
-      testName: 'Third server HTTP website address',
+      testName: 'Third Server HTTP Website Address',
       requestCommand: '?30,N,xxx..,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
@@ -880,7 +925,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _thirdServerFtpAddressCommandId,
-      testName: 'Third server FTP address',
+      testName: 'Third Server FTP Address',
       requestCommand: '?31,xxxx..,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
@@ -892,7 +937,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _thirdServerFtpPortNoCommandId,
-      testName: 'Third server FTP port no.',
+      testName: 'Third Server FTP Port No.',
       requestCommand: '?32,PPPPP,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
@@ -904,7 +949,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _thirdServerFtpPathCommandId,
-      testName: 'Third server FTP path',
+      testName: 'Third Server FTP Path',
       requestCommand: '?33,xxxx..,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
@@ -916,7 +961,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _thirdServerFtpUsernameCommandId,
-      testName: 'Third server FTP username',
+      testName: 'Third Server FTP Username',
       requestCommand: '?34,xxxx..,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
@@ -928,7 +973,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _thirdServerFtpPasswordCommandId,
-      testName: 'Third server FTP password',
+      testName: 'Third Server FTP Password',
       requestCommand: '?35,xxxx..,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
@@ -940,7 +985,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _setThirdServerSmsCellNoCommandId,
-      testName: 'Set Third server SMS cell no',
+      testName: 'Set Third Server SMS Cell No',
       requestCommand: '?36,+91nnnnnnnnnn,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription: '(nnnnnnnnnn: Cellular no. – 10 digit long)',
@@ -951,7 +996,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _thirdServerTxMediaRedundancyCommandId,
-      testName: 'Third server tx media redundancy',
+      testName: 'Third Server TX Media Redundancy',
       requestCommand: '?37,n,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription: 'n = 0-GSM and GPRS, 1-GSM if GPRS Fail',
@@ -962,7 +1007,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _factoryServerHttpWebsiteAddressCommandId,
-      testName: 'Factory server HTTP website address',
+      testName: 'Factory Server HTTP Website Address',
       requestCommand: '?38,N,xxx..,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
@@ -974,7 +1019,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _factoryServerFtpAddressCommandId,
-      testName: 'Factory server FTP address',
+      testName: 'Factory Server FTP Address',
       requestCommand: '?39,xxx..,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
@@ -986,7 +1031,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _factoryServerFtpPortNoCommandId,
-      testName: 'Factory server FTP port no',
+      testName: 'Factory Server FTP Port No',
       requestCommand: '?40,PPPPP,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
@@ -998,7 +1043,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _factoryServerFtpPathCommandId,
-      testName: 'Factory server FTP path',
+      testName: 'Factory Server FTP Path',
       requestCommand: '?41,xxxx...,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
@@ -1010,7 +1055,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _factoryServerFtpUsernameCommandId,
-      testName: 'Factory server FTP username',
+      testName: 'Factory Server FTP Username',
       requestCommand: '?42,xxxx...,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
@@ -1022,7 +1067,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _factoryServerFtpPasswordCommandId,
-      testName: 'Factory server FTP password',
+      testName: 'Factory Server FTP Password',
       requestCommand: '?43,xxxx..,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
@@ -1034,7 +1079,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _setFactoryServerSmsCellNoCommandId,
-      testName: 'Set factory server SMS cell no',
+      testName: 'Set Factory Server SMS Cell No',
       requestCommand: '?44,+91nnnnnnnnnn,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription: '(nnnnnnnnnn: Cellular no. – 10 digit long)',
@@ -1045,7 +1090,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _factoryServerTxMediaRedundancyCommandId,
-      testName: 'Factory server tx media redundancy',
+      testName: 'Factory Server TX Media Redundancy',
       requestCommand: '?45,n,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription: 'n = 0-GSM and GPRS, 1-GSM if GPRS Fail',
@@ -1056,11 +1101,11 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _setPrimaryServerAllFtpHttpParametersCommandId,
-      testName: 'Set primary server all FTP/HTTP parameters',
+      testName: 'Set Primary Server All FTP/HTTP Parameters',
       requestCommand: '?46,IIIIII,FFF…,PPPPP,ffff…,uuuu…,pppp…,+91nnnn…,R,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
-          '(station id, FTP server address, FTP port no., FTP file path, FTP user name, FTP password, cell no., tx redundancy)Station id – fix 8 characters.FTP port no. – fix 5 character, range 00000 to 65535.FTP server address, FTP file path, FTP user name, FTP password – max 20 characters. If < 20 char, use ‘‘last character.Cell no. – fix 10 charactersTx redundancy – 1 => enable, 0 => disable',
+          '(station id, FTP server address, FTP port no., FTP file path, FTP Username, FTP password, cell no., tx redundancy)Station id – fix 8 characters.FTP port no. – fix 5 character, range 00000 to 65535.FTP server address, FTP file path, FTP Username, FTP password – max 20 characters. If < 20 char, use ‘‘last character.Cell no. – fix 10 charactersTx redundancy – 1 => enable, 0 => disable',
       response: r'$46,all primary server settings#',
       responseDescription:
           'IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters',
@@ -1068,11 +1113,11 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _setSecondaryServerAllFtpHttpParametersCommandId,
-      testName: 'Set secondary server all FTP/HTTP parameters',
+      testName: 'Set Secondary Server All FTP/HTTP Parameters',
       requestCommand: '?47,IIIIII,FFF…,PPPPP,ffff…,uuuu…,pppp…,+91nnnn…,R,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
-          '(station id, FTP server address, FTP port no., FTP file path, FTP user name, FTP password, cell no., tx redundancy)Station id – fix 8 characters.FTP port no. – fix 5 character, range 00000 to 65535.FTP server address, FTP file path, FTP user name, FTP password – max 20 characters. If < 20 char, use ‘‘last character.Cell no. – fix 10 charactersTx redundancy – 1 => enable, 0 => disable',
+          '(station id, FTP server address, FTP port no., FTP file path, FTP Username, FTP password, cell no., tx redundancy)Station id – fix 8 characters.FTP port no. – fix 5 character, range 00000 to 65535.FTP server address, FTP file path, FTP Username, FTP password – max 20 characters. If < 20 char, use ‘‘last character.Cell no. – fix 10 charactersTx redundancy – 1 => enable, 0 => disable',
       response: r'$47,all secondary server settings#',
       responseDescription:
           'IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters',
@@ -1080,11 +1125,11 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _setThirdServerAllFtpHttpParametersCommandId,
-      testName: 'Set third server all FTP/HTTP parameters',
+      testName: 'Set Third Server All FTP/HTTP Parameters',
       requestCommand: '?48,IIIIII,FFF…,PPPPP,ffff…,uuuu…,pppp…,+91nnnn…,R,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
-          '(station id, FTP server address, FTP port no., FTP file path, FTP user name, FTP password, cell no., tx redundancy)Station id – fix 8 characters.FTP port no. – fix 5 character, range 00000 to 65535.FTP server address, FTP file path, FTP user name, FTP password – max 20 characters. If < 20 char, use ‘‘last character.Cell no. – fix 10 charactersTx redundancy – 1 => enable, 0 => disable',
+          '(station id, FTP server address, FTP port no., FTP file path, FTP Username, FTP password, cell no., tx redundancy)Station id – fix 8 characters.FTP port no. – fix 5 character, range 00000 to 65535.FTP server address, FTP file path, FTP Username, FTP password – max 20 characters. If < 20 char, use ‘‘last character.Cell no. – fix 10 charactersTx redundancy – 1 => enable, 0 => disable',
       response: r'$48,all third server settings#',
       responseDescription:
           'IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters',
@@ -1092,11 +1137,11 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _setFactoryServerAllFtpHttpParametersCommandId,
-      testName: 'Set factory server all FTP/HTTP parameters',
+      testName: 'Set Factory Server All FTP/HTTP Parameters',
       requestCommand: '?49,IIIIII,FFF…,PPPPP,ffff…,uuuu…,pppp…,+91nnnn…,R,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
-          '(station id, FTP server address, FTP port no., FTP file path, FTP user name, FTP password, cell no., tx redundancy)Station id – fix 8 characters.FTP port no. – fix 5 character, range 00000 to 65535.FTP server address, FTP file path, FTP user name, FTP password – max 20 characters. If < 20 char, use ‘‘last character.Cell no. – fix 10 charactersTx redundancy – 1 => enable, 0 => disable',
+          '(station id, FTP server address, FTP port no., FTP file path, FTP Username, FTP password, cell no., tx redundancy)Station id – fix 8 characters.FTP port no. – fix 5 character, range 00000 to 65535.FTP server address, FTP file path, FTP Username, FTP password – max 20 characters. If < 20 char, use ‘‘last character.Cell no. – fix 10 charactersTx redundancy – 1 => enable, 0 => disable',
       response: r'$49,all factory server settings#',
       responseDescription:
           'IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters',
@@ -1104,7 +1149,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _getPrimaryServerAllFtpHttpParametersCommandId,
-      testName: 'Get primary server all FTP/HTTP parameters',
+      testName: 'Get Primary Server All FTP/HTTP Parameters',
       requestCommand: '?50,,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription: 'Returns all primary settings',
@@ -1115,7 +1160,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _getSecondaryServerAllFtpHttpParametersCommandId,
-      testName: 'Get secondary server all FTP/HTTP parameters',
+      testName: 'Get Secondary Server All FTP/HTTP Parameters',
       requestCommand: '?51,,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription: 'Returns all secondary settings',
@@ -1126,7 +1171,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _getThirdServerAllFtpHttpParametersCommandId,
-      testName: 'Get third server all FTP/HTTP parameters',
+      testName: 'Get Third Server All FTP/HTTP Parameters',
       requestCommand: '?52,,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription: 'Returns all third settings',
@@ -1137,7 +1182,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _getFactoryServerAllFtpHttpParametersCommandId,
-      testName: 'Get factory server all FTP/HTTP parameters',
+      testName: 'Get Factory Server All FTP/HTTP Parameters',
       requestCommand: '?53,,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription: 'Returns all factory settings',
@@ -1148,7 +1193,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _restorePrimaryServerAllFtpHttpParametersCommandId,
-      testName: 'Restore primary server all FTP/HTTP parameters',
+      testName: 'Restore Primary Server All FTP/HTTP Parameters',
       requestCommand: '?54,,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription: 'Returns all primary settings',
@@ -1159,7 +1204,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _restoreSecondaryServerAllFtpHttpParametersCommandId,
-      testName: 'Restore secondary server all FTP/HTTP parameters',
+      testName: 'Restore Secondary Server All FTP/HTTP Parameters',
       requestCommand: '?55,,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription: 'Returns all secondary settings',
@@ -1170,7 +1215,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _restoreThirdServerAllFtpHttpParametersCommandId,
-      testName: 'Restore third server all FTP/HTTP parameters',
+      testName: 'Restore Third Server All FTP/HTTP Parameters',
       requestCommand: '?56,,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription: 'Returns all third settings',
@@ -1181,7 +1226,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _restoreFactoryServerAllFtpHttpParametersCommandId,
-      testName: 'Restore factory server all FTP/HTTP parameters',
+      testName: 'Restore Factory Server All FTP/HTTP Parameters',
       requestCommand: '?57,,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription: 'Returns all factory settings',
@@ -1192,7 +1237,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _fastSmsCheckCommandId,
-      testName: 'Fast SMS check',
+      testName: 'Fast SMS Check',
       requestCommand: '?58,N,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription: 'N=0 Disable, 1Enable',
@@ -1203,7 +1248,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _setAdmin1SmsCellNoCommandId,
-      testName: 'Set admin 1 SMS cell no',
+      testName: 'Set Admin 1 SMS Cell No',
       requestCommand: '?59,+91nnnnnnnnnn,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription: '(nnnnnnnnnn: Cellular no. – 10 digit long)',
@@ -1214,7 +1259,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _setAdmin2SmsCellNoCommandId,
-      testName: 'Set admin 2 SMS cell no',
+      testName: 'Set Admin 2 SMS Cell No',
       requestCommand: '?60,+91nnnnnnnnnn,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription: '(nnnnnnnnnn: Cellular no. – 10 digit long)',
@@ -1237,7 +1282,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _getTransmissionStartTimeGprsCommandId,
-      testName: 'Get transmission start time GPRS',
+      testName: 'Get Transmission Start Time GPRS',
       requestCommand: '?63,,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription: 'returns current tranmission time',
@@ -1247,7 +1292,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _transmitterFrequencyCommandId,
-      testName: 'Set/Get transmitter frequency',
+      testName: 'Set/Get Transmitter Frequency',
       requestCommand: '?65,N,S,FFFFFFFFF,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
@@ -1276,7 +1321,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _radioSondeTransmitterIdCommandId,
-      testName: 'Get station ID of Radio sonde Transmitter',
+      testName: 'Get Station ID of Radio Sonde Transmitter',
       requestCommand: '?67,S,xxxxx,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
@@ -1288,7 +1333,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _setDlCellNoCommandId,
-      testName: 'Set DL cell no',
+      testName: 'Set Buoy Cell No',
       requestCommand: '?68,N,nnnnnnnnnnnnn,#',
       waitingPeriodSecondsRaw: 'NA',
       requestCommandDescription:
@@ -1303,7 +1348,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _testModeCommandId,
-      testName: 'TestMode',
+      testName: 'Test Mode',
       requestCommand: '?71,N,#',
       waitingPeriodSecondsRaw: 'NA',
       requestCommandDescription: 'N = 0 or 1. Example: ?71,1,#',
@@ -1323,8 +1368,19 @@ class GeneralUserSelfTestDebugBloc
       isActive: true,
     ),
     DrifterBuoyCommandModel(
+      id: _setBuoyOffsetCommandId,
+      testName: 'Set Buoy Offset',
+      requestCommand: '?75,+/-1234,#',
+      waitingPeriodSecondsRaw: 'NA',
+      requestCommandDescription:
+          'Enter offset as + or - followed by 4 digits (e.g. +1234, -0567).',
+      response: r'$75,BUOY0807,+/-1234,#',
+      responseDescription: 'Station ID and buoy offset read-back.',
+      isActive: true,
+    ),
+    DrifterBuoyCommandModel(
       id: _simCardTestCommandId,
-      testName: 'Sim Card Test',
+      testName: 'SIM Card Test',
       requestCommand: '?77,1,#',
       waitingPeriodSecondsRaw: '5 min',
       requestCommandDescription:
@@ -1347,7 +1403,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _setSensorAllParameterCommandId,
-      testName: 'SET Sensor ALL parameter',
+      testName: 'Set Sensor All Parameter',
       requestCommand:
           '?80,(Sensor no, channel no,F.G, factory off, senG, Soff, Resolution, sen Min, sens Max, Averag Scheme, Vector, start time, interval, total sample, mode, Tx.G, Tx.O ),#',
       waitingPeriodSecondsRaw: 'NA',
@@ -1359,7 +1415,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _getSensorParameterCommandId,
-      testName: 'GET sensor parameter (?81)',
+      testName: 'Get Sensor Parameter - 1',
       requestCommand: '?81,Sensor Number,#',
       waitingPeriodSecondsRaw: 'NA',
       requestCommandDescription: 'NA',
@@ -1372,7 +1428,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _setSensorsParametersCommandId,
-      testName: 'SET sensors parameters',
+      testName: 'Set Sensors Parameters',
       requestCommand:
           '?82,(sensor no,unit,SenSelStatus,BaudRate,ReqLen,Start Char,Fp,Lp,Resp Len,RelayNo,PeriodicSmpl,DerievedPara,RequestString,Sensor name,id, model,rstcnt,datum,dec_len,frac_len,max_threshold,min_threshold)',
       waitingPeriodSecondsRaw: '2 min',
@@ -1384,7 +1440,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _getSensorParameter83CommandId,
-      testName: 'GET sensor parameter (?83)',
+      testName: 'Get Sensor Parameter - 2',
       requestCommand: '?83,Sensor number,#',
       waitingPeriodSecondsRaw: 'NA',
       requestCommandDescription: 'NA',
@@ -1395,7 +1451,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _setIndividualSensorParameterCommandId,
-      testName: 'Sensor Para Set',
+      testName: 'Sensor Parameter Set',
       requestCommand: '?86,SensorNo,ParaNo,Value,#',
       waitingPeriodSecondsRaw: 'NA',
       requestCommandDescription:
@@ -1434,7 +1490,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _setHttpPasswordCommandId,
-      testName: 'Set HTTP password',
+      testName: 'Set HTTP Password',
       requestCommand: '?97,N,password,#',
       waitingPeriodSecondsRaw: 'NA',
       requestCommandDescription:
@@ -1459,7 +1515,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _memoryTestCommandId,
-      testName: 'Memory test',
+      testName: 'Memory Test',
       requestCommand: '?91,,#',
       waitingPeriodSecondsRaw: 'NA',
       requestCommandDescription: 'Runs memory test on the device.',
@@ -1470,7 +1526,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _manualFtpCommandId,
-      testName: 'manual FTP',
+      testName: 'Manual FTP',
       requestCommand: _manualFtpBleCommand,
       waitingPeriodSecondsRaw: '5 min',
       requestCommandDescription:
@@ -1688,10 +1744,11 @@ class GeneralUserSelfTestDebugBloc
       final localCommands = await AppDatabase.instance.getCommands();
       if (localCommands.isNotEmpty) {
         AppLogger.i('Loaded commands from sqflite local database.');
+        final cachedCommands = processAndSortApiCommands(localCommands);
         emit(
           state.copyWith(
             status: GeneralUserSelfTestDebugStatus.loaded,
-            commands: localCommands,
+            commands: cachedCommands,
             message: '',
             isSuccessMessage: false,
             clearParameterizedCommandPrompt: true,
@@ -1704,15 +1761,32 @@ class GeneralUserSelfTestDebugBloc
             clearAdminSmsCellPrompt: true,
           ),
         );
+        unawaited(_refreshCommandsFromRemote());
         return;
       }
     } catch (e) {
       AppLogger.w('Failed to load commands from sqflite: $e');
     }
 
+    await _fetchCommandsFromRemote(emit);
+  }
+
+  void _onApplyRefreshedSelfTestCommands(
+    ApplyRefreshedSelfTestCommands event,
+    Emitter<GeneralUserSelfTestDebugState> emit,
+  ) {
+    if (event.apiCommands.isEmpty) {
+      return;
+    }
+    emit(_loadedStateForApiCommands(event.apiCommands));
+  }
+
+  Future<void> _fetchCommandsFromRemote(
+    Emitter<GeneralUserSelfTestDebugState> emit,
+  ) async {
     final result = await _remote.getAllDrifterBuoyCommands();
-    result.fold(
-      (failure) {
+    await result.fold(
+      (failure) async {
         if (_isUnauthorizedFailure(failure)) {
           AppLogger.w(
             'Self-test command API unauthorized (${failure.message}).',
@@ -1732,7 +1806,6 @@ class GeneralUserSelfTestDebugBloc
           'Self-test command API unavailable (${failure.message}). '
           'Using built-in command catalog.',
         );
-        // Fallback: keep self-test usable even when permission API fails.
         emit(
           state.copyWith(
             status: GeneralUserSelfTestDebugStatus.loaded,
@@ -1751,45 +1824,66 @@ class GeneralUserSelfTestDebugBloc
         );
       },
       (data) async {
-        final apiCommands = data.result;
-        final List<DrifterBuoyCommandModel> cmds;
-
-        if (apiCommands.isEmpty) {
-          cmds = List<DrifterBuoyCommandModel>.from(_staticCommands);
-        } else {
-          cmds = _allowedCommandsInCsvOrder(apiCommands);
-          cmds.sort((a, b) {
-            final valA = a.serialNumber == 0 ? 999999 : a.serialNumber;
-            final valB = b.serialNumber == 0 ? 999999 : b.serialNumber;
-            return valA.compareTo(valB);
-          });
-          try {
-            await AppDatabase.instance.saveCommands(cmds);
-            AppLogger.i('Saved API commands to sqflite.');
-          } catch (e) {
-            AppLogger.w('Failed to save API commands to sqflite: $e');
-          }
+        await _persistApiCommands(data.result);
+        if (isClosed) {
+          return;
         }
+        emit(_loadedStateForApiCommands(data.result));
+      },
+    );
+  }
 
-        emit(
-          state.copyWith(
-            status: GeneralUserSelfTestDebugStatus.loaded,
-            commands: cmds,
-            message: cmds.isEmpty
-                ? 'No self-test commands are permitted for this user.'
-                : '',
-            isSuccessMessage: false,
-            clearParameterizedCommandPrompt: true,
-            clearSetAllGeneralParametersPrompt: true,
-            clearTransmissionTimePrompt: true,
-            clearTransmissionIntervalPrompt: true,
-            clearMeasurementIntervalPrompt: true,
-            clearSetApnPrompt: true,
-            clearFastSmsCheckPrompt: true,
-            clearAdminSmsCellPrompt: true,
-          ),
+  Future<void> _refreshCommandsFromRemote() async {
+    final result = await _remote.getAllDrifterBuoyCommands();
+    await result.fold(
+      (failure) async {
+        AppLogger.w(
+          'Background self-test command sync failed (${failure.message}).',
         );
       },
+      (data) async {
+        await _persistApiCommands(data.result);
+        if (isClosed || data.result.isEmpty) {
+          return;
+        }
+        add(ApplyRefreshedSelfTestCommands(data.result));
+      },
+    );
+  }
+
+  Future<void> _persistApiCommands(
+    List<DrifterBuoyCommandModel> apiCommands,
+  ) async {
+    if (apiCommands.isEmpty) {
+      return;
+    }
+    try {
+      await AppDatabase.instance.saveCommands(apiCommands);
+      AppLogger.i('Saved API commands to sqflite.');
+    } catch (e) {
+      AppLogger.w('Failed to save API commands to sqflite: $e');
+    }
+  }
+
+  GeneralUserSelfTestDebugState _loadedStateForApiCommands(
+    List<DrifterBuoyCommandModel> apiCommands,
+  ) {
+    final cmds = processAndSortApiCommands(apiCommands);
+    return state.copyWith(
+      status: GeneralUserSelfTestDebugStatus.loaded,
+      commands: cmds,
+      message: cmds.isEmpty
+          ? 'No self-test commands are permitted for this user.'
+          : '',
+      isSuccessMessage: false,
+      clearParameterizedCommandPrompt: true,
+      clearSetAllGeneralParametersPrompt: true,
+      clearTransmissionTimePrompt: true,
+      clearTransmissionIntervalPrompt: true,
+      clearMeasurementIntervalPrompt: true,
+      clearSetApnPrompt: true,
+      clearFastSmsCheckPrompt: true,
+      clearAdminSmsCellPrompt: true,
     );
   }
 
@@ -1866,7 +1960,7 @@ class GeneralUserSelfTestDebugBloc
       return;
     }
     if (cmd.requestCommand.trim().startsWith('?08,')) {
-      _onOpenTransmissionTimePrompt(cmd, emit);
+      await _onOpenTransmissionTimePrompt(cmd, index, emit);
       return;
     }
     if (cmd.requestCommand.trim().startsWith('?61,')) {
@@ -2106,6 +2200,8 @@ class GeneralUserSelfTestDebugBloc
       final isManualRtcUpdate = cmd.id == _manualRtcUpdateCommandId;
       final isEraseMemory = cmd.id == _eraseMemoryCommandId;
       final isMemoryTest = cmd.id == _memoryTestCommandId;
+      final isManualDataAcquisitionPoll =
+          cmd.id == _manualDataAcquistionPollCommandId;
       final helpText = isGetAllGeneral
           ? _formatGeneralSystemParametersBleSummary(line)
           : isGprsTransmissionStartTime
@@ -2128,6 +2224,8 @@ class GeneralUserSelfTestDebugBloc
           ? _formatEraseMemoryBleSummary(line)
           : isMemoryTest
           ? _formatMemoryTestBleSummary(line)
+          : isManualDataAcquisitionPoll
+          ? ''
           : (cmd.responseDescription.trim().isEmpty ||
                     cmd.responseDescription.trim().toUpperCase() == 'NA'
                 ? cmd.response.trim()
@@ -2181,7 +2279,7 @@ class GeneralUserSelfTestDebugBloc
               : isGprsRssi
               ? 'GPRS RSSI read successfully.'
               : isManualFtp
-              ? 'Manual FTP completed successfully.'
+              ? 'Manual Transsmittion completed successfully.'
               : isModemTest
               ? 'Modem test completed successfully.'
               : isManualRtcUpdate
@@ -2436,7 +2534,7 @@ class GeneralUserSelfTestDebugBloc
           message: '',
           isSuccessMessage: false,
           lastSnapshot: SelfTestBleResponseSnapshot(
-            testName: model?.testName ?? 'Set Station Id',
+            testName: model?.testName ?? 'Set Station ID',
             responseLine: line,
             hideResponseLine: true,
             helpText: _formatGeneralSystemParametersBleSummary(
@@ -2601,16 +2699,54 @@ class GeneralUserSelfTestDebugBloc
     }
   }
 
-  void _onOpenTransmissionTimePrompt(
+  Future<void> _onOpenTransmissionTimePrompt(
     DrifterBuoyCommandModel cmd,
+    int index,
     Emitter<GeneralUserSelfTestDebugState> emit,
-  ) {
+  ) async {
+    emit(
+      state.copyWith(
+        status: GeneralUserSelfTestDebugStatus.running,
+        runningCommandIndex: index,
+        message: '',
+        isSuccessMessage: false,
+        clearLastSnapshot: true,
+      ),
+    );
+
+    var initialTxTime = '';
+    String? prefetchWarning;
+
+    try {
+      final getModel =
+          _staticCommandsById[_getTransmissionStartTimeGprsCommandId];
+      final wait = getModel?.responseWaitTimeout ?? cmd.responseWaitTimeout;
+      final getCommand = getModel?.requestCommand ?? '?63,,#';
+      final line = await _ble.sendDrifterAsciiCommand(getCommand, wait);
+      final parsed = _extractTransmissionStartTimeFromGprsResponse(line);
+      if (parsed != null) {
+        initialTxTime = parsed;
+      } else {
+        prefetchWarning = '';
+      }
+    } on TimeoutException catch (e) {
+      AppLogger.e('Prefetch transmission time timeout', error: e);
+      prefetchWarning =
+          'Timed out reading current transmission time (?63). Enter it manually.';
+    } catch (e, st) {
+      AppLogger.e('Prefetch transmission time error', error: e, stackTrace: st);
+      prefetchWarning =
+          'Could not read current transmission time. Enter it manually.';
+    }
+
     emit(
       state.copyWith(
         status: GeneralUserSelfTestDebugStatus.loaded,
         clearRunningCommandIndex: true,
         transmissionTimePrompt: SelfTestTransmissionTimePrompt(
           testName: cmd.testName,
+          currentTxTime: initialTxTime,
+          prefetchWarning: prefetchWarning,
           note: _commandCatalogNote(cmd),
         ),
         clearLastSnapshot: true,
@@ -2651,8 +2787,8 @@ class GeneralUserSelfTestDebugBloc
       }
     } on TimeoutException catch (e) {
       AppLogger.e('Prefetch Tx interval timeout', error: e);
-      prefetchWarning =
-          'Timed out reading parameters (?04). Enter Tx interval manually (minimum 00:10:00).';
+      // prefetchWarning =
+      //     'Timed out reading parameters (?04). Enter Tx interval manually (minimum 00:10:00).';
     } catch (e, st) {
       AppLogger.e('Prefetch Tx interval error', error: e, stackTrace: st);
       prefetchWarning =
@@ -3518,7 +3654,7 @@ class GeneralUserSelfTestDebugBloc
         status: GeneralUserSelfTestDebugStatus.loaded,
         transmitterFrequencyPrompt: SelfTestTransmitterFrequencyPrompt(
           transmitterType: 0,
-          frequencyValue: '000402500',
+          frequencyValue: '',
           note: _commandCatalogNote(cmd),
         ),
         clearLastSnapshot: true,
@@ -3638,66 +3774,29 @@ class GeneralUserSelfTestDebugBloc
   ) async {
     emit(
       state.copyWith(
-        status: GeneralUserSelfTestDebugStatus.running,
-        runningCommandIndex: index,
+        status: GeneralUserSelfTestDebugStatus.loaded,
+        clearRunningCommandIndex: true,
+        setAttenuationPrompt: SelfTestSetAttenuationPrompt(
+          transmitterType: 0,
+          attenuationValue: '',
+          note: _commandCatalogNote(cmd),
+        ),
+        clearLastSnapshot: true,
         message: '',
         isSuccessMessage: false,
-        clearLastSnapshot: true,
       ),
     );
+  }
 
-    try {
-      final line = await _ble.sendDrifterAsciiCommand(
-        '?66,0,0,#',
-        cmd.responseWaitTimeout,
-      );
-      final parsed = _extractSetAttenuation(line);
-      if (parsed == null) {
-        emit(
-          state.copyWith(
-            status: GeneralUserSelfTestDebugStatus.loaded,
-            clearRunningCommandIndex: true,
-            message: 'Could not parse set attenuation response.',
-            isSuccessMessage: false,
-          ),
-        );
-        return;
-      }
-      emit(
-        state.copyWith(
-          status: GeneralUserSelfTestDebugStatus.loaded,
-          clearRunningCommandIndex: true,
-          setAttenuationPrompt: SelfTestSetAttenuationPrompt(
-            transmitterType: parsed.$1,
-            attenuationValue: parsed.$2,
-            note: _commandCatalogNote(cmd),
-          ),
-          clearLastSnapshot: true,
-          message: '',
-          isSuccessMessage: false,
-        ),
-      );
-    } on TimeoutException catch (e) {
-      AppLogger.e('Fetch set attenuation timeout', error: e);
-      emit(
-        state.copyWith(
-          status: GeneralUserSelfTestDebugStatus.loaded,
-          clearRunningCommandIndex: true,
-          message: 'Timed out while reading attenuation value.',
-          isSuccessMessage: false,
-        ),
-      );
-    } catch (e, st) {
-      AppLogger.e('Fetch set attenuation error', error: e, stackTrace: st);
-      emit(
-        state.copyWith(
-          status: GeneralUserSelfTestDebugStatus.loaded,
-          clearRunningCommandIndex: true,
-          message: e.toString(),
-          isSuccessMessage: false,
-        ),
-      );
+  static String _setAttenuationRequestCommand({
+    required int n,
+    required int s,
+    String? xx,
+  }) {
+    if (s == 0) {
+      return '?66,$n,0,#';
     }
+    return '?66,$n,1,${xx ?? ''},#';
   }
 
   Future<void> _onSubmitGeneralUserSetAttenuation(
@@ -3716,15 +3815,18 @@ class GeneralUserSelfTestDebugBloc
     }
 
     final n = event.transmitterType == 1 ? 1 : 0;
-    final xx = _normalizeAttenuationXx(event.attenuationValue);
-    if (xx == null) {
-      emit(
-        state.copyWith(
-          message: 'Attenuation must be a 2-digit value.',
-          isSuccessMessage: false,
-        ),
-      );
-      return;
+    String? xx;
+    if (event.sValue == 1) {
+      xx = _normalizeAttenuationXx(event.attenuationValue);
+      if (xx == null) {
+        emit(
+          state.copyWith(
+            message: 'Attenuation must be a 2-digit value.',
+            isSuccessMessage: false,
+          ),
+        );
+        return;
+      }
     }
 
     final runningIndex = state.commands.indexWhere(
@@ -3745,7 +3847,10 @@ class GeneralUserSelfTestDebugBloc
     );
 
     try {
-      final line = await _ble.sendDrifterAsciiCommand('?66,$n,1,$xx,#', wait);
+      final line = await _ble.sendDrifterAsciiCommand(
+        _setAttenuationRequestCommand(n: n, s: event.sValue, xx: xx),
+        wait,
+      );
       final parsed = _parseSetAttenuationResponse(line);
       final summary = _formatSetAttenuationBleSummary(line);
       final isSuccess = parsed == null
@@ -3952,7 +4057,7 @@ class GeneralUserSelfTestDebugBloc
           isSuccessMessage: false,
           lastSnapshot: SelfTestBleResponseSnapshot(
             testName:
-                model?.testName ?? 'Get station ID of Radio sonde Transmitter',
+                model?.testName ?? 'Get station ID of Radio Sonde Transmitter',
             responseLine: line,
             hideResponseLine: true,
             helpText: summary,
@@ -4405,7 +4510,7 @@ class GeneralUserSelfTestDebugBloc
 
     final resultLines = <String>[];
     final failures = <String>[];
-    const names = ['Plain carrier', 'Modulation', 'PRBS'];
+    const names = ['Plain carrier', 'Modulation', 'PRBS', 'RF Plain carrier'];
 
     try {
       final n = event.selectedN;
@@ -4415,24 +4520,48 @@ class GeneralUserSelfTestDebugBloc
       final status = _extractTransmitterTestStatus(line);
       final isOk = status == 0;
       if (!isOk) {
-        failures.add('${names[n]} (${_transmitterTestStatusText(status)})');
+        final label = n >= 0 && n < names.length ? names[n] : 'Option $n';
+        failures.add('$label (${_transmitterTestStatusText(status)})');
       }
 
       if (failures.isNotEmpty) {
+        if (event.suppressResponseDialog) {
+          emit(
+            state.copyWith(
+              status: GeneralUserSelfTestDebugStatus.loaded,
+              clearRunningCommandIndex: true,
+              message: 'Transmitter test update failed: ${failures.join(', ')}',
+              isSuccessMessage: false,
+            ),
+          );
+        } else {
+          emit(
+            state.copyWith(
+              status: GeneralUserSelfTestDebugStatus.loaded,
+              clearRunningCommandIndex: true,
+              message:
+                  'Transmitter test update partially failed: ${failures.join(', ')}',
+              isSuccessMessage: false,
+              lastSnapshot: SelfTestBleResponseSnapshot(
+                testName: 'Transmitter Test',
+                responseLine: resultLines.join('\n'),
+                helpText: 'Transmitter test Not OK.',
+                hideResponseLine: true,
+                descriptionSuccess: false,
+              ),
+            ),
+          );
+        }
+        return;
+      }
+
+      if (event.suppressResponseDialog) {
         emit(
           state.copyWith(
             status: GeneralUserSelfTestDebugStatus.loaded,
             clearRunningCommandIndex: true,
-            message:
-                'Transmitter test update partially failed: ${failures.join(', ')}',
+            message: '',
             isSuccessMessage: false,
-            lastSnapshot: SelfTestBleResponseSnapshot(
-              testName: 'Transmitter Test',
-              responseLine: resultLines.join('\n'),
-              helpText: 'Transmitter test Not OK.',
-              hideResponseLine: true,
-              descriptionSuccess: false,
-            ),
           ),
         );
         return;
@@ -4745,17 +4874,17 @@ class GeneralUserSelfTestDebugBloc
 
   /// Comma-separated payload after `$04` / `$06` / etc. opcode (11 parameter fields).
   static const List<String> _generalSystemParameterLabels = [
-    'Station id',
-    'Station name',
-    'Tx interval',
-    'Measurement interval',
-    'APN',
-    'APN',
-    'Fast SMS check',
-    'Admin cell no.1',
-    'Admin cell no. 2',
-    'Sensor power on time',
-    'Measurement start time',
+    'Buoy Id',
+    'Buoy Name',
+    'Tx Interval',
+    'Measurement Interval',
+    'SIM 1 APN',
+    'SIM 2 APN',
+    'Fast SMS Check',
+    'Admin Cell No.1',
+    'Admin Cell No. 2',
+    'Sensor Power on Time',
+    'Measurement Start Time',
   ];
 
   static List<String>? _parseGeneralSystemParametersFields(String rawLine) {
@@ -4763,8 +4892,7 @@ class GeneralUserSelfTestDebugBloc
     if (trimmed.isEmpty) {
       return null;
     }
-    final hash = trimmed.indexOf('#');
-    final noHash = hash >= 0 ? trimmed.substring(0, hash) : trimmed;
+    final noHash = stripDrifterLineTerminator(trimmed);
     final parts = noHash.split(',').map((e) => e.trim()).toList();
     if (parts.isEmpty) {
       return null;
@@ -4781,7 +4909,7 @@ class GeneralUserSelfTestDebugBloc
   /// Formats `$03` / `$04` / `$10` / `$58` / `$59` / `$60` as labeled key:value lines.
   static String _formatGeneralSystemParametersBleSummary(
     String rawLine, {
-    String heading = 'Read-back from device:',
+    String heading = '',
   }) {
     final trimmed = rawLine.trim();
     if (trimmed.isEmpty) {
@@ -4832,7 +4960,7 @@ class GeneralUserSelfTestDebugBloc
     if (!upper.contains(r'$03')) {
       return _formatGeneralSystemParametersBleSummary(
         rawLine,
-        heading: 'Device response:',
+        heading: 'Device Response:',
       );
     }
     return _formatGeneralSystemParametersBleSummary(
@@ -4896,9 +5024,7 @@ class GeneralUserSelfTestDebugBloc
     if (cleaned.isEmpty) {
       return null;
     }
-    final noHash = cleaned.endsWith('#')
-        ? cleaned.substring(0, cleaned.length - 1)
-        : cleaned;
+    final noHash = stripDrifterLineTerminator(cleaned);
     final parts = noHash.split(',').map((e) => e.trim()).toList();
     if (parts.length < 6 || !parts[0].toUpperCase().contains(r'$99')) {
       return null;
@@ -4934,18 +5060,15 @@ class GeneralUserSelfTestDebugBloc
           'Raw response:\n$trimmed';
     }
 
-    return _joinLabeledBleSummary('Device response:', [
-      MapEntry('Response code', parsed.responseCode),
-      MapEntry(
-        'Station ID',
-        _displaySensorParameterFieldValue(parsed.stationId),
-      ),
+    return _joinLabeledBleSummary('Device Response:', [
+      MapEntry('Response Code', parsed.responseCode),
+      MapEntry('Buoy Id', _displaySensorParameterFieldValue(parsed.stationId)),
       MapEntry(
         'UHF Transmission Start Time',
         _displaySensorParameterFieldValue(parsed.uhfStartTime),
       ),
       MapEntry(
-        'UHF Transmission Interval Time',
+        'UHF Interval Time',
         _displaySensorParameterFieldValue(parsed.uhfIntervalTime),
       ),
       MapEntry(
@@ -4953,7 +5076,7 @@ class GeneralUserSelfTestDebugBloc
         _displaySensorParameterFieldValue(parsed.sondeStartTime),
       ),
       MapEntry(
-        'Sonde Transmission Interval Time',
+        'Sonde Interval Time',
         _displaySensorParameterFieldValue(parsed.sondeIntervalTime),
       ),
     ]);
@@ -4971,9 +5094,7 @@ class GeneralUserSelfTestDebugBloc
     if (cleaned.isEmpty) {
       return null;
     }
-    final noHash = cleaned.endsWith('#')
-        ? cleaned.substring(0, cleaned.length - 1)
-        : cleaned;
+    final noHash = stripDrifterLineTerminator(cleaned);
     final parts = noHash.split(',').map((e) => e.trim()).toList();
     if (parts.length < 5 || !parts[0].toUpperCase().contains(r'$65')) {
       return null;
@@ -5006,30 +5127,29 @@ class GeneralUserSelfTestDebugBloc
 
     final nLabel = switch (parsed.n) {
       0 => 'UHF',
-      1 => 'Radio Sonde',
+      1 => 'RF',
       _ => '${parsed.n}',
     };
-    final sLabel = switch (parsed.s) {
-      '0' => 'Frequency set successful',
-      '1' => 'Checksum error',
-      '2' => 'Frequency not set',
-      '3' => 'Transmitter communication problem or not connected',
-      '4' => 'Get successful',
-      _ => parsed.s,
-    };
+    final sLabel = _isTransmitterFrequencyErrorFrequency(parsed.frequency)
+        ? 'Frequency Set Failure'
+        : switch (parsed.s) {
+            '0' => 'Frequency Set Successful',
+            '1' => 'Checksum Error',
+            '2' => 'Frequency Set Failure',
+            '3' => 'Transmitter Communication Problem or Not Connected',
+            '4' => 'Get Successful',
+            _ => parsed.s,
+          };
     final frequencyLabel =
         _isTransmitterFrequencyErrorFrequency(parsed.frequency)
         ? 'FFFFFFFFF — Error'
         : _displaySensorParameterFieldValue(parsed.frequency);
 
-    return _joinLabeledBleSummary('Device response:', [
-      MapEntry('Response code', parsed.responseCode),
-      MapEntry(
-        'Station ID',
-        _displaySensorParameterFieldValue(parsed.stationId),
-      ),
-      MapEntry('N', nLabel),
-      MapEntry('S', sLabel),
+    return _joinLabeledBleSummary('Device Response:', [
+      MapEntry('Response Code', parsed.responseCode),
+      MapEntry('Buoy Id', _displaySensorParameterFieldValue(parsed.stationId)),
+      MapEntry('Selection', nLabel),
+      MapEntry('Status', sLabel),
       MapEntry('Frequency', frequencyLabel),
     ]);
   }
@@ -5039,7 +5159,8 @@ class GeneralUserSelfTestDebugBloc
     if (upper == 'FFFFFFFFF') {
       return 'FFFFFFFFF';
     }
-    return _normalizeTransmitterFrequencyDigitsStatic(raw);
+    // return _normalizeTransmitterFrequencyDigitsStatic(raw);
+    return raw;
   }
 
   static bool _isTransmitterFrequencyErrorFrequency(String frequency) =>
@@ -5056,27 +5177,13 @@ class GeneralUserSelfTestDebugBloc
     return onlyDigits.padLeft(9, '0');
   }
 
-  (int, String, int)? _extractSetAttenuation(String responseLine) {
-    final parsed = _parseSetAttenuationResponse(responseLine);
-    if (parsed == null) {
-      return null;
-    }
-    final statusCode = int.tryParse(parsed.s);
-    if (statusCode == null) {
-      return null;
-    }
-    return (parsed.n, parsed.xx, statusCode);
-  }
-
   static ({String responseCode, String stationId, int n, String s, String xx})?
   _parseSetAttenuationResponse(String responseLine) {
     final cleaned = responseLine.trim();
     if (cleaned.isEmpty) {
       return null;
     }
-    final noHash = cleaned.endsWith('#')
-        ? cleaned.substring(0, cleaned.length - 1)
-        : cleaned;
+    final noHash = stripDrifterLineTerminator(cleaned);
     final parts = noHash.split(',').map((e) => e.trim()).toList();
     if (parts.length < 5 || !parts[0].toUpperCase().contains(r'$66')) {
       return null;
@@ -5109,27 +5216,26 @@ class GeneralUserSelfTestDebugBloc
 
     final nLabel = switch (parsed.n) {
       0 => 'UHF',
-      1 => 'Radio Sonde',
+      1 => 'RF',
       _ => '${parsed.n}',
     };
-    final sLabel = switch (parsed.s) {
-      '0' => 'Get',
-      '1' => 'Set',
-      _ => parsed.s,
-    };
+    final sLabel = _isSetAttenuationErrorXx(parsed.xx)
+        ? 'Set Failure'
+        : switch (parsed.s) {
+            '0' => 'Get',
+            '1' => 'Set',
+            _ => parsed.s,
+          };
     final xxLabel = _isSetAttenuationErrorXx(parsed.xx)
         ? 'FF — Error'
         : _displaySensorParameterFieldValue(parsed.xx);
 
-    return _joinLabeledBleSummary('Device response:', [
-      MapEntry('Response code', parsed.responseCode),
-      MapEntry(
-        'Station ID',
-        _displaySensorParameterFieldValue(parsed.stationId),
-      ),
-      MapEntry('N', nLabel),
-      MapEntry('S', sLabel),
-      MapEntry('Attenuation (xx)', xxLabel),
+    return _joinLabeledBleSummary('Device Response:', [
+      MapEntry('Response Code', parsed.responseCode),
+      MapEntry('Buoy Id', _displaySensorParameterFieldValue(parsed.stationId)),
+      MapEntry('Selection', nLabel),
+      MapEntry('Status', sLabel),
+      MapEntry('Attenuation', xxLabel),
     ]);
   }
 
@@ -5178,9 +5284,7 @@ class GeneralUserSelfTestDebugBloc
     if (cleaned.isEmpty) {
       return null;
     }
-    final noHash = cleaned.endsWith('#')
-        ? cleaned.substring(0, cleaned.length - 1)
-        : cleaned;
+    final noHash = stripDrifterLineTerminator(cleaned);
     final parts = noHash.split(',').map((e) => e.trim()).toList();
     if (parts.length < 4 || !parts[0].toUpperCase().contains(r'$67')) {
       return null;
@@ -5216,18 +5320,15 @@ class GeneralUserSelfTestDebugBloc
     };
 
     final entries = <MapEntry<String, String>>[
-      MapEntry('Response code', parsed.responseCode),
+      MapEntry('Response Code', parsed.responseCode),
+      MapEntry('Buoy Id', _displaySensorParameterFieldValue(parsed.stationId)),
+      MapEntry('Status', sLabel),
       MapEntry(
-        'Station ID',
-        _displaySensorParameterFieldValue(parsed.stationId),
-      ),
-      MapEntry('S', sLabel),
-      MapEntry(
-        'Radio sonde transmitter id',
+        'Radio Sonde Transmitter Id',
         _displaySensorParameterFieldValue(parsed.transmitterId),
       ),
     ];
-    return _joinLabeledBleSummary('Device response:', entries);
+    return _joinLabeledBleSummary('Device Response:', entries);
   }
 
   int _extractTransmitterTestStatus(String responseLine) {
@@ -5252,10 +5353,10 @@ class GeneralUserSelfTestDebugBloc
 
   String _transmitterTestStatusText(int status) {
     if (status == 0) {
-      return 'Transmitter test OK';
+      return 'Transmitter Test ON';
     }
     if (status == 1) {
-      return 'Transmitter test Not OK';
+      return 'Transmitter Test OFF';
     }
     return 'Unknown status=$status';
   }
@@ -5677,19 +5778,20 @@ class GeneralUserSelfTestDebugBloc
     try {
       final responseLine = await _ble.sendDrifterAsciiCommand(bleLine, wait);
       final summary = _formatParameterizedServerBleSummary(responseLine);
+      final parsedServerSettings = _parseServerSettingsResponse(responseLine);
       emit(
         state.copyWith(
           status: GeneralUserSelfTestDebugStatus.loaded,
           clearRunningCommandIndex: true,
           clearSetAllServerParametersPrompt: true,
-          message: '${model.testName} updated successfully.',
-          isSuccessMessage: true,
+          message: '',
+          isSuccessMessage: false,
           lastSnapshot: SelfTestBleResponseSnapshot(
             testName: model.testName,
             responseLine: responseLine,
             hideResponseLine: true,
             helpText: summary,
-            descriptionSuccess: true,
+            descriptionSuccess: parsedServerSettings != null,
           ),
         ),
       );
@@ -5742,10 +5844,10 @@ class GeneralUserSelfTestDebugBloc
       }
     }
 
-    rejectComma('Station id', stationId);
-    rejectComma('Station name', stationName);
+    rejectComma('Bouy id', stationId);
+    rejectComma('Bouy name', stationName);
     rejectComma('Tx interval', txInterval);
-    rejectComma('Measurement interval', measurementInterval);
+    rejectComma('Measurement Interval', measurementInterval);
     rejectComma('APN', apn);
     rejectComma('Fast SMS check', fastSmsCheck);
     rejectComma('Admin cell 1', adminCell1);
@@ -5760,7 +5862,7 @@ class GeneralUserSelfTestDebugBloc
       throw ArgumentError('Tx interval must be HH:MM:SS (24-hour).');
     }
     if (mi == null) {
-      throw ArgumentError('Measurement interval must be HH:MM:SS (24-hour).');
+      throw ArgumentError('Measurement Interval must be HH:MM:SS (24-hour).');
     }
     final apnField = _padBleGeneralParameterField(apn, 31, 'APN');
 
@@ -6019,11 +6121,18 @@ class GeneralUserSelfTestDebugBloc
       final isHttpServerUsername = commandId == _httpServerUsernameCommandId;
       final isDlCellNo = commandId == _setDlCellNoCommandId;
       final isPowerSwitching = commandId == _powerSwitchingCommandId;
+      final isSetBuoyOffset = commandId == _setBuoyOffsetCommandId;
       final isTestMode = commandId == _testModeCommandId;
       final isSetHttpPort = commandId == _setHttpPortCommandId;
       final isSetHttpPassword = commandId == _setHttpPasswordCommandId;
       final isGetSensorParameter81 = req.startsWith('?81');
       final isGetSensorParameter83 = req.startsWith('?83');
+      final isHttpWebsiteAddress = _httpWebsiteAddressCommandIds.contains(
+        commandId,
+      );
+      final isRtcHttpAddress =
+          commandId == _setRtcServerHttpWebsiteAddressCommandId;
+      final isRtcHttpKey = commandId == _setRtcServerHttpWebsiteKeyCommandId;
       final summary = isBatteryVoltage
           ? _formatBatteryVoltageBleSummary(responseLine)
           : isHttpServerUsername
@@ -6032,6 +6141,8 @@ class GeneralUserSelfTestDebugBloc
           ? _formatDlCellNoBleSummary(responseLine)
           : isPowerSwitching
           ? _formatPowerSwitchingBleSummary(responseLine)
+          : isSetBuoyOffset
+          ? _formatSetBuoyOffsetBleSummary(responseLine)
           : isTestMode
           ? _formatTestModeBleSummary(responseLine)
           : isSetHttpPort
@@ -6042,13 +6153,28 @@ class GeneralUserSelfTestDebugBloc
           ? _formatGetSensorParameter81BleSummary(responseLine)
           : isGetSensorParameter83
           ? _formatGetSensorParameter83BleSummary(responseLine)
+          : isRtcHttpAddress
+          ? _formatRtcHttpSimpleBleSummary(responseLine, isKeyCommand: false)
+          : isRtcHttpKey
+          ? _formatRtcHttpSimpleBleSummary(responseLine, isKeyCommand: true)
+          : isHttpWebsiteAddress
+          ? _formatHttpWebsiteAddressBleSummary(responseLine)
           : _formatParameterizedServerBleSummary(responseLine);
+      final isIndividualServerSettings = _individualServerSettingsCommandIds
+          .contains(commandId);
+      final individualServerParsedOk = !isIndividualServerSettings
+          ? false
+          : isHttpWebsiteAddress
+          ? _parseHttpWebsiteAddressResponse(responseLine) != null
+          : _parseServerSettingsResponse(responseLine) != null;
       emit(
         state.copyWith(
           status: GeneralUserSelfTestDebugStatus.loaded,
           clearRunningCommandIndex: true,
           clearParameterizedCommandPrompt: true,
-          message: isBatteryVoltage
+          message: isIndividualServerSettings
+              ? ''
+              : isBatteryVoltage
               ? 'Battery voltage read successfully.'
               : isHttpServerUsername
               ? 'HTTP server username updated successfully.'
@@ -6065,13 +6191,15 @@ class GeneralUserSelfTestDebugBloc
               : isGetSensorParameter81 || isGetSensorParameter83
               ? 'Sensor parameters read successfully.'
               : '${model.testName} updated successfully.',
-          isSuccessMessage: true,
+          isSuccessMessage: isIndividualServerSettings ? false : true,
           lastSnapshot: SelfTestBleResponseSnapshot(
             testName: model.testName,
             responseLine: responseLine,
             hideResponseLine: true,
             helpText: summary,
-            descriptionSuccess: true,
+            descriptionSuccess: isIndividualServerSettings
+                ? individualServerParsedOk
+                : true,
           ),
         ),
       );
@@ -6250,19 +6378,20 @@ class GeneralUserSelfTestDebugBloc
         model.responseWaitTimeout,
       );
       final summary = _formatParameterizedServerBleSummary(responseLine);
+      final parsedServerSettings = _parseServerSettingsResponse(responseLine);
       emit(
         state.copyWith(
           status: GeneralUserSelfTestDebugStatus.loaded,
           clearRunningCommandIndex: true,
           clearRestoreServerParametersPrompt: true,
-          message: '${model.testName} completed successfully.',
-          isSuccessMessage: true,
+          message: '',
+          isSuccessMessage: false,
           lastSnapshot: SelfTestBleResponseSnapshot(
             testName: model.testName,
             responseLine: responseLine,
             hideResponseLine: true,
             helpText: summary,
-            descriptionSuccess: true,
+            descriptionSuccess: parsedServerSettings != null,
           ),
         ),
       );
@@ -6509,18 +6638,19 @@ class GeneralUserSelfTestDebugBloc
         cmd.responseWaitTimeout,
       );
       final summary = _formatParameterizedServerBleSummary(responseLine);
+      final parsedServerSettings = _parseServerSettingsResponse(responseLine);
       emit(
         state.copyWith(
           status: GeneralUserSelfTestDebugStatus.loaded,
           clearRunningCommandIndex: true,
-          message: '${cmd.testName} read successfully.',
-          isSuccessMessage: true,
+          message: '',
+          isSuccessMessage: false,
           lastSnapshot: SelfTestBleResponseSnapshot(
             testName: cmd.testName,
             responseLine: responseLine,
             hideResponseLine: true,
             helpText: summary,
-            descriptionSuccess: true,
+            descriptionSuccess: parsedServerSettings != null,
           ),
         ),
       );
@@ -6558,9 +6688,7 @@ class GeneralUserSelfTestDebugBloc
     if (trimmed.isEmpty) {
       return 'No response text was received.';
     }
-    final noHash = trimmed.endsWith('#')
-        ? trimmed.substring(0, trimmed.length - 1)
-        : trimmed;
+    final noHash = stripDrifterLineTerminator(trimmed);
     final parts = noHash.split(',').map((e) => e.trim()).toList();
     if (parts.length < 2 || !parts[0].toUpperCase().contains(r'$08')) {
       return 'The device responded, but the payload could not be parsed as '
@@ -6589,12 +6717,36 @@ class GeneralUserSelfTestDebugBloc
     }
 
     final entries = <MapEntry<String, String>>[
-      MapEntry('Response code', parts[0]),
+      MapEntry('Response Code', parts[0]),
       if (stationId != null && stationId.isNotEmpty)
-        MapEntry('Station ID', _displaySensorParameterFieldValue(stationId)),
-      MapEntry('Transmission time', _displaySensorParameterFieldValue(time)),
+        MapEntry('Buoy Id', _displaySensorParameterFieldValue(stationId)),
+      MapEntry('Transmission Time', _displaySensorParameterFieldValue(time)),
     ];
     return _joinLabeledBleSummary('Transmission time updated:', entries);
+  }
+
+  /// Extracts the `HH:MM:SS` value from a `?63,,#` read-back, tolerating both
+  /// `$63,HH:MM:SS#` and `$63,station id,HH:MM:SS#`. Returns null when absent.
+  static String? _extractTransmissionStartTimeFromGprsResponse(String rawLine) {
+    final trimmed = rawLine.trim();
+    if (trimmed.isEmpty) return null;
+    final noHash = stripDrifterLineTerminator(trimmed);
+    final parts = noHash.split(',').map((e) => e.trim()).toList();
+    if (parts.length < 2 || !parts[0].toUpperCase().contains(r'$63')) {
+      return null;
+    }
+    if (parts.length == 2 &&
+        _transmissionStartTimeHmsPattern.hasMatch(parts[1])) {
+      return parts[1];
+    }
+    if (parts.length >= 3 &&
+        _transmissionStartTimeHmsPattern.hasMatch(parts[2])) {
+      return parts[2];
+    }
+    if (_transmissionStartTimeHmsPattern.hasMatch(parts.last)) {
+      return parts.last;
+    }
+    return null;
   }
 
   /// GPRS transmission start time read-back.
@@ -6605,9 +6757,7 @@ class GeneralUserSelfTestDebugBloc
     if (trimmed.isEmpty) {
       return 'No response text was received.';
     }
-    final noHash = trimmed.endsWith('#')
-        ? trimmed.substring(0, trimmed.length - 1)
-        : trimmed;
+    final noHash = stripDrifterLineTerminator(trimmed);
     final parts = noHash.split(',').map((e) => e.trim()).toList();
     if (parts.length < 2 || !parts[0].toUpperCase().contains(r'$63')) {
       return 'The device responded, but the payload could not be parsed as '
@@ -6648,9 +6798,7 @@ class GeneralUserSelfTestDebugBloc
     if (trimmed.isEmpty) {
       return 'No response text was received.';
     }
-    final noHash = trimmed.endsWith('#')
-        ? trimmed.substring(0, trimmed.length - 1)
-        : trimmed;
+    final noHash = stripDrifterLineTerminator(trimmed);
     final parts = noHash.split(',').map((e) => e.trim()).toList();
     if (parts.length < 5 || !parts[0].toUpperCase().contains(r'$95')) {
       return 'The device responded, but the payload could not be parsed as '
@@ -6665,17 +6813,17 @@ class GeneralUserSelfTestDebugBloc
         ? '${_displaySensorParameterFieldValue(dateTimeRaw)} (RTC not updated — placeholder)'
         : _displaySensorParameterFieldValue(dateTimeRaw);
     return _joinLabeledBleSummary('Manual RTC update:', [
-      MapEntry('Response code', parts[0]),
-      MapEntry('Factory Station ID', factoryId),
+      MapEntry('Response Code', parts[0]),
+      MapEntry('Buoy Id', factoryId),
       MapEntry(
         'GPS RTC Update Status',
         _formatManualRtcGpsUpdateStatus(gpsStatus),
       ),
-      MapEntry('Last RTC date/time', dateTimeDisplay),
-      MapEntry(
-        'GPRS RTC Update Status',
-        _formatManualRtcUpdateStatus(rtcStatus),
-      ),
+      MapEntry('Last RTC Date & Time', dateTimeDisplay),
+      // MapEntry(
+      //   'GPRS RTC Update Status',
+      //   _formatManualRtcUpdateStatus(rtcStatus),
+      // ),
     ]);
   }
 
@@ -6697,15 +6845,24 @@ class GeneralUserSelfTestDebugBloc
     };
   }
 
+  static String _httpServerLabelFromNo(String serverNo) {
+    final n = int.tryParse(serverNo.trim());
+    return switch (n) {
+      1 => 'Primary Server',
+      2 => 'Secondary Server',
+      3 => 'Third Server',
+      4 => 'Factory Server',
+      _ => serverNo.trim().isEmpty ? '—' : serverNo.trim(),
+    };
+  }
+
   /// `$97,station id,N,password#` — HTTP password read-back.
   static String _formatSetHttpPasswordBleSummary(String rawLine) {
     final trimmed = rawLine.trim();
     if (trimmed.isEmpty) {
       return 'The device acknowledged the update. No response text was received.';
     }
-    final noHash = trimmed.endsWith('#')
-        ? trimmed.substring(0, trimmed.length - 1)
-        : trimmed;
+    final noHash = stripDrifterLineTerminator(trimmed);
     final parts = noHash.split(',').map((e) => e.trim()).toList();
     if (parts.length < 4 || !parts[0].toUpperCase().contains(r'$97')) {
       return 'The device responded, but the payload could not be parsed as '
@@ -6717,13 +6874,12 @@ class GeneralUserSelfTestDebugBloc
     final serverNo = parts[2];
     final password = parts.sublist(3).join(',').trim();
     return [
-      'Read-back from device:',
+      'HTTP password from device:',
       '',
-      password,
-      '',
-      'HTTP server number (N): ${dash(serverNo)} (1–4)',
-      'Station ID: ${dash(station)}',
-      'Response code: ${parts[0]}',
+      'HTTP Server: ${_httpServerLabelFromNo(serverNo)}',
+      'Password: ${dash(password)}',
+      'Buoy Id: ${dash(station)}',
+      'Response Code: ${parts[0]}',
     ].join('\n');
   }
 
@@ -6733,9 +6889,7 @@ class GeneralUserSelfTestDebugBloc
     if (trimmed.isEmpty) {
       return 'The device acknowledged the update. No response text was received.';
     }
-    final noHash = trimmed.endsWith('#')
-        ? trimmed.substring(0, trimmed.length - 1)
-        : trimmed;
+    final noHash = stripDrifterLineTerminator(trimmed);
     final parts = noHash.split(',').map((e) => e.trim()).toList();
     if (parts.length < 6 || !parts[0].toUpperCase().contains(r'$98')) {
       return 'The device responded, but the payload could not be parsed as '
@@ -6751,13 +6905,13 @@ class GeneralUserSelfTestDebugBloc
     return [
       'HTTP ports from device:',
       '',
-      'User 1 HTTP port: ${dash(user1)}',
-      'User 2 HTTP port: ${dash(user2)}',
-      'User 3 HTTP port: ${dash(user3)}',
+      'Primary HTTP port: ${dash(user1)}',
+      'Secondary HTTP port: ${dash(user2)}',
+      'Third HTTP port: ${dash(user3)}',
       'Factory HTTP port: ${dash(factory)}',
       '',
-      'Station ID: ${dash(station)}',
-      'Response code: ${parts[0]}',
+      'Buoy Id: ${dash(station)}',
+      'Response Code: ${parts[0]}',
     ].join('\n');
   }
 
@@ -6780,9 +6934,7 @@ class GeneralUserSelfTestDebugBloc
     if (trimmed.isEmpty) {
       return 'No response text was received.';
     }
-    final noHash = trimmed.endsWith('#')
-        ? trimmed.substring(0, trimmed.length - 1)
-        : trimmed;
+    final noHash = stripDrifterLineTerminator(trimmed);
     final parts = noHash.split(',').map((e) => e.trim()).toList();
     if (parts.length < 3 || !parts[0].toUpperCase().contains(r'$96')) {
       return 'The device responded, but the payload could not be parsed as '
@@ -6802,8 +6954,8 @@ class GeneralUserSelfTestDebugBloc
       '',
       statusLine,
       '',
-      'Station ID: ${dash(station)}',
-      'Response code: ${parts[0]}',
+      'Buoy Id: ${dash(station)}',
+      'Response Code: ${parts[0]}',
     ].join('\n');
   }
 
@@ -6813,9 +6965,7 @@ class GeneralUserSelfTestDebugBloc
     if (trimmed.isEmpty) {
       return 'No response text was received.';
     }
-    final noHash = trimmed.endsWith('#')
-        ? trimmed.substring(0, trimmed.length - 1)
-        : trimmed;
+    final noHash = stripDrifterLineTerminator(trimmed);
     final parts = noHash.split(',').map((e) => e.trim()).toList();
     if (parts.length < 4 || !parts[0].toUpperCase().contains(r'$91')) {
       return 'The device responded, but the payload could not be parsed as '
@@ -6827,18 +6977,20 @@ class GeneralUserSelfTestDebugBloc
     final lines = <String>[
       'Memory test:',
       '',
-      'Memory status: ${_formatMemoryTestOkNotOk(parts[2])}',
+      'Record Number: ${_formatMemoryTestOkNotOk(parts[2])}',
     ];
     if (parts.length > 3) {
-      lines.add('Memory 2 status: ${_formatMemoryTestOkNotOk(parts[3])}');
+      lines.add(
+        'Record Store Up To: ${_formatMemoryTestOkNotOk(parts[3])} (Days)',
+      );
     }
-    for (var i = 4; i < parts.length; i++) {
-      lines.add('Status ${i - 1}: ${_formatMemoryTestOkNotOk(parts[i])}');
-    }
+    // for (var i = 4; i < parts.length; i++) {
+    //   lines.add('Status ${i - 1}: ${_formatMemoryTestOkNotOk(parts[i])}');
+    // }
     lines.addAll([
       '',
-      'Station ID: ${dash(station)}',
-      'Response code: ${parts[0]}',
+      'Buoy Id: ${dash(station)}',
+      'Response Code: ${parts[0]}',
     ]);
     return lines.join('\n');
   }
@@ -6849,30 +7001,28 @@ class GeneralUserSelfTestDebugBloc
     if (trimmed.isEmpty) {
       return 'No response text was received.';
     }
-    final noHash = trimmed.endsWith('#')
-        ? trimmed.substring(0, trimmed.length - 1)
-        : trimmed;
+    final noHash = stripDrifterLineTerminator(trimmed);
     final parts = noHash.split(',').map((e) => e.trim()).toList();
     if (parts.length < 7 || !parts[0].toUpperCase().contains(r'$77')) {
       return 'The device responded, but the payload could not be parsed as '
           'SIM card test status.\n\n'
           'Raw response:\n$trimmed';
     }
-    return _joinLabeledBleSummary('SIM card test:', [
-      MapEntry('Response code', parts[0]),
-      MapEntry('Station ID', _displaySensorParameterFieldValue(parts[1])),
-      MapEntry('SIM1 slot status', _formatSimSlotStatus(parts[2])),
+    return _joinLabeledBleSummary('SIM Card Test:', [
+      MapEntry('Response Code', parts[0]),
+      MapEntry('Buoy ID', _displaySensorParameterFieldValue(parts[1])),
+      MapEntry('SIM 1 Slot Status', _formatSimSlotStatus(parts[2])),
       MapEntry(
-        'Signal strength SIM1',
+        'Signal Strength SIM 1',
         _displaySensorParameterFieldValue(parts[3]),
       ),
-      MapEntry('SIM2 slot status', _formatSimSlotStatus(parts[4])),
+      // MapEntry('SIM2 Slot Status', _formatSimSlotStatus(parts[4])),
+      // MapEntry(
+      //   'Signal Strength SIM2',
+      //   _displaySensorParameterFieldValue(parts[5]),
+      // ),
       MapEntry(
-        'Signal strength SIM2',
-        _displaySensorParameterFieldValue(parts[5]),
-      ),
-      MapEntry(
-        'Modem firmware version',
+        'Modem Firmware Version',
         _displaySensorParameterFieldValue(parts[6]),
       ),
     ]);
@@ -6893,9 +7043,7 @@ class GeneralUserSelfTestDebugBloc
     if (trimmed.isEmpty) {
       return 'No response text was received.';
     }
-    final noHash = trimmed.endsWith('#')
-        ? trimmed.substring(0, trimmed.length - 1)
-        : trimmed;
+    final noHash = stripDrifterLineTerminator(trimmed);
     final parts = noHash.split(',').map((e) => e.trim()).toList();
     if (parts.length < 3 || !parts[0].toUpperCase().contains(r'$89')) {
       return 'The device responded, but the payload could not be parsed as '
@@ -6903,11 +7051,8 @@ class GeneralUserSelfTestDebugBloc
           'Raw response:\n$trimmed';
     }
     return _joinLabeledBleSummary('GPRS RSSI:', [
-      MapEntry('Response code', parts[0]),
-      MapEntry(
-        'Factory Station ID',
-        _displaySensorParameterFieldValue(parts[1]),
-      ),
+      MapEntry('Response Code', parts[0]),
+      MapEntry('Buoy Id', _displaySensorParameterFieldValue(parts[1])),
       MapEntry('RSSI', _displaySensorParameterFieldValue(parts[2])),
     ]);
   }
@@ -6918,29 +7063,24 @@ class GeneralUserSelfTestDebugBloc
     if (trimmed.isEmpty) {
       return 'No response text was received.';
     }
-    final noHash = trimmed.endsWith('#')
-        ? trimmed.substring(0, trimmed.length - 1)
-        : trimmed;
+    final noHash = stripDrifterLineTerminator(trimmed);
     final parts = noHash.split(',').map((e) => e.trim()).toList();
     if (parts.length < 3 || !parts[0].toUpperCase().contains(r'$92')) {
       return 'The device responded, but the payload could not be parsed as '
           'manual FTP status.\n\n'
           'Raw response:\n$trimmed';
     }
-    return _joinLabeledBleSummary('Manual FTP:', [
-      MapEntry('Response code', parts[0]),
-      MapEntry(
-        'Factory Station ID',
-        _displaySensorParameterFieldValue(parts[1]),
-      ),
-      MapEntry('Task status', _formatManualFtpTaskStatus(parts[2])),
+    return _joinLabeledBleSummary('Manual Transmission:', [
+      MapEntry('Response Code', parts[0]),
+      MapEntry('Buoy Id', _displaySensorParameterFieldValue(parts[1])),
+      MapEntry('Task Status', _formatManualFtpTaskStatus(parts[2])),
     ]);
   }
 
   static String _formatManualFtpTaskStatus(String raw) {
     final s = raw.trim();
     return switch (s) {
-      '0' => '0 — Task completed',
+      '0' => 'Successfully',
       _ => s.isEmpty ? '—' : s,
     };
   }
@@ -6951,9 +7091,7 @@ class GeneralUserSelfTestDebugBloc
     if (trimmed.isEmpty) {
       return 'No response text was received.';
     }
-    final noHash = trimmed.endsWith('#')
-        ? trimmed.substring(0, trimmed.length - 1)
-        : trimmed;
+    final noHash = stripDrifterLineTerminator(trimmed);
     final parts = noHash.split(',').map((e) => e.trim()).toList();
     if (parts.length < 3 || !parts[0].toUpperCase().contains(r'$94')) {
       return 'The device responded, but the payload could not be parsed as '
@@ -6961,12 +7099,9 @@ class GeneralUserSelfTestDebugBloc
           'Raw response:\n$trimmed';
     }
     return _joinLabeledBleSummary('Modem test:', [
-      MapEntry('Response code', parts[0]),
-      MapEntry(
-        'Factory Station ID',
-        _displaySensorParameterFieldValue(parts[1]),
-      ),
-      MapEntry('Test status', _formatModemTestStatus(parts[2])),
+      MapEntry('Response Code', parts[0]),
+      MapEntry('Buoy Id', _displaySensorParameterFieldValue(parts[1])),
+      MapEntry('Test Status', _formatModemTestStatus(parts[2])),
     ]);
   }
 
@@ -6984,9 +7119,7 @@ class GeneralUserSelfTestDebugBloc
     if (trimmed.isEmpty) {
       return 'No response text was received.';
     }
-    final noHash = trimmed.endsWith('#')
-        ? trimmed.substring(0, trimmed.length - 1)
-        : trimmed;
+    final noHash = stripDrifterLineTerminator(trimmed);
     final parts = noHash.split(',').map((e) => e.trim()).toList();
     if (parts.length < 3 || !parts[0].toUpperCase().contains(r'$79')) {
       return 'The device responded, but the payload could not be parsed as '
@@ -7006,8 +7139,8 @@ class GeneralUserSelfTestDebugBloc
       '',
       statusLine,
       '',
-      'Station ID: ${dash(station)}',
-      'Response code: ${parts[0]}',
+      'Buoy Id: ${dash(station)}',
+      'Response Code: ${parts[0]}',
     ].join('\n');
   }
 
@@ -7017,9 +7150,7 @@ class GeneralUserSelfTestDebugBloc
     if (trimmed.isEmpty) {
       return 'No response text was received.';
     }
-    final noHash = trimmed.endsWith('#')
-        ? trimmed.substring(0, trimmed.length - 1)
-        : trimmed;
+    final noHash = stripDrifterLineTerminator(trimmed);
     final parts = noHash.split(',').map((e) => e.trim()).toList();
     if (parts.length < 3 || !parts[0].toUpperCase().contains(r'$71')) {
       return 'The device responded, but the payload could not be parsed as '
@@ -7030,12 +7161,36 @@ class GeneralUserSelfTestDebugBloc
     final station = parts[1];
     final mode = parts[2];
     return [
-      'Test mode:',
+      // 'Test mode:',
       '',
-      mode,
+      mode == '0' ? 'Test Mode: Disable' : 'Test Mode: Enable',
       '',
-      'Station ID: ${dash(station)}',
-      'Response code: ${parts[0]}',
+      'Buoy Id: ${dash(station)}',
+      'Response Code: ${parts[0]}',
+    ].join('\n');
+  }
+
+  /// `$75,station id,+/-dddd#` — buoy offset read-back.
+  static String _formatSetBuoyOffsetBleSummary(String rawLine) {
+    final trimmed = rawLine.trim();
+    if (trimmed.isEmpty) {
+      return 'No response text was received.';
+    }
+    final noHash = stripDrifterLineTerminator(trimmed);
+    final parts = noHash.split(',').map((e) => e.trim()).toList();
+    if (parts.length < 3 || !parts[0].toUpperCase().contains(r'$75')) {
+      return 'The device responded, but the payload could not be parsed as '
+          'buoy offset.\n\n'
+          'Raw response:\n$trimmed';
+    }
+    String dash(String s) => s.isEmpty ? '—' : s;
+    final responseCode = parts[0].replaceFirst(RegExp(r'^\$'), '').trim();
+    final station = parts[1];
+    final offset = parts[2];
+    return [
+      'Response Code: ${dash(responseCode)}',
+      'Buoy Id: ${dash(station)}',
+      'Offset: ${dash(offset)}',
     ].join('\n');
   }
 
@@ -7045,9 +7200,7 @@ class GeneralUserSelfTestDebugBloc
     if (trimmed.isEmpty) {
       return 'No response text was received.';
     }
-    final noHash = trimmed.endsWith('#')
-        ? trimmed.substring(0, trimmed.length - 1)
-        : trimmed;
+    final noHash = stripDrifterLineTerminator(trimmed);
     final parts = noHash.split(',').map((e) => e.trim()).toList();
     if (parts.length < 3 || !parts[0].toUpperCase().contains(r'$76')) {
       return 'The device responded, but the payload could not be parsed as '
@@ -7067,8 +7220,8 @@ class GeneralUserSelfTestDebugBloc
       '',
       statusLine,
       '',
-      'Station ID: ${dash(station)}',
-      'Response code: ${parts[0]}',
+      'Buoy Id: ${dash(station)}',
+      'Response Code: ${parts[0]}',
     ].join('\n');
   }
 
@@ -7078,9 +7231,7 @@ class GeneralUserSelfTestDebugBloc
     if (trimmed.isEmpty) {
       return 'The device acknowledged the update. No response text was received.';
     }
-    final noHash = trimmed.endsWith('#')
-        ? trimmed.substring(0, trimmed.length - 1)
-        : trimmed;
+    final noHash = stripDrifterLineTerminator(trimmed);
     final parts = noHash.split(',').map((e) => e.trim()).toList();
     if (parts.length < 3 || !parts[0].toUpperCase().contains(r'$68')) {
       return 'The device responded, but the payload could not be parsed as '
@@ -7091,12 +7242,12 @@ class GeneralUserSelfTestDebugBloc
     final station = parts[1];
     final cellNumber = parts.sublist(2).join(',').trim();
     return [
-      'Read-back from device:',
+      ':',
       '',
-      cellNumber,
+      cellNumber.replaceAll(',', ''),
       '',
-      'Station ID: ${dash(station)}',
-      'Response code: ${parts[0]}',
+      'Buoy Id: ${dash(station)}',
+      'Response Code: ${parts[0]}',
     ].join('\n');
   }
 
@@ -7106,9 +7257,7 @@ class GeneralUserSelfTestDebugBloc
     if (trimmed.isEmpty) {
       return 'The device acknowledged the update. No response text was received.';
     }
-    final noHash = trimmed.endsWith('#')
-        ? trimmed.substring(0, trimmed.length - 1)
-        : trimmed;
+    final noHash = stripDrifterLineTerminator(trimmed);
     final parts = noHash.split(',').map((e) => e.trim()).toList();
     if (parts.length < 4 || !parts[0].toUpperCase().contains(r'$62')) {
       return 'The device responded, but the payload could not be parsed as '
@@ -7120,12 +7269,12 @@ class GeneralUserSelfTestDebugBloc
     final serverNo = parts[2];
     final username = parts.sublist(3).join(',').trim();
     return [
-      'Read-back from device:',
+      'HTTP server username from device:',
       '',
-      'HTTP server number (N): ${dash(serverNo)} (1–4)',
+      'HTTP Server: ${_httpServerLabelFromNo(serverNo)}',
       'Username: ${dash(username)}',
-      'Station ID: ${dash(station)}',
-      'Response code: ${parts[0]}',
+      'Buoy Id: ${dash(station)}',
+      'Response Code: ${parts[0]}',
     ].join('\n');
   }
 
@@ -7134,9 +7283,7 @@ class GeneralUserSelfTestDebugBloc
     if (trimmed.isEmpty) {
       return 'No response text was received.';
     }
-    final noHash = trimmed.endsWith('#')
-        ? trimmed.substring(0, trimmed.length - 1)
-        : trimmed;
+    final noHash = stripDrifterLineTerminator(trimmed);
     final parts = noHash.split(',').map((e) => e.trim()).toList();
     if (parts.length < 3 || !parts[0].toUpperCase().contains(r'$84')) {
       return 'The device responded, but the payload could not be parsed.\n\n'
@@ -7146,11 +7293,11 @@ class GeneralUserSelfTestDebugBloc
     final voltage = _displaySensorParameterFieldValue(parts[2]);
     final cntRaw = parts.length > 3 ? parts.sublist(3).join(', ').trim() : '';
     final cnt = _displayBatteryVoltageCntValue(cntRaw);
-    return _joinLabeledBleSummary('Battery voltage:', [
-      MapEntry('Response code', parts[0]),
-      MapEntry('Station ID', station),
-      MapEntry('Battery voltage', voltage),
-      MapEntry('CNT (counts)', cnt),
+    return _joinLabeledBleSummary('Battery Voltage:', [
+      MapEntry('Response Code', parts[0]),
+      MapEntry('Buoy Id', station),
+      MapEntry('Battery Voltage', voltage),
+      MapEntry('ADC Count', cnt),
     ]);
   }
 
@@ -7172,68 +7319,358 @@ class GeneralUserSelfTestDebugBloc
 
   /// Parses `$15`–`$19` / `$23`–`$29` style read-back lines:
   /// `$NN,station,addr,port,path,user,pass,cell,R#`
+  ///
+  /// Devices may omit trailing empty fields (cell no., TX redundancy); at least
+  /// `$NN` and station ID must be present.
+  static String _serverSettingsFieldAt(List<String> parts, int index) {
+    return index < parts.length ? parts[index] : '';
+  }
+
+  /// Minimum payload length after `$NN,station,` for padded server-settings bodies.
+  static const int _serverSettingsPaddedPayloadMinLength =
+      20 + 5 + 20 + 20 + 20 + 13 + 1;
+
+  static (String field, String rest)? _readFixedWidthServerSettingsField(
+    String rest,
+    int width,
+  ) {
+    var cursor = rest;
+    if (cursor.startsWith(',')) {
+      cursor = cursor.substring(1);
+    }
+    if (cursor.length < width) {
+      return null;
+    }
+    final field = cursor.substring(0, width);
+    cursor = cursor.substring(width);
+    if (cursor.startsWith(',')) {
+      cursor = cursor.substring(1);
+    }
+    return (field, cursor);
+  }
+
+  static ({
+    String responseCode,
+    String stationId,
+    String ftpAddress,
+    String ftpPort,
+    String ftpPath,
+    String ftpUsername,
+    String ftpPassword,
+    String cellNo,
+    String txRedundancy,
+  })?
+  _parseServerSettingsResponseFixedWidth(String rawLine) {
+    final trimmed = rawLine.trim();
+    if (trimmed.isEmpty) {
+      return null;
+    }
+    final noHash = stripDrifterLineTerminator(trimmed);
+    final opcodeComma = noHash.indexOf(',');
+    if (opcodeComma < 0 || !noHash.startsWith(r'$')) {
+      return null;
+    }
+    final responseCode = noHash.substring(0, opcodeComma);
+    var rest = noHash.substring(opcodeComma + 1);
+    final stationComma = rest.indexOf(',');
+    if (stationComma < 0) {
+      return null;
+    }
+    final stationId = rest.substring(0, stationComma);
+    rest = rest.substring(stationComma + 1);
+    if (rest.length < _serverSettingsPaddedPayloadMinLength) {
+      return null;
+    }
+
+    final addr = _readFixedWidthServerSettingsField(rest, 20);
+    if (addr == null) {
+      return null;
+    }
+    final port = _readFixedWidthServerSettingsField(addr.$2, 5);
+    if (port == null) {
+      return null;
+    }
+    final path = _readFixedWidthServerSettingsField(port.$2, 20);
+    if (path == null) {
+      return null;
+    }
+    final user = _readFixedWidthServerSettingsField(path.$2, 20);
+    if (user == null) {
+      return null;
+    }
+    final pass = _readFixedWidthServerSettingsField(user.$2, 20);
+    if (pass == null) {
+      return null;
+    }
+    final cell = _readFixedWidthServerSettingsField(pass.$2, 13);
+    if (cell == null) {
+      return null;
+    }
+    final redundancy = _readFixedWidthServerSettingsField(cell.$2, 1);
+    if (redundancy == null) {
+      return null;
+    }
+
+    final tx = redundancy.$1.trim();
+    if (tx != '0' && tx != '1') {
+      return null;
+    }
+    final cellTrimmed = cell.$1.trim();
+    if (!cellTrimmed.startsWith('+91') || cellTrimmed.length < 13) {
+      return null;
+    }
+
+    return (
+      responseCode: responseCode,
+      stationId: stationId.trim(),
+      ftpAddress: addr.$1.trim(),
+      ftpPort: port.$1.trim(),
+      ftpPath: path.$1.trim(),
+      ftpUsername: user.$1.trim(),
+      ftpPassword: pass.$1.trim(),
+      cellNo: cellTrimmed,
+      txRedundancy: tx,
+    );
+  }
+
+  static ({
+    String responseCode,
+    String stationId,
+    String ftpAddress,
+    String ftpPort,
+    String ftpPath,
+    String ftpUsername,
+    String ftpPassword,
+    String cellNo,
+    String txRedundancy,
+  })?
+  _parseServerSettingsResponseCommaSplit(String rawLine) {
+    final trimmed = rawLine.trim();
+    if (trimmed.isEmpty) {
+      return null;
+    }
+    final noHash = stripDrifterLineTerminator(trimmed);
+    final parts = noHash.split(',').map((e) => e.trim()).toList();
+    if (parts.length < 2 || !parts.first.startsWith(r'$')) {
+      return null;
+    }
+    return (
+      responseCode: parts[0],
+      stationId: parts[1],
+      ftpAddress: _serverSettingsFieldAt(parts, 2),
+      ftpPort: _serverSettingsFieldAt(parts, 3),
+      ftpPath: _serverSettingsFieldAt(parts, 4),
+      ftpUsername: _serverSettingsFieldAt(parts, 5),
+      ftpPassword: _serverSettingsFieldAt(parts, 6),
+      cellNo: _serverSettingsFieldAt(parts, 7),
+      txRedundancy: _serverSettingsFieldAt(parts, 8),
+    );
+  }
+
+  static ({
+    String responseCode,
+    String stationId,
+    String ftpAddress,
+    String ftpPort,
+    String ftpPath,
+    String ftpUsername,
+    String ftpPassword,
+    String cellNo,
+    String txRedundancy,
+  })?
+  _parseServerSettingsResponse(String rawLine) {
+    return _parseServerSettingsResponseFixedWidth(rawLine) ??
+        _parseServerSettingsResponseCommaSplit(rawLine);
+  }
+
+  static String _serverSettingsTxRedundancyLabel(String raw) {
+    final r = raw.trim();
+    return switch (r) {
+      '0' => 'GSM and GPRS',
+      '1' => 'GSM if GPRS fail',
+      _ => _displaySensorParameterFieldValue(r),
+    };
+  }
+
+  /// Parses `$12` / `$13` RTC HTTP read-back: `$NN,station,value#`
+  static ({String responseCode, String stationId, String value, bool isKey})?
+  _parseRtcHttpSimpleResponse(String rawLine) {
+    final trimmed = rawLine.trim();
+    if (trimmed.isEmpty) {
+      return null;
+    }
+    final noHash = stripDrifterLineTerminator(trimmed);
+    final parts = noHash.split(',');
+    if (parts.length < 3 || !parts.first.trim().startsWith(r'$')) {
+      return null;
+    }
+    final responseCode = parts.first.trim();
+    final upper = responseCode.toUpperCase();
+    if (!upper.contains(r'$12') && !upper.contains(r'$13')) {
+      return null;
+    }
+    final isKey = upper.contains(r'$13');
+    final stationId = parts[1].trim();
+    final value = parts.sublist(2).join(',');
+    if (stationId.isEmpty && value.trim().isEmpty) {
+      return null;
+    }
+    return (
+      responseCode: responseCode,
+      stationId: stationId,
+      value: value,
+      isKey: isKey,
+    );
+  }
+
+  static String _formatRtcHttpSimpleBleSummary(
+    String rawLine, {
+    required bool isKeyCommand,
+  }) {
+    final trimmed = rawLine.trim();
+    if (trimmed.isEmpty) {
+      return 'No response text was received.';
+    }
+    final parsed = _parseRtcHttpSimpleResponse(rawLine);
+    if (parsed == null) {
+      return _joinLabeledBleSummary('Device Response:', [
+        MapEntry(
+          'Status',
+          isKeyCommand
+              ? 'Could not parse RTC HTTP key response'
+              : 'Could not parse RTC HTTP address response',
+        ),
+        MapEntry('Raw Response', trimmed),
+      ]);
+    }
+    final valueLabel = isKeyCommand || parsed.isKey ? 'Key' : 'Address';
+    return _joinLabeledBleSummary('Device Response:', [
+      MapEntry('Response Code', parsed.responseCode),
+      MapEntry('Buoy Id', _displaySensorParameterFieldValue(parsed.stationId)),
+      MapEntry(
+        valueLabel,
+        _displaySensorParameterFieldValue(parsed.value).replaceAll(',', ''),
+      ),
+    ]);
+  }
+
+  /// Parses `$14` / `$22` / `$30` / `$38` HTTP website read-back:
+  /// `$NN,station,N,address#`
+  static ({
+    String responseCode,
+    String stationId,
+    String httpField,
+    String httpAddress,
+  })?
+  _parseHttpWebsiteAddressResponse(String rawLine) {
+    final trimmed = rawLine.trim();
+    if (trimmed.isEmpty) {
+      return null;
+    }
+    final noHash = stripDrifterLineTerminator(trimmed);
+    final parts = noHash.split(',').map((e) => e.trim()).toList();
+    if (parts.length < 4 || !parts.first.startsWith(r'$')) {
+      return null;
+    }
+    return (
+      responseCode: parts[0],
+      stationId: parts[1],
+      httpField: parts[2],
+      httpAddress: parts.sublist(3).join(','),
+    );
+  }
+
+  static String _httpWebsiteFieldLabel(String raw) {
+    final n = raw.trim();
+    return switch (n) {
+      '1' => 'HTTP server URL',
+      '2' => 'HTTP server key',
+      '3' => 'HTTP data',
+      _ => _displaySensorParameterFieldValue(n),
+    };
+  }
+
+  static String _formatHttpWebsiteAddressBleSummary(String rawLine) {
+    final trimmed = rawLine.trim();
+    if (trimmed.isEmpty) {
+      return 'No response text was received.';
+    }
+    final parsed = _parseHttpWebsiteAddressResponse(rawLine);
+    if (parsed == null) {
+      return _joinLabeledBleSummary('Device Response:', [
+        MapEntry('Status', 'Could not parse HTTP website address response'),
+        MapEntry('Raw Response', trimmed),
+      ]);
+    }
+    return _joinLabeledBleSummary('Device Response:', [
+      MapEntry('Response Code', parsed.responseCode),
+      MapEntry('Buoy ID', _displaySensorParameterFieldValue(parsed.stationId)),
+      MapEntry('HTTP Field', _httpWebsiteFieldLabel(parsed.httpField)),
+      MapEntry(
+        'HTTP Website Address',
+        _displaySensorParameterFieldValue(parsed.httpAddress),
+      ),
+    ]);
+  }
+
   static String _formatParameterizedServerBleSummary(String rawLine) {
     final trimmed = rawLine.trim();
     if (trimmed.isEmpty) {
-      return 'The device acknowledged the update. No response text was received.';
+      return 'No response text was received.';
     }
-    final noHash = trimmed.endsWith('#')
-        ? trimmed.substring(0, trimmed.length - 1)
-        : trimmed;
-    final parts = noHash.split(',').map((e) => e.trim()).toList();
-    if (parts.length < 9) {
-      return 'The device responded, but the payload could not be parsed as '
-          'server settings.\n\n'
-          'Raw response:\n$trimmed';
+    final parsed = _parseServerSettingsResponse(rawLine);
+    if (parsed == null) {
+      return _joinLabeledBleSummary('Device Response:', [
+        MapEntry('Status', 'Could not parse server settings response'),
+        MapEntry('Raw Response', trimmed),
+      ]);
     }
-    final opcode = parts[0];
-    final station = parts[1];
-    final addr = parts[2];
-    final port = parts[3];
-    final path = parts[4];
-    final user = parts[5];
-    final pass = parts[6];
-    final cell = parts[7];
-    final r = parts[8];
-    if (!opcode.startsWith(r'$')) {
-      return 'The device responded, but the payload could not be parsed as '
-          'server settings.\n\n'
-          'Raw response:\n$trimmed';
-    }
-    String dash(String s) => s.isEmpty ? '—' : s;
-    final rText = switch (r) {
-      '0' => 'GSM and GPRS',
-      '1' => 'GSM if GPRS fail',
-      _ => dash(r),
-    };
-    return [
-      'Read-back from device:',
-      '',
-      'Response code: $opcode',
-      'Station ID: ${dash(station)}',
-      'FTP server address: ${dash(addr)}',
-      'FTP port: ${dash(port)}',
-      'FTP path: ${dash(path)}',
-      'FTP username: ${dash(user)}',
-      'FTP password: ${dash(pass)}',
-      'Cell number: ${dash(cell)}',
-      'TX redundancy: $rText',
-    ].join('\n');
+    return _joinLabeledBleSummary('Device Response:', [
+      MapEntry('Response Code', parsed.responseCode),
+      MapEntry('Buoy ID', _displaySensorParameterFieldValue(parsed.stationId)),
+      MapEntry(
+        'FTP Server Address',
+        _displaySensorParameterFieldValue(parsed.ftpAddress),
+      ),
+      MapEntry(
+        'FTP Port No.',
+        _displaySensorParameterFieldValue(parsed.ftpPort),
+      ),
+      MapEntry(
+        'FTP File Path',
+        _displaySensorParameterFieldValue(parsed.ftpPath),
+      ),
+      MapEntry(
+        'FTP Username',
+        _displaySensorParameterFieldValue(parsed.ftpUsername),
+      ),
+      MapEntry(
+        'FTP Password',
+        _displaySensorParameterFieldValue(parsed.ftpPassword),
+      ),
+      MapEntry('Cell No.', _displaySensorParameterFieldValue(parsed.cellNo)),
+      MapEntry(
+        'TX Redundancy',
+        _serverSettingsTxRedundancyLabel(parsed.txRedundancy),
+      ),
+    ]);
   }
 
   static List<String>? _parseServerSettingsFields(String rawLine) {
-    final trimmed = rawLine.trim();
-    if (trimmed.isEmpty) {
+    final parsed = _parseServerSettingsResponse(rawLine);
+    if (parsed == null) {
       return null;
     }
-    final noHash = trimmed.endsWith('#')
-        ? trimmed.substring(0, trimmed.length - 1)
-        : trimmed;
-    final parts = noHash.split(',').map((e) => e.trim()).toList();
-    if (parts.length < 9 || !parts.first.startsWith(r'$')) {
-      return null;
-    }
-    return parts.sublist(1, 9);
+    return [
+      parsed.stationId,
+      parsed.ftpAddress,
+      parsed.ftpPort,
+      parsed.ftpPath,
+      parsed.ftpUsername,
+      parsed.ftpPassword,
+      parsed.cellNo,
+      parsed.txRedundancy,
+    ];
   }
 
   /// HTTP server username (`?62`): max 64 chars; shorter values padded with spaces.
@@ -7659,8 +8096,7 @@ class GeneralUserSelfTestDebugBloc
     if (trimmed.isEmpty) {
       return null;
     }
-    final hash = trimmed.indexOf('#');
-    final core = (hash >= 0 ? trimmed.substring(0, hash) : trimmed).trim();
+    final core = stripDrifterLineTerminator(trimmed).trim();
     if (!core.toUpperCase().startsWith(r'$86')) {
       return null;
     }
@@ -7702,7 +8138,7 @@ class GeneralUserSelfTestDebugBloc
   ) {
     final paraLabel = _individualSensorParaLabel(ack.paraNo);
     return _joinLabeledBleSummary('Parameter set on device:', [
-      MapEntry('Response code', r'$86'),
+      MapEntry('Response Code', r'$86'),
       MapEntry('Sensor no', _displaySensorParameterFieldValue(ack.sensorNo)),
       MapEntry(
         'Para no',
@@ -7717,8 +8153,7 @@ class GeneralUserSelfTestDebugBloc
     if (trimmed.isEmpty) {
       return null;
     }
-    final hash = trimmed.indexOf('#');
-    final core = (hash >= 0 ? trimmed.substring(0, hash) : trimmed).trim();
+    final core = stripDrifterLineTerminator(trimmed).trim();
     final headerMatch = RegExp(
       r'^[\$?]\d+,?(.*)$',
       caseSensitive: false,
@@ -7751,6 +8186,14 @@ class GeneralUserSelfTestDebugBloc
   }
 
   /// `?84,xx,#` — xx is 00–11 (two digits).
+  static String? _normalizeBuoyOffset(String raw) {
+    final match = RegExp(r'^([+-])(\d{4})$').firstMatch(raw.trim());
+    if (match == null) {
+      return null;
+    }
+    return '${match.group(1)}${match.group(2)}';
+  }
+
   static String? _normalizeBatteryVoltageIndex(String raw) {
     final t = raw.trim();
     if (t.isEmpty) {
@@ -7781,61 +8224,61 @@ class GeneralUserSelfTestDebugBloc
   static const int _getSensorParameter81LegacyPayloadFieldCount = 16;
 
   static const List<String> _getSensorParameter81FieldLabels = [
-    'Sensor no',
-    'Channel no',
-    'F.G',
-    'Factory off',
-    'senG',
-    'S.off',
+    'Sensor No',
+    'Channel No',
+    'Factory Gain',
+    'Factory Off',
+    'Sensor Gain',
+    'Sensor Offset',
     'Resolution',
-    'Sen Min',
-    'Sens Max',
-    'Averag Scheme',
+    'Sensor Minimum',
+    'Sensor Maximum',
+    'Average Scheme',
     'Vector',
-    'Start time',
+    'Start Time',
     'Interval',
-    'Total sample',
+    'Total Sample',
     'Mode',
-    'Tx.G',
-    'Tx.O',
+    'Transmit Gain',
+    'Transmit Offset',
   ];
 
   static const List<String> _getSensorParameter81LegacyFieldLabels = [
-    'Sensor no',
-    'F.G',
-    'Factory off',
-    'senG',
-    'S.off',
+    'Sensor No',
+    'Factory Gain',
+    'Factory Off',
+    'Sensor Gain',
+    'Sensor Offset',
     'Resolution',
-    'Sen Min',
-    'Sens Max',
-    'Averag Scheme',
+    'Sensor Minimum',
+    'Sensor Maximum',
+    'Average Scheme',
     'Vector',
-    'Start time',
+    'Start Time',
     'Interval',
-    'Total sample',
+    'Total Sample',
     'Mode',
-    'Tx.G',
-    'Tx.O',
+    'Transmit Gain',
+    'Transmit Offset',
   ];
 
   /// Sheet 1 parameter numbers for `?86` (para 1 = F.G, not sensor/channel).
   static const List<String> _getSensorParameter81SetParaFieldLabels = [
-    'F.G',
-    'Factory off',
-    'senG',
-    'S.off',
+    'Factory Gain',
+    'Factory Off',
+    'Sensor Gain',
+    'Sensor Offset',
     'Resolution',
-    'Sen Min',
-    'Sens Max',
-    'Averag Scheme',
+    'Sensor Minimum',
+    'Sensor Maximum',
+    'Average Scheme',
     'Vector',
-    'Start time',
+    'Start Timex',
     'Interval',
-    'Total sample',
+    'Total Sample',
     'Mode',
-    'Tx.G',
-    'Tx.O',
+    'Transmit Gain',
+    'Transmit Offset',
   ];
 
   static List<String> _sensorParameter81LabelsForPayloadLength(int payloadLen) {
@@ -7852,8 +8295,7 @@ class GeneralUserSelfTestDebugBloc
     if (trimmed.isEmpty) {
       return null;
     }
-    final hash = trimmed.indexOf('#');
-    final core = (hash >= 0 ? trimmed.substring(0, hash) : trimmed).trim();
+    final core = stripDrifterLineTerminator(trimmed).trim();
     final header = r'$' + opcode;
     if (!core.toUpperCase().startsWith(header)) {
       return null;
@@ -7928,7 +8370,7 @@ class GeneralUserSelfTestDebugBloc
     final entries = <MapEntry<String, String>>[];
     if (valueStartIndex > 0) {
       entries.add(
-        MapEntry('Station ID', _displaySensorParameterFieldValue(fields[0])),
+        MapEntry('Buoy Id', _displaySensorParameterFieldValue(fields[0])),
       );
     }
     for (var i = 0; i < labels.length; i++) {
@@ -7987,29 +8429,29 @@ class GeneralUserSelfTestDebugBloc
   }
 
   static const List<String> _getSensorParameter83FieldLabels = [
-    'Station ID',
-    'Sensor no',
+    'Buoy ID',
+    'Sensor No',
     'Unit',
-    'SenSelStatus',
-    'BaudRate',
-    'ReqLen',
+    'Sensor Select Status',
+    'Baud Rate',
+    'Request Length',
     'Start Char',
-    'Fp',
-    'Lp',
-    'Resp Len',
-    'RelayNo',
-    'PeriodicSmpl',
-    'DerievedPara',
-    'RequestString',
-    'Sensor name',
-    'id',
-    'model',
-    'rstcnt',
-    'datum',
-    'dec_len',
-    'frac_len',
-    'max_threshold',
-    'min_threshold',
+    'FP',
+    'LP',
+    'Response Length',
+    'Relay No',
+    'Periodic Sample',
+    'Derived Parameter',
+    'Request String',
+    'Sensor Name',
+    'ID',
+    'Model',
+    'Reset Count',
+    'Datum',
+    'Dec Len',
+    'Frac Len',
+    'Max Threshold',
+    'Min Threshold',
   ];
 
   static const int _getSensorParameter83FieldCount = 23;
@@ -8022,8 +8464,7 @@ class GeneralUserSelfTestDebugBloc
     if (trimmed.isEmpty) {
       return null;
     }
-    final hash = trimmed.indexOf('#');
-    final core = (hash >= 0 ? trimmed.substring(0, hash) : trimmed).trim();
+    final core = stripDrifterLineTerminator(trimmed).trim();
     final header = r'$' + opcode;
     if (!core.toUpperCase().startsWith(header)) {
       return null;
@@ -8233,7 +8674,7 @@ class GeneralUserSelfTestDebugBloc
         final nRaw = map['n'];
         final ni = nRaw is int ? nRaw : int.tryParse(nRaw?.toString() ?? '');
         if (ni == null || ni < 1 || ni > 4) {
-          throw ArgumentError('HTTP server number (N) must be from 1 to 4.');
+          throw ArgumentError('HTTP Server must be from 1 to 4.');
         }
         final username = map['v']?.toString() ?? '';
         final encoded = _padHttpServerUsernameTo64(username);
@@ -8267,6 +8708,14 @@ class GeneralUserSelfTestDebugBloc
           throw ArgumentError('Enter a numeric value for N (digits only).');
         }
         return '?$opcode,$n,#';
+      case SelfTestParameterizedCommandFieldKind.setBuoyOffsetSignedFourDigits:
+        final offset = _normalizeBuoyOffset(userValue);
+        if (offset == null) {
+          throw ArgumentError(
+            'Enter offset as + or - followed by 4 digits (e.g. +123456).',
+          );
+        }
+        return '?$opcode,$offset,#';
       case SelfTestParameterizedCommandFieldKind.setHttpPortIndex1to4FiveDigits:
         final map = _parseIndexedHttpJsonPayload(userValue);
         final nRaw = map['n'];

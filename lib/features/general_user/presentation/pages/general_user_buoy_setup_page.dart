@@ -8,6 +8,7 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/buoy_setup/
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoy_setup/general_user_buoy_setup_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoy_setup/general_user_buoy_setup_state.dart';
 import 'package:drifter_buoy/core/bluetooth/ble_connection_service.dart';
+import 'package:drifter_buoy/core/bluetooth/drifter_ble_line_utils.dart';
 import 'package:drifter_buoy/core/utils/app_logger.dart';
 import 'package:drifter_buoy/core/utils/injection_container.dart';
 import 'package:flutter/material.dart';
@@ -338,8 +339,7 @@ void _getInitialBuoySettings(BuildContext context) {
         AppLogger.i('Received ?04 response: $response');
 
         final trimmed = response.trim();
-        final hash = trimmed.indexOf('#');
-        final noHash = hash >= 0 ? trimmed.substring(0, hash) : trimmed;
+        final noHash = stripDrifterLineTerminator(trimmed);
         final parts = noHash.split(',').map((e) => e.trim()).toList();
         if (parts.length > 2) {
           final start =

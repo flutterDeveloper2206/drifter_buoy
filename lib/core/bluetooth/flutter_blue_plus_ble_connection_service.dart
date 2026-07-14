@@ -6,6 +6,7 @@ import 'dart:math' show min;
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:drifter_buoy/core/bluetooth/ble_drifter_runtime_settings.dart';
 import 'package:drifter_buoy/core/bluetooth/ble_connection_service.dart';
+import 'package:drifter_buoy/core/bluetooth/drifter_ble_line_utils.dart';
 import 'package:drifter_buoy/core/bluetooth/ble_scan_result.dart';
 import 'package:drifter_buoy/core/constants/ble_gatt_constants.dart';
 import 'package:drifter_buoy/core/utils/app_logger.dart';
@@ -32,6 +33,11 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
   StreamSubscription<List<int>>? _drifterNotifySub;
   final StringBuffer _drifterRxBuffer = StringBuffer();
   Completer<String>? _drifterLineCompleter;
+  Timer? _drifterRxIdleTimer;
+
+  /// Wait for notify chunks to stop before completing a line (password may
+  /// contain `#` mid-packet when BLE frames are ~20 chars).
+  static const Duration _drifterRxIdleBeforeComplete = Duration(milliseconds: 150);
 
   @override
   String? get connectedRemoteId => _connectedRemoteId;
@@ -242,16 +248,31 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
       return;
     }
     _drifterRxBuffer.write(String.fromCharCodes(bytes));
-    final acc = _drifterRxBuffer.toString();
-    final hashIdx = acc.indexOf('#');
-    if (hashIdx >= 0 &&
-        _drifterLineCompleter != null &&
-        !_drifterLineCompleter!.isCompleted) {
-      final line = acc.substring(0, hashIdx + 1).trim();
-      _drifterLineCompleter!.complete(line);
-      _drifterLineCompleter = null;
-      _drifterRxBuffer.clear();
+    _drifterRxIdleTimer?.cancel();
+    _drifterRxIdleTimer = Timer(
+      _drifterRxIdleBeforeComplete,
+      _tryCompleteDrifterRxLine,
+    );
+  }
+
+  void _tryCompleteDrifterRxLine() {
+    _drifterRxIdleTimer = null;
+    final completer = _drifterLineCompleter;
+    if (completer == null || completer.isCompleted) {
+      return;
     }
+    final acc = _drifterRxBuffer.toString();
+    if (!drifterRxLineReadyToComplete(acc)) {
+      return;
+    }
+    final hashIdx = drifterTerminatorIndex(acc);
+    if (hashIdx < 0) {
+      return;
+    }
+    final line = acc.substring(0, hashIdx + 1).trim();
+    _drifterLineCompleter = null;
+    _drifterRxBuffer.clear();
+    completer.complete(line);
   }
 
   @override
@@ -265,6 +286,8 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
       throw ArgumentError('Empty command');
     }
 
+    _drifterRxIdleTimer?.cancel();
+    _drifterRxIdleTimer = null;
     _drifterRxBuffer.clear();
     _drifterLineCompleter = Completer<String>();
 
@@ -375,6 +398,8 @@ class FlutterBluePlusBleConnectionService implements BleConnectionService {
 
   @override
   void resetDrifterCommandChannel() {
+    _drifterRxIdleTimer?.cancel();
+    _drifterRxIdleTimer = null;
     _drifterNotifySub?.cancel();
     _drifterNotifySub = null;
     _drifterWriteChar = null;

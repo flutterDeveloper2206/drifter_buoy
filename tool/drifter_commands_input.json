@@ -296,7 +296,7 @@
       },
       {
         "_id": "6a04547227be228113206962",
-        "testName": "Secondary server FTP user name",
+        "testName": "Secondary server FTP Username",
         "requestCommand": "?26,xxxx..,#",
         "waitingPeriodSecondsRaw": "1 min",
         "requestCommandDescription": "(Max 20 characters) Alphanumeric ASCII characters. Use ‘ ‘(space) as last character if < 20 char. Space char will not be part of address",
@@ -499,7 +499,7 @@
         "testName": "Set primary server all FTP/HTTP parameters",
         "requestCommand": "?46,IIIIII,FFF…,PPPPP,ffff…,uuuu…,pppp…,+91nnnn…,R,#",
         "waitingPeriodSecondsRaw": "1 min",
-        "requestCommandDescription": "(station id, FTP server address, FTP port no., FTP file path, FTP user name, FTP password, cell no., tx redundancy)Station id – fix 8 characters.FTP port no. – fix 5 character, range 00000 to 65535.FTP server address, FTP file path, FTP user name, FTP password – max 20 characters. If < 20 char, use ‘‘last character.Cell no. – fix 10 charactersTx redundancy – 1 => enable, 0 => disable",
+        "requestCommandDescription": "(station id, FTP server address, FTP port no., FTP file path, FTP Username, FTP password, cell no., tx redundancy)Station id – fix 8 characters.FTP port no. – fix 5 character, range 00000 to 65535.FTP server address, FTP file path, FTP Username, FTP password – max 20 characters. If < 20 char, use ‘‘last character.Cell no. – fix 10 charactersTx redundancy – 1 => enable, 0 => disable",
         "response": "$46,all primary server settings#",
         "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
         "isActive": true
@@ -509,7 +509,7 @@
         "testName": "Set secondary server all FTP/HTTP parameters",
         "requestCommand": "?47,IIIIII,FFF…,PPPPP,ffff…,uuuu…,pppp…,+91nnnn…,R,#",
         "waitingPeriodSecondsRaw": "1 min",
-        "requestCommandDescription": "(station id, FTP server address, FTP port no., FTP file path, FTP user name, FTP password, cell no., tx redundancy)Station id – fix 8 characters.FTP port no. – fix 5 character, range 00000 to 65535.FTP server address, FTP file path, FTP user name, FTP password – max 20 characters. If < 20 char, use ‘‘last character.Cell no. – fix 10 charactersTx redundancy – 1 => enable, 0 => disable",
+        "requestCommandDescription": "(station id, FTP server address, FTP port no., FTP file path, FTP Username, FTP password, cell no., tx redundancy)Station id – fix 8 characters.FTP port no. – fix 5 character, range 00000 to 65535.FTP server address, FTP file path, FTP Username, FTP password – max 20 characters. If < 20 char, use ‘‘last character.Cell no. – fix 10 charactersTx redundancy – 1 => enable, 0 => disable",
         "response": "$47,all secondary server settings#",
         "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
         "isActive": true
@@ -519,7 +519,7 @@
         "testName": "Set third server all FTP/HTTP parameters",
         "requestCommand": "?48,IIIIII,FFF…,PPPPP,ffff…,uuuu…,pppp…,+91nnnn…,R,#",
         "waitingPeriodSecondsRaw": "1 min",
-        "requestCommandDescription": "(station id, FTP server address, FTP port no., FTP file path, FTP user name, FTP password, cell no., tx redundancy)Station id – fix 8 characters.FTP port no. – fix 5 character, range 00000 to 65535.FTP server address, FTP file path, FTP user name, FTP password – max 20 characters. If < 20 char, use ‘‘last character.Cell no. – fix 10 charactersTx redundancy – 1 => enable, 0 => disable",
+        "requestCommandDescription": "(station id, FTP server address, FTP port no., FTP file path, FTP Username, FTP password, cell no., tx redundancy)Station id – fix 8 characters.FTP port no. – fix 5 character, range 00000 to 65535.FTP server address, FTP file path, FTP Username, FTP password – max 20 characters. If < 20 char, use ‘‘last character.Cell no. – fix 10 charactersTx redundancy – 1 => enable, 0 => disable",
         "response": "$48,all third server settings#",
         "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
         "isActive": true
@@ -529,7 +529,7 @@
         "testName": "Set factory server all FTP/HTTP parameters",
         "requestCommand": "?49,IIIIII,FFF…,PPPPP,ffff…,uuuu…,pppp…,+91nnnn…,R,#",
         "waitingPeriodSecondsRaw": "1 min",
-        "requestCommandDescription": "(station id, FTP server address, FTP port no., FTP file path, FTP user name, FTP password, cell no., tx redundancy)Station id – fix 8 characters.FTP port no. – fix 5 character, range 00000 to 65535.FTP server address, FTP file path, FTP user name, FTP password – max 20 characters. If < 20 char, use ‘‘last character.Cell no. – fix 10 charactersTx redundancy – 1 => enable, 0 => disable",
+        "requestCommandDescription": "(station id, FTP server address, FTP port no., FTP file path, FTP Username, FTP password, cell no., tx redundancy)Station id – fix 8 characters.FTP port no. – fix 5 character, range 00000 to 65535.FTP server address, FTP file path, FTP Username, FTP password – max 20 characters. If < 20 char, use ‘‘last character.Cell no. – fix 10 charactersTx redundancy – 1 => enable, 0 => disable",
         "response": "$49,all factory server settings#",
         "responseDescription": "IIIIII, HHHH…, FFF…, PPPPP,ffff…,uuuu…,pppp…,+91nnnnnnnnnn,R-(Station id,FTP server address, FTP port no., FTP file path, FTP username, FTP password, cell no., TX redundancy),Max length = 8+1+20+1+5+1+20+1+20+1+20+1+13+1+1 = 114 characters",
         "isActive": true

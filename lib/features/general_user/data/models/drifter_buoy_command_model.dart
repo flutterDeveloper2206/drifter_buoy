@@ -98,6 +98,21 @@ class DrifterBuoyCommandModel extends Equatable {
     isActive,
     serialNumber,
   ];
+
+  /// One SQLite row per API document id; later duplicates in the feed win.
+  static List<DrifterBuoyCommandModel> dedupeByIdForStorage(
+    List<DrifterBuoyCommandModel> commands,
+  ) {
+    final byId = <String, DrifterBuoyCommandModel>{};
+    for (final cmd in commands) {
+      final id = cmd.id.trim();
+      if (id.isEmpty) {
+        continue;
+      }
+      byId[id] = cmd;
+    }
+    return byId.values.toList();
+  }
 }
 
 class GetAllDrifterBuoyCommandsResponse extends Equatable {
@@ -139,7 +154,7 @@ class GetAllDrifterBuoyCommandsResponse extends Equatable {
     return GetAllDrifterBuoyCommandsResponse(
       statusCode: _toInt(json['statusCode']),
       message: (json['message'] ?? '').toString(),
-      result: list,
+      result: DrifterBuoyCommandModel.dedupeByIdForStorage(list),
       isSuccess:
           json['isSuccess'] == true ||
           (json['isSuccess']?.toString().toLowerCase() == 'true'),

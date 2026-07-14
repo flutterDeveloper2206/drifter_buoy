@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:drifter_buoy/core/utils/app_logger.dart';
 import 'package:drifter_buoy/core/storage/app_database.dart';
 import 'package:drifter_buoy/features/general_user/data/datasources/general_user_self_test_remote_data_source.dart';
-import 'package:drifter_buoy/features/general_user/presentation/bloc/self_test_debug/general_user_self_test_debug_bloc.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_buoy_dashboard.dart';
 import 'package:drifter_buoy/features/general_user/domain/usecases/general_user_get_buoy_map_dashboard.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/dashboard/general_user_dashboard_event.dart';
@@ -154,11 +153,7 @@ class GeneralUserDashboardBloc
         AppLogger.w('Failed to sync commands: ${remoteFailure.message}');
       },
       (remoteData) async {
-        final processed =
-            GeneralUserSelfTestDebugBloc.processAndSortApiCommands(
-              remoteData.result,
-            );
-        await AppDatabase.instance.saveCommands(processed);
+        await AppDatabase.instance.saveCommands(remoteData.result);
         AppLogger.i('Synced commands successfully in bloc');
       },
     );

@@ -66,10 +66,7 @@ class SelfTestStationNamePrompt extends Equatable {
 
 /// `?61,HH:MM:SS,#` — dialog only (no `?04` prefetch); user enters time, then BLE send.
 class SelfTestMeasurementTimePrompt extends Equatable {
-  const SelfTestMeasurementTimePrompt({
-    required this.testName,
-    this.note = '',
-  });
+  const SelfTestMeasurementTimePrompt({required this.testName, this.note = ''});
 
   final String testName;
   final String note;
@@ -78,18 +75,22 @@ class SelfTestMeasurementTimePrompt extends Equatable {
   List<Object?> get props => [testName, note];
 }
 
-/// `?08,HH:MM:SS,#` — dialog only (no `?04` prefetch); user picks time, then BLE send.
+/// `?08,HH:MM:SS,#` — current time prefetched via `?63,,#`, then user confirms/edits.
 class SelfTestTransmissionTimePrompt extends Equatable {
   const SelfTestTransmissionTimePrompt({
     required this.testName,
+    this.currentTxTime = '',
+    this.prefetchWarning,
     this.note = '',
   });
 
   final String testName;
+  final String currentTxTime;
+  final String? prefetchWarning;
   final String note;
 
   @override
-  List<Object?> get props => [testName, note];
+  List<Object?> get props => [testName, currentTxTime, prefetchWarning, note];
 }
 
 /// `?09,HH:MM:SS,#` — Tx interval from `?04,,#` (3rd field), then user confirms/edits.
@@ -370,6 +371,9 @@ enum SelfTestParameterizedCommandFieldKind {
 
   /// Power switching (`?76`) — numeric N (e.g. 20 → `?76,20,#`).
   powerSwitchingValueN,
+
+  /// Set buoy offset (`?75`) — signed 4-digit value (`+1234` / `-1234`).
+  setBuoyOffsetSignedFourDigits,
 
   /// Set HTTP port (`?98`) — server N (0–3) plus port PPPPP (0–65535, 5 digits).
   setHttpPortIndex1to4FiveDigits,
@@ -867,7 +871,7 @@ class GeneralUserSelfTestDebugState extends Equatable {
   final SelfTestSetSensorAllParametersPrompt? setSensorAllParametersPrompt;
   final SelfTestSetSensorsParametersPrompt? setSensorsParametersPrompt;
   final SelfTestSetIndividualSensorParameterPrompt?
-      setIndividualSensorParameterPrompt;
+  setIndividualSensorParameterPrompt;
 
   const GeneralUserSelfTestDebugState({
     required this.status,
@@ -986,7 +990,7 @@ class GeneralUserSelfTestDebugState extends Equatable {
     SelfTestSetSensorsParametersPrompt? setSensorsParametersPrompt,
     bool clearSetSensorsParametersPrompt = false,
     SelfTestSetIndividualSensorParameterPrompt?
-        setIndividualSensorParameterPrompt,
+    setIndividualSensorParameterPrompt,
     bool clearSetIndividualSensorParameterPrompt = false,
   }) {
     return GeneralUserSelfTestDebugState(
@@ -1072,9 +1076,9 @@ class GeneralUserSelfTestDebugState extends Equatable {
           : (setSensorsParametersPrompt ?? this.setSensorsParametersPrompt),
       setIndividualSensorParameterPrompt:
           clearSetIndividualSensorParameterPrompt
-              ? null
-              : (setIndividualSensorParameterPrompt ??
-                    this.setIndividualSensorParameterPrompt),
+          ? null
+          : (setIndividualSensorParameterPrompt ??
+                this.setIndividualSensorParameterPrompt),
     );
   }
 

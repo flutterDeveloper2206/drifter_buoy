@@ -2,20 +2,20 @@
 String? validateBuoySetupStationId(String value) {
   final trimmed = value.trim().toUpperCase();
   if (trimmed.isEmpty) {
-    return 'Station ID is required.';
+    return 'Buoy ID is required.';
   }
   if (trimmed.length != 8) {
-    return 'Station ID must be exactly 8 characters.';
+    return 'Buoy ID must be exactly 8 characters.';
   }
   if (!RegExp(r'^[A-Z0-9]+$').hasMatch(trimmed)) {
-    return 'Station ID may only contain letters and numbers.';
+    return 'Buoy ID may only contain letters and numbers.';
   }
   return null;
 }
 
 String? validateBuoySetupStationName(String value) {
   if (value.trim().isEmpty) {
-    return 'Station name is required.';
+    return 'Buoy name is required.';
   }
   return null;
 }
@@ -53,7 +53,7 @@ String? validateBuoySetupForm({
       validateBuoySetupStationName(stationName) ??
       validateBuoySetupHhMmSs(
         transmissionInterval,
-        'Transmission interval',
+        'Transmission Interval',
       ) ??
       validateBuoySetupHhMmSs(
         transmissionStartTime,

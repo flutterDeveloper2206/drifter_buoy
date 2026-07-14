@@ -33,6 +33,48 @@ const Set<String> _pinProtectedCommandIds = {
   '6a04547227be22811320694b',
 };
 
+/// Sim Card Test (Mongo id) must always send this fixed BLE command, ignoring
+/// any request command the API might supply for the row.
+const String _simCardTestCommandId = '6a04547227be22811320698f';
+const String _simCardTestStaticCommand = '?77,1,#';
+
+/// Manual RTC Update (Mongo id) — asks for confirmation before sending.
+const String _manualRtcUpdateCommandId = '6a04547227be22811320699c';
+
+/// Simple confirmation dialog: Cancel dismisses, Update runs [onProceed].
+Future<void> _showCommandConfirmDialog({
+  required BuildContext context,
+  required String testName,
+  required VoidCallback onProceed,
+}) async {
+  await showDialog<void>(
+    context: context,
+    barrierDismissible: true,
+    builder: (ctx) {
+      return AlertDialog(
+        title: Text(testName),
+        content: Text(
+          'Are you sure you want to run "$testName"?',
+          style: const TextStyle(fontSize: 14, color: Color(0xFF6A7178)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              onProceed();
+            },
+            child: const Text('Update'),
+          ),
+        ],
+      );
+    },
+  );
+}
+
 Future<void> _showCommandPinDialog({
   required BuildContext context,
   required VoidCallback onProceed,
@@ -74,6 +116,7 @@ Future<void> _showCommandPinDialog({
                     autofocus: true,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     decoration: InputDecoration(
+                      errorMaxLines: _kSelfTestFormErrorMaxLines,
                       labelText: 'PIN',
                       errorText: errorMessage,
                       border: const OutlineInputBorder(),
@@ -145,6 +188,9 @@ String _selfTestCommandListDescriptionNote(DrifterBuoyCommandModel command) {
   return command.note?.trim() ?? '';
 }
 
+/// Max lines for validation error text under self-test form fields.
+const _kSelfTestFormErrorMaxLines = 2;
+
 Widget? _buildSelfTestDialogNote(BuildContext context, String? note) {
   final t = note?.trim() ?? '';
   if (t.isEmpty || t.toLowerCase() == 'na') {
@@ -152,16 +198,28 @@ Widget? _buildSelfTestDialogNote(BuildContext context, String? note) {
   }
   return Padding(
     padding: const EdgeInsets.only(bottom: 12),
-    child: Text(
-      'Note: $t',
-      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-        color: const Color(0xFF6A7178),
+    child: Text.rich(
+      TextSpan(
+        children: [
+          const TextSpan(
+            text: '\nNote: ',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          TextSpan(text: t),
+        ],
       ),
+      maxLines: 20,
+      style: Theme.of(
+        context,
+      ).textTheme.bodySmall?.copyWith(color: const Color(0xFF6A7178)),
     ),
   );
 }
 
-Widget? _buildSelfTestDialogPrefetchWarning(BuildContext context, String? warn) {
+Widget? _buildSelfTestDialogPrefetchWarning(
+  BuildContext context,
+  String? warn,
+) {
   final w = warn?.trim() ?? '';
   if (w.isEmpty) {
     return null;
@@ -205,6 +263,29 @@ String? _validateSelfTestApn31(String? value) {
   }
   if (!RegExp(r'^[\x20-\x7E]+$').hasMatch(t)) {
     return 'Use printable ASCII only.';
+  }
+  return null;
+}
+
+/// Transmitter frequency display format: `000.000000` (10 chars, 400–406 MHz).
+String? _validateSelfTestTransmitterFrequency(String? value) {
+  final t = value?.trim() ?? '';
+  if (t.isEmpty) {
+    return 'Enter frequency (000.000000).';
+  }
+  if (t.length != 10) {
+    return 'Must be exactly 10 characters (000.000000).';
+  }
+  if (!RegExp(r'^\d{3}\.\d{6}$').hasMatch(t)) {
+    return 'Use format 000.000000.';
+  }
+  final nineDigits = t.replaceAll('.', '');
+  final asInt = int.tryParse(nineDigits);
+  if (asInt == null) {
+    return 'Invalid frequency.';
+  }
+  if (asInt < 400000000 || asInt > 406000000) {
+    return 'Frequency must be 400.000000–406.000000 MHz.';
   }
   return null;
 }
@@ -320,8 +401,8 @@ String _dlCellSlotHelperText(int slot) {
   return switch (slot) {
     1 => 'D.L. cell no. 1 — +91 and 10 digits, or 13 digits.',
     2 => 'D.L. cell no. 2 — +91 and 10 digits, or 13 digits.',
-    3 => 'MSISDN no. 1 — 13 digits only (no +91).',
-    4 => 'MSISDN no. 2 — 13 digits only (no +91).',
+    3 => 'MSISDN No. 1 — 13 digits only (no +91).',
+    4 => 'MSISDN No. 2 — 13 digits only (no +91).',
     _ => '',
   };
 }
@@ -333,6 +414,17 @@ String? _validateSelfTestPowerSwitchingValue(String? value) {
   }
   if (!RegExp(r'^\d+$').hasMatch(t)) {
     return 'Use digits only (e.g. 20).';
+  }
+  return null;
+}
+
+String? _validateSelfTestBuoyOffset(String? value) {
+  final t = value?.trim() ?? '';
+  if (t.isEmpty) {
+    return 'Enter buoy offset.';
+  }
+  if (!RegExp(r'^[+-]\d{6}$').hasMatch(t)) {
+    return 'Use + or - followed by 6 digits (e.g. +1234).';
   }
   return null;
 }
@@ -417,10 +509,11 @@ Widget _buildSelfTestSensorSetInputField({
             maxLength: maxLength,
           )),
       decoration: InputDecoration(
+        errorMaxLines: _kSelfTestFormErrorMaxLines,
         labelText: label,
         hintText: hint,
-        helperText: helper,
-        helperMaxLines: 2,
+        // helperText: helper,
+        // helperMaxLines: 2,
         filled: true,
         fillColor: Colors.white,
         isDense: false,
@@ -468,7 +561,7 @@ String _selfTestEffectiveHhMmSsInitial(String current, String fallback) {
 }
 
 String? _validateSelfTestTransmissionIntervalHhMmSs(String? value) {
-  return _validateSelfTestHhMmSs('Transmission interval', value);
+  return _validateSelfTestHhMmSs('Transmission Interval', value);
 }
 
 String? _validateSelfTestStationIdSetAllGeneral(String? value) {
@@ -712,8 +805,6 @@ class _GeneralUserSelfTestDebugPageState
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (_buildSelfTestDialogNote(ctx, prompt.note) case final note?)
-                    note,
                   TextFormField(
                     key: ValueKey('set-station-id-${prompt.currentStationId}'),
                     initialValue: prompt.currentStationId,
@@ -722,11 +813,16 @@ class _GeneralUserSelfTestDebugPageState
                     textCapitalization: TextCapitalization.characters,
                     onChanged: (v) => draftStationId = v,
                     decoration: const InputDecoration(
+                      errorMaxLines: _kSelfTestFormErrorMaxLines,
                       border: OutlineInputBorder(),
                       hintText: 'XXXXXXXX',
                       counterText: '',
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  if (_buildSelfTestDialogNote(ctx, prompt.note)
+                      case final note?)
+                    note,
                 ],
               ),
             ),
@@ -785,14 +881,6 @@ class _GeneralUserSelfTestDebugPageState
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (_buildSelfTestDialogPrefetchWarning(
-                        ctx,
-                        prompt.prefetchWarning,
-                      )
-                      case final warn?)
-                    warn,
-                  if (_buildSelfTestDialogNote(ctx, prompt.note) case final note?)
-                    note,
                   TextFormField(
                     key: ValueKey(
                       'set-station-name-${prompt.currentStationName}',
@@ -801,11 +889,22 @@ class _GeneralUserSelfTestDebugPageState
                     maxLength: 16,
                     onChanged: (v) => draftStationName = v,
                     decoration: const InputDecoration(
+                      errorMaxLines: _kSelfTestFormErrorMaxLines,
                       border: OutlineInputBorder(),
                       hintText: 'e.g. Pakistan',
                       counterText: '',
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  if (_buildSelfTestDialogPrefetchWarning(
+                        ctx,
+                        prompt.prefetchWarning,
+                      )
+                      case final warn?)
+                    warn,
+                  if (_buildSelfTestDialogNote(ctx, prompt.note)
+                      case final note?)
+                    note,
                 ],
               ),
             ),
@@ -875,8 +974,6 @@ class _GeneralUserSelfTestDebugPageState
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (_buildSelfTestDialogNote(ctx, prompt.note) case final note?)
-                      note,
                     TextFormField(
                       initialValue: '00:00:00',
                       keyboardType: TextInputType.datetime,
@@ -885,12 +982,17 @@ class _GeneralUserSelfTestDebugPageState
                           _validateSelfTestHhMmSs('Measurement start time', v),
                       onChanged: (v) => draftTime = v,
                       decoration: const InputDecoration(
-                        labelText: 'Measurement start time',
+                        errorMaxLines: _kSelfTestFormErrorMaxLines,
+                        labelText: 'Measurement Start Time',
                         hintText: '00:00:00',
-                        helperText: 'HH:MM:SS (24-hour)',
+                        // helperText: 'HH:MM:SS (24-hour)',
                         border: OutlineInputBorder(),
                       ),
                     ),
+                    const SizedBox(height: 12),
+                    if (_buildSelfTestDialogNote(ctx, prompt.note)
+                        case final note?)
+                      note,
                   ],
                 ),
               ),
@@ -940,7 +1042,11 @@ class _GeneralUserSelfTestDebugPageState
       return;
     }
     _isTransmissionTimeDialogOpen = true;
-    var draftTime = '00:00:00';
+    final initialTime = _selfTestEffectiveHhMmSsInitial(
+      prompt.currentTxTime,
+      '00:00:00',
+    );
+    var draftTime = initialTime;
     final formKey = GlobalKey<FormState>();
 
     try {
@@ -957,22 +1063,31 @@ class _GeneralUserSelfTestDebugPageState
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (_buildSelfTestDialogNote(ctx, prompt.note) case final note?)
-                      note,
                     TextFormField(
-                      initialValue: '00:00:00',
+                      initialValue: initialTime,
                       keyboardType: TextInputType.datetime,
                       autovalidateMode: AutovalidateMode.onUserInteraction,
                       validator: (v) =>
-                          _validateSelfTestHhMmSs('Transmission time', v),
+                          _validateSelfTestHhMmSs('Transmission Time', v),
                       onChanged: (v) => draftTime = v,
                       decoration: const InputDecoration(
-                        labelText: 'Transmission time',
-                        hintText: '00:00:00',
-                        helperText: 'HH:MM:SS (24-hour)',
+                        errorMaxLines: _kSelfTestFormErrorMaxLines,
+                        labelText: 'Transmission Time',
+                        // hintText: '00:00:00',
+                        // helperText: 'HH:MM:SS (24-hour)',
                         border: OutlineInputBorder(),
                       ),
                     ),
+                    const SizedBox(height: 12),
+                    if (_buildSelfTestDialogPrefetchWarning(
+                          ctx,
+                          prompt.prefetchWarning,
+                        )
+                        case final warn?)
+                      warn,
+                    if (_buildSelfTestDialogNote(ctx, prompt.note)
+                        case final note?)
+                      note,
                   ],
                 ),
               ),
@@ -1043,14 +1158,6 @@ class _GeneralUserSelfTestDebugPageState
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (_buildSelfTestDialogPrefetchWarning(
-                          ctx,
-                          prompt.prefetchWarning,
-                        )
-                        case final warn?)
-                      warn,
-                    if (_buildSelfTestDialogNote(ctx, prompt.note) case final note?)
-                      note,
                     TextFormField(
                       initialValue: initialInterval,
                       keyboardType: TextInputType.datetime,
@@ -1058,12 +1165,23 @@ class _GeneralUserSelfTestDebugPageState
                       validator: _validateSelfTestTransmissionIntervalHhMmSs,
                       onChanged: (v) => draftInterval = v,
                       decoration: const InputDecoration(
-                        labelText: 'Transmission interval',
-                        hintText: '00:10:00',
-                        helperText: 'HH:MM:SS (24-hour)',
+                        errorMaxLines: _kSelfTestFormErrorMaxLines,
+                        labelText: 'Transmission Interval',
+                        // hintText: '00:10:00',
+                        // helperText: 'HH:MM:SS (24-hour)',
                         border: OutlineInputBorder(),
                       ),
                     ),
+                    const SizedBox(height: 12),
+                    if (_buildSelfTestDialogPrefetchWarning(
+                          ctx,
+                          prompt.prefetchWarning,
+                        )
+                        case final warn?)
+                      warn,
+                    if (_buildSelfTestDialogNote(ctx, prompt.note)
+                        case final note?)
+                      note,
                   ],
                 ),
               ),
@@ -1136,28 +1254,31 @@ class _GeneralUserSelfTestDebugPageState
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    TextFormField(
+                      initialValue: initialInterval,
+                      keyboardType: TextInputType.datetime,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      validator: (v) =>
+                          _validateSelfTestHhMmSs('Measurement Interval', v),
+                      onChanged: (v) => draftInterval = v,
+                      decoration: const InputDecoration(
+                        errorMaxLines: _kSelfTestFormErrorMaxLines,
+                        labelText: 'Measurement Interval',
+                        // hintText: '00:10:00',
+                        // helperText: 'HH:MM:SS (24-hour)',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
                     if (_buildSelfTestDialogPrefetchWarning(
                           ctx,
                           prompt.prefetchWarning,
                         )
                         case final warn?)
                       warn,
-                    if (_buildSelfTestDialogNote(ctx, prompt.note) case final note?)
+                    if (_buildSelfTestDialogNote(ctx, prompt.note)
+                        case final note?)
                       note,
-                    TextFormField(
-                      initialValue: initialInterval,
-                      keyboardType: TextInputType.datetime,
-                      autovalidateMode: AutovalidateMode.onUserInteraction,
-                      validator: (v) =>
-                          _validateSelfTestHhMmSs('Measurement interval', v),
-                      onChanged: (v) => draftInterval = v,
-                      decoration: const InputDecoration(
-                        labelText: 'Measurement interval',
-                        hintText: '00:10:00',
-                        helperText: 'HH:MM:SS (24-hour)',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -1226,6 +1347,18 @@ class _GeneralUserSelfTestDebugPageState
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Fast SMS Enable'),
+                        // subtitle: Text(
+                        //   enabled ? 'Enabled (1)' : 'Disabled (0)',
+                        // ),
+                        value: enabled,
+                        onChanged: (v) {
+                          setLocalState(() => enabled = v);
+                        },
+                      ),
+                      const SizedBox(height: 12),
                       if (_buildSelfTestDialogPrefetchWarning(
                             ctx,
                             prompt.prefetchWarning,
@@ -1235,17 +1368,6 @@ class _GeneralUserSelfTestDebugPageState
                       if (_buildSelfTestDialogNote(ctx, prompt.note)
                           case final note?)
                         note,
-                      SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: const Text('Fast SMS check'),
-                        subtitle: Text(
-                          enabled ? 'Enabled (1)' : 'Disabled (0)',
-                        ),
-                        value: enabled,
-                        onChanged: (v) {
-                          setLocalState(() => enabled = v);
-                        },
-                      ),
                     ],
                   ),
                 ),
@@ -1354,6 +1476,7 @@ class _GeneralUserSelfTestDebugPageState
     var draftType = prompt.transmitterType == 1 ? 1 : 0;
     var draftFfff = prompt.frequencyValue;
     var selectedAction = 0; // 0 for GET, 1 for SET
+    final formKey = GlobalKey<FormState>();
 
     try {
       await showDialog<void>(
@@ -1363,69 +1486,81 @@ class _GeneralUserSelfTestDebugPageState
           return StatefulBuilder(
             builder: (ctx, setLocalState) {
               return AlertDialog(
-                title: const Text('RF & UHF transmitter frequency'),
+                title: const Text('RF & UHF Transmitter Frequency'),
                 content: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (_buildSelfTestDialogNote(ctx, prompt.note)
-                          case final note?)
-                        note,
-                      DropdownButtonFormField<int>(
-                        initialValue: draftType,
-                        items: const [
-                          DropdownMenuItem(value: 0, child: Text('UHF')),
-                          DropdownMenuItem(
-                            value: 1,
-                            child: Text('Radio Sonde'),
-                          ),
-                        ],
-                        onChanged: (v) {
-                          setLocalState(() {
-                            draftType = v ?? 0;
-                          });
-                        },
-                        decoration: const InputDecoration(
-                          labelText: 'Transmitter type',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      DropdownButtonFormField<int>(
-                        initialValue: selectedAction,
-                        items: const [
-                          DropdownMenuItem(value: 0, child: Text('GET')),
-                          DropdownMenuItem(value: 1, child: Text('SET')),
-                        ],
-                        onChanged: (v) {
-                          setLocalState(() {
-                            selectedAction = v ?? 0;
-                          });
-                        },
-                        decoration: const InputDecoration(
-                          labelText: 'Action',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      if (selectedAction == 1) ...[
-                        const SizedBox(height: 12),
-                        TextFormField(
-                          initialValue: prompt.frequencyValue,
-                          maxLength: 9,
-                          keyboardType: TextInputType.number,
-                          onChanged: (v) => draftFfff = v,
+                  child: Form(
+                    key: formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        DropdownButtonFormField<int>(
+                          initialValue: draftType,
+                          items: const [
+                            DropdownMenuItem(value: 0, child: Text('UHF')),
+                            DropdownMenuItem(value: 1, child: Text('RF Tx')),
+                          ],
+                          onChanged: (v) {
+                            setLocalState(() {
+                              draftType = v ?? 0;
+                            });
+                          },
                           decoration: const InputDecoration(
-                            labelText: 'Frequency (9 digits)',
+                            errorMaxLines: _kSelfTestFormErrorMaxLines,
+                            labelText: 'Transmitter Type',
                             border: OutlineInputBorder(),
-                            hintText: '000402500',
-                            helperText:
-                                '402.0000–403.0000 MHz. Sent as nine digits.',
-                            counterText: '',
                           ),
                         ),
+                        const SizedBox(height: 12),
+                        DropdownButtonFormField<int>(
+                          initialValue: selectedAction,
+                          items: const [
+                            DropdownMenuItem(value: 0, child: Text('GET')),
+                            DropdownMenuItem(value: 1, child: Text('SET')),
+                          ],
+                          onChanged: (v) {
+                            setLocalState(() {
+                              selectedAction = v ?? 0;
+                            });
+                          },
+                          decoration: const InputDecoration(
+                            errorMaxLines: _kSelfTestFormErrorMaxLines,
+                            labelText: 'Action',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+
+                        if (selectedAction == 1) ...[
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            initialValue: prompt.frequencyValue,
+                            maxLength: 10,
+                            keyboardType: TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                RegExp(r'[\d.]'),
+                              ),
+                            ],
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
+                            validator: _validateSelfTestTransmitterFrequency,
+                            onChanged: (v) => draftFfff = v,
+                            decoration: const InputDecoration(
+                              errorMaxLines: _kSelfTestFormErrorMaxLines,
+                              labelText: 'Frequency',
+                              border: OutlineInputBorder(),
+                              hintText: '000.000000',
+                              counterText: '',
+                            ),
+                          ),
+                          if (_buildSelfTestDialogNote(ctx, prompt.note)
+                              case final note?)
+                            note,
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
                 actions: [
@@ -1439,9 +1574,13 @@ class _GeneralUserSelfTestDebugPageState
                   FilledButton(
                     onPressed: () {
                       FocusScope.of(ctx).unfocus();
+                      if (selectedAction == 1 &&
+                          !(formKey.currentState?.validate() ?? false)) {
+                        return;
+                      }
                       final bloc = context.read<GeneralUserSelfTestDebugBloc>();
                       final transmitterType = draftType;
-                      final frequencyValue = draftFfff;
+                      final frequencyValue = draftFfff.replaceAll('.', '');
                       Navigator.of(ctx).pop();
                       _runAfterDialogRouteClosed(() {
                         bloc.add(
@@ -1481,6 +1620,7 @@ class _GeneralUserSelfTestDebugPageState
     _isSetAttenuationDialogOpen = true;
     var draftType = prompt.transmitterType == 1 ? 1 : 0;
     var draftXx = prompt.attenuationValue;
+    var selectedAction = 0;
 
     try {
       await showDialog<void>(
@@ -1496,17 +1636,11 @@ class _GeneralUserSelfTestDebugPageState
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (_buildSelfTestDialogNote(ctx, prompt.note)
-                          case final note?)
-                        note,
                       DropdownButtonFormField<int>(
                         initialValue: draftType,
                         items: const [
-                          DropdownMenuItem(value: 0, child: Text('UHF (N=0)')),
-                          DropdownMenuItem(
-                            value: 1,
-                            child: Text('Radio Sonde (N=1)'),
-                          ),
+                          DropdownMenuItem(value: 0, child: Text('UHF')),
+                          DropdownMenuItem(value: 1, child: Text('RF')),
                         ],
                         onChanged: (v) {
                           setLocalState(() {
@@ -1514,23 +1648,48 @@ class _GeneralUserSelfTestDebugPageState
                           });
                         },
                         decoration: const InputDecoration(
-                          labelText: 'Transmitter type',
+                          errorMaxLines: _kSelfTestFormErrorMaxLines,
+                          labelText: 'Transmitter Type',
                           border: OutlineInputBorder(),
                         ),
                       ),
                       const SizedBox(height: 12),
-                      TextFormField(
-                        initialValue: prompt.attenuationValue,
-                        maxLength: 2,
-                        keyboardType: TextInputType.number,
-                        onChanged: (v) => draftXx = v,
+                      DropdownButtonFormField<int>(
+                        initialValue: selectedAction,
+                        items: const [
+                          DropdownMenuItem(value: 0, child: Text('GET')),
+                          DropdownMenuItem(value: 1, child: Text('SET')),
+                        ],
+                        onChanged: (v) {
+                          setLocalState(() {
+                            selectedAction = v ?? 0;
+                          });
+                        },
                         decoration: const InputDecoration(
-                          labelText: 'Attenuation (xx)',
+                          errorMaxLines: _kSelfTestFormErrorMaxLines,
+                          labelText: 'Action',
                           border: OutlineInputBorder(),
-                          hintText: '05',
-                          counterText: '',
                         ),
                       ),
+                      if (selectedAction == 1) ...[
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          initialValue: prompt.attenuationValue,
+                          maxLength: 2,
+                          keyboardType: TextInputType.number,
+                          onChanged: (v) => draftXx = v,
+                          decoration: const InputDecoration(
+                            errorMaxLines: _kSelfTestFormErrorMaxLines,
+                            labelText: 'Attenuation',
+                            border: OutlineInputBorder(),
+                            hintText: '05',
+                            counterText: '',
+                          ),
+                        ),
+                        if (_buildSelfTestDialogNote(ctx, prompt.note)
+                            case final note?)
+                          note,
+                      ],
                     ],
                   ),
                 ),
@@ -1554,11 +1713,12 @@ class _GeneralUserSelfTestDebugPageState
                           SubmitGeneralUserSetAttenuation(
                             transmitterType: transmitterType,
                             attenuationValue: attenuationValue,
+                            sValue: selectedAction,
                           ),
                         );
                       });
                     },
-                    child: const Text('Update'),
+                    child: const Text('Send'),
                   ),
                 ],
               );
@@ -1592,25 +1752,28 @@ class _GeneralUserSelfTestDebugPageState
         barrierDismissible: false,
         builder: (ctx) {
           return AlertDialog(
-            title: const Text('Get station ID of Radio sonde Transmitter'),
+            title: const Text('Get Buoy Id of Radio Sonde Transmitter'),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (_buildSelfTestDialogNote(ctx, prompt.note) case final note?)
-                    note,
                   TextFormField(
                     initialValue: prompt.currentTransmitterId,
                     maxLength: 3,
                     textCapitalization: TextCapitalization.characters,
                     onChanged: (v) => draftId = v,
                     decoration: const InputDecoration(
+                      errorMaxLines: _kSelfTestFormErrorMaxLines,
                       border: OutlineInputBorder(),
                       hintText: 'XXX',
                       counterText: '',
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  if (_buildSelfTestDialogNote(ctx, prompt.note)
+                      case final note?)
+                    note,
                 ],
               ),
             ),
@@ -1691,33 +1854,71 @@ class _GeneralUserSelfTestDebugPageState
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (_buildSelfTestDialogPrefetchWarning(
-                              ctx,
-                              prompt.prefetchWarning,
-                            )
-                            case final warn?)
-                          warn,
-                        if (_buildSelfTestDialogNote(ctx, prompt.note)
-                            case final note?)
-                          note,
                         DropdownButtonFormField<int>(
                           initialValue: draftN,
+                          isExpanded: true,
+                          selectedItemBuilder: (context) => const [
+                            Text(
+                              'UHF Transmission Start Time',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              softWrap: true,
+                            ),
+                            Text(
+                              'UHF Interval Time',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              softWrap: true,
+                            ),
+                            Text(
+                              'Sonde Transmission Start Time',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              softWrap: true,
+                            ),
+                            Text(
+                              'Sonde Interval Time',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              softWrap: true,
+                            ),
+                          ],
                           items: const [
                             DropdownMenuItem(
                               value: 1,
-                              child: Text('1 — UHF Transmission Start Time'),
+                              child: Text(
+                                'UHF Transmission Start Time',
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                softWrap: true,
+                              ),
                             ),
                             DropdownMenuItem(
                               value: 2,
-                              child: Text('2 — UHF Interval Time'),
+                              child: Text(
+                                'UHF Interval Time',
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                softWrap: true,
+                              ),
                             ),
                             DropdownMenuItem(
                               value: 3,
-                              child: Text('3 — Sonde Transmission Start Time'),
+                              child: Text(
+                                'Sonde Transmission Start Time',
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                softWrap: true,
+                              ),
                             ),
                             DropdownMenuItem(
                               value: 4,
-                              child: Text('4 — Sonde Interval Time'),
+                              child: Text(
+                                'Sonde Interval Time',
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                softWrap: true,
+                              ),
                             ),
                           ],
                           onChanged: (v) {
@@ -1730,7 +1931,8 @@ class _GeneralUserSelfTestDebugPageState
                             });
                           },
                           decoration: const InputDecoration(
-                            labelText: 'Field (N)',
+                            errorMaxLines: _kSelfTestFormErrorMaxLines,
+                            labelText: 'Field',
                             border: OutlineInputBorder(),
                           ),
                         ),
@@ -1743,12 +1945,23 @@ class _GeneralUserSelfTestDebugPageState
                           validator: (v) => _validateSelfTestHhMmSs('Time', v),
                           onChanged: (v) => draftTime = v,
                           decoration: const InputDecoration(
-                            labelText: 'Time (HH:MM:SS)',
-                            hintText: '00:00:00',
-                            helperText: '24-hour format',
+                            errorMaxLines: _kSelfTestFormErrorMaxLines,
+                            labelText: 'Time',
+                            // hintText: '00:00:00',
+                            // helperText: '24-hour format',
                             border: OutlineInputBorder(),
                           ),
                         ),
+                        const SizedBox(height: 12),
+                        if (_buildSelfTestDialogPrefetchWarning(
+                              ctx,
+                              prompt.prefetchWarning,
+                            )
+                            case final warn?)
+                          warn,
+                        if (_buildSelfTestDialogNote(ctx, prompt.note)
+                            case final note?)
+                          note,
                       ],
                     ),
                   ),
@@ -1806,118 +2019,26 @@ class _GeneralUserSelfTestDebugPageState
       return;
     }
     _isTransmitterTestDialogOpen = true;
-    var selectedN = prompt.plainCarrierOn
-        ? 0
-        : prompt.modulationOn
-        ? 1
-        : prompt.prbsOn
-        ? 2
-        : 0;
-    var sOn = prompt.plainCarrierOn || prompt.modulationOn || prompt.prbsOn;
 
     try {
+      final bloc = context.read<GeneralUserSelfTestDebugBloc>();
       await showDialog<void>(
         context: context,
         barrierDismissible: false,
-        builder: (ctx) {
-          return StatefulBuilder(
-            builder: (ctx, setLocalState) {
-              return AlertDialog(
-                title: const Text('Transmitter Test'),
-                content: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (_buildSelfTestDialogNote(ctx, prompt.note)
-                          case final note?)
-                        note,
-                      RadioGroup<int>(
-                        groupValue: selectedN,
-                        onChanged: (v) {
-                          if (v != null) {
-                            setLocalState(() => selectedN = v);
-                          }
-                        },
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            RadioListTile<int>(
-                              dense: true,
-                              contentPadding: EdgeInsets.zero,
-                              value: 0,
-                              title: const Text('Plain carrier'),
-                            ),
-                            RadioListTile<int>(
-                              dense: true,
-                              contentPadding: EdgeInsets.zero,
-                              value: 1,
-                              title: const Text('Modulation'),
-                            ),
-                            RadioListTile<int>(
-                              dense: true,
-                              contentPadding: EdgeInsets.zero,
-                              value: 2,
-                              title: const Text('PRBS'),
-                            ),
-                            RadioListTile<int>(
-                              dense: true,
-                              contentPadding: EdgeInsets.zero,
-                              value: 3,
-                              title: const Text('RF'),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      SwitchListTile(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        value: sOn,
-                        title: const Text('Status'),
-                        subtitle: Text(sOn ? 'ON' : 'OFF'),
-                        onChanged: (val) {
-                          setLocalState(() => sOn = val);
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      FocusScope.of(ctx).unfocus();
-                      Navigator.of(ctx).pop();
-                    },
-                    child: const Text('Cancel'),
-                  ),
-                  FilledButton(
-                    onPressed: () {
-                      FocusScope.of(ctx).unfocus();
-                      final bloc = context.read<GeneralUserSelfTestDebugBloc>();
-                      Navigator.of(ctx).pop();
-                      _runAfterDialogRouteClosed(() {
-                        bloc.add(
-                          SubmitGeneralUserTransmitterTest(
-                            selectedN: selectedN,
-                            sValue: sOn ? 0 : 1,
-                          ),
-                        );
-                      });
-                    },
-                    child: const Text('Send'),
-                  ),
-                ],
-              );
+        builder: (dialogContext) => BlocProvider.value(
+          value: bloc,
+          child: _TransmitterTestDialog(
+            prompt: prompt,
+            onClosed: () {
+              if (context.mounted) {
+                context.read<GeneralUserSelfTestDebugBloc>().add(
+                  const ClearGeneralUserTransmitterTestPrompt(),
+                );
+              }
             },
-          );
-        },
+          ),
+        ),
       );
-      if (context.mounted) {
-        context.read<GeneralUserSelfTestDebugBloc>().add(
-          const ClearGeneralUserTransmitterTestPrompt(),
-        );
-      }
     } finally {
       _isTransmitterTestDialogOpen = false;
     }
@@ -1941,8 +2062,13 @@ class _GeneralUserSelfTestDebugPageState
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _checkStatusSectionTitle(ctx, 'Peripheral Status (PP)'),
-                _checkStatusValueLine(ctx, prompt.peripheralStatus),
+                _checkStatusSectionTitle(ctx, 'Firmware Version'),
+                _checkStatusValueLine(
+                  ctx,
+                  prompt.firmwareVersion.trim().isEmpty
+                      ? '—'
+                      : prompt.firmwareVersion.trim(),
+                ),
                 const SizedBox(height: 10),
 
                 _checkStatusSectionTitle(ctx, 'Memory 1 Status'),
@@ -1958,16 +2084,10 @@ class _GeneralUserSelfTestDebugPageState
                 // _checkStatusSectionTitle(ctx, 'Battery charging (CH)'),
                 // _checkStatusCharging(ctx, prompt.chargeStatus),
                 const SizedBox(height: 10),
-                _checkStatusSectionTitle(ctx, 'Firmware Version'),
-                _checkStatusValueLine(
-                  ctx,
-                  prompt.firmwareVersion.trim().isEmpty
-                      ? '—'
-                      : prompt.firmwareVersion.trim(),
-                ),
+                _checkStatusSectionTitle(ctx, 'Peripheral Status (PP)'),
+                _checkStatusValueLine(ctx, prompt.peripheralStatus),
                 const SizedBox(height: 10),
 
-                _checkStatusSectionTitle(ctx, 'GPRS Server Status (GG × 4)'),
                 _checkStatusValueLine(ctx, 'Primary: ${prompt.gprsPrimary}'),
                 _checkStatusValueLine(
                   ctx,
@@ -2320,10 +2440,10 @@ class _GeneralUserSelfTestDebugPageState
     late final String line;
     late final Color color;
     if (v == 0) {
-      line = '0 — OK';
+      line = 'OK';
       color = _checkOkGreen;
     } else if (v == 1) {
-      line = '1 — Not OK';
+      line = 'Not OK';
       color = _checkBadRed;
     } else {
       line = raw.isEmpty ? '—' : raw;
@@ -2863,6 +2983,7 @@ class _GeneralUserSelfTestDebugPageState
                                 controller: _commandSearchController,
                                 textInputAction: TextInputAction.search,
                                 decoration: InputDecoration(
+                                  errorMaxLines: _kSelfTestFormErrorMaxLines,
                                   hintText: 'Search commands',
                                   prefixIcon: const Icon(
                                     Icons.search_rounded,
@@ -2971,10 +3092,10 @@ class _GeneralUserSelfTestDebugPageState
                                               des.toLowerCase() != 'na') {
                                             subtitleParts.add('Des: $des');
                                           }
-                                          if (note.isNotEmpty &&
-                                              note.toLowerCase() != 'na') {
-                                            subtitleParts.add('Note: $note');
-                                          }
+                                          // if (note.isNotEmpty &&
+                                          //     note.toLowerCase() != 'na') {
+                                          //   subtitleParts.add('Note: $note');
+                                          // }
                                           final subtitleText = subtitleParts
                                               .join('\n');
                                           return _ActionTile(
@@ -3029,6 +3150,21 @@ class _GeneralUserSelfTestDebugPageState
                                                         .contains(command.id)) {
                                                       _showCommandPinDialog(
                                                         context: context,
+                                                        onProceed: onAction,
+                                                      );
+                                                    } else if (command.id ==
+                                                        _simCardTestCommandId) {
+                                                      onAction(
+                                                        overrideCommand:
+                                                            _simCardTestStaticCommand,
+                                                      );
+                                                    } else if (command.id ==
+                                                        _manualRtcUpdateCommandId) {
+                                                      _showCommandConfirmDialog(
+                                                        context: context,
+                                                        testName: command
+                                                            .testName
+                                                            .trim(),
                                                         onProceed: onAction,
                                                       );
                                                     } else {
@@ -3176,25 +3312,30 @@ class _AdminSmsCellAlertDialogState extends State<_AdminSmsCellAlertDialog> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
+              TextFormField(
+                controller: _mobileController,
+                keyboardType: TextInputType.phone,
+                validator: _validateSelfTestParameterizedSmsCell,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                maxLength: 13,
+
+                decoration: const InputDecoration(
+                  errorMaxLines: _kSelfTestFormErrorMaxLines,
+                  labelText: 'Mobile No.',
+                  // helperText: '10 digits, or +91 and 10 digits',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
               if (_buildSelfTestDialogPrefetchWarning(
                     context,
                     prompt.prefetchWarning,
                   )
                   case final warn?)
                 warn,
-              if (_buildSelfTestDialogNote(context, prompt.note) case final note?)
+              if (_buildSelfTestDialogNote(context, prompt.note)
+                  case final note?)
                 note,
-              TextFormField(
-                controller: _mobileController,
-                keyboardType: TextInputType.phone,
-                validator: _validateSelfTestParameterizedSmsCell,
-                autovalidateMode: AutovalidateMode.onUserInteraction,
-                decoration: const InputDecoration(
-                  labelText: 'Mobile number',
-                  helperText: '10 digits, or +91 and 10 digits',
-                  border: OutlineInputBorder(),
-                ),
-              ),
             ],
           ),
         ),
@@ -3332,10 +3473,14 @@ class _SetApnAlertDialogState extends State<_SetApnAlertDialog> {
 
   SelfTestSetApnPrompt get _prompt => widget.prompt;
 
+  String _apnForSlot(int slot) {
+    return slot == 1 ? _prompt.initialSim1Apn : _prompt.initialSim2Apn;
+  }
+
   @override
   void initState() {
     super.initState();
-    _apnController = TextEditingController();
+    _apnController = TextEditingController(text: _apnForSlot(_para3));
   }
 
   @override
@@ -3353,41 +3498,23 @@ class _SetApnAlertDialogState extends State<_SetApnAlertDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (_buildSelfTestDialogPrefetchWarning(
-                  context,
-                  _prompt.prefetchWarning,
-                )
-                case final warn?)
-              warn,
-            if (_buildSelfTestDialogNote(context, _prompt.note) case final note?)
-              note,
             Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  TextFormField(
-                    controller: _apnController,
-                    maxLength: 31,
-                    validator: _validateSelfTestApn31,
-                    autovalidateMode: AutovalidateMode.onUserInteraction,
-                    decoration: const InputDecoration(
-                      labelText: 'APN name (Para 1)',
-                      border: OutlineInputBorder(),
-                      counterText: '',
-                    ),
-                  ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<int>(
                     decoration: const InputDecoration(
-                      labelText: 'SIM operator (Para 2)',
+                      errorMaxLines: _kSelfTestFormErrorMaxLines,
+                      labelText: 'SIM Operator',
                       border: OutlineInputBorder(),
                     ),
                     initialValue: _para2,
                     items: const [
-                      DropdownMenuItem(value: 0, child: Text('0 — Vodafone')),
-                      DropdownMenuItem(value: 1, child: Text('1 — Other SIM')),
+                      DropdownMenuItem(value: 0, child: Text('Vodafone')),
+                      DropdownMenuItem(value: 1, child: Text('Other SIM')),
                     ],
                     onChanged: (v) {
                       if (v == null) {
@@ -3399,13 +3526,14 @@ class _SetApnAlertDialogState extends State<_SetApnAlertDialog> {
                   const SizedBox(height: 12),
                   DropdownButtonFormField<int>(
                     decoration: const InputDecoration(
-                      labelText: 'APN slot (Para 3)',
+                      errorMaxLines: _kSelfTestFormErrorMaxLines,
+                      labelText: 'APN Slot',
                       border: OutlineInputBorder(),
                     ),
                     initialValue: _para3,
                     items: const [
-                      DropdownMenuItem(value: 1, child: Text('1 — SIM1 APN')),
-                      DropdownMenuItem(value: 2, child: Text('2 — SIM2 APN')),
+                      DropdownMenuItem(value: 1, child: Text('SIM 1 APN')),
+                      DropdownMenuItem(value: 2, child: Text('SIM 2 APN')),
                     ],
                     onChanged: (v) {
                       if (v == null) {
@@ -3413,17 +3541,35 @@ class _SetApnAlertDialogState extends State<_SetApnAlertDialog> {
                       }
                       setState(() {
                         _para3 = v;
-                        if (_apnController.text.trim().isEmpty) {
-                          _apnController.text = v == 1
-                              ? _prompt.initialSim1Apn
-                              : _prompt.initialSim2Apn;
-                        }
+                        _apnController.text = _apnForSlot(v);
                       });
                     },
+                  ),
+                  SizedBox(height: 10),
+                  TextFormField(
+                    controller: _apnController,
+                    maxLength: 31,
+                    validator: _validateSelfTestApn31,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    decoration: const InputDecoration(
+                      errorMaxLines: _kSelfTestFormErrorMaxLines,
+                      labelText: 'APN Name',
+                      border: OutlineInputBorder(),
+                      counterText: '',
+                    ),
                   ),
                 ],
               ),
             ),
+            if (_buildSelfTestDialogPrefetchWarning(
+                  context,
+                  _prompt.prefetchWarning,
+                )
+                case final warn?)
+              warn,
+            if (_buildSelfTestDialogNote(context, _prompt.note)
+                case final note?)
+              note,
           ],
         ),
       ),
@@ -3528,16 +3674,17 @@ class _ParameterizedServerCommandDialogState
       children: [
         DropdownButtonFormField<int>(
           decoration: const InputDecoration(
-            labelText: 'HTTP field',
-            helperText: _httpWebsiteFieldHint,
+            errorMaxLines: _kSelfTestFormErrorMaxLines,
+            labelText: 'HTTP Field',
+            // helperText: _httpWebsiteFieldHint,
             helperMaxLines: 2,
             border: OutlineInputBorder(),
           ),
           initialValue: _httpServerIndex.clamp(1, 3),
           items: const [
-            DropdownMenuItem(value: 1, child: Text('1')),
-            DropdownMenuItem(value: 2, child: Text('2')),
-            DropdownMenuItem(value: 3, child: Text('3')),
+            DropdownMenuItem(value: 1, child: Text('HTTP Server URL')),
+            DropdownMenuItem(value: 2, child: Text('HTTP Server Key')),
+            DropdownMenuItem(value: 3, child: Text('HTTP Data')),
           ],
           onChanged: (v) {
             if (v == null) {
@@ -3553,8 +3700,9 @@ class _ParameterizedServerCommandDialogState
           validator: _validateSelfTestPrintableAsciiMax128NoComma,
           autovalidateMode: AutovalidateMode.onUserInteraction,
           decoration: InputDecoration(
-            labelText: 'HTTP website address',
-            helperText: addressHelperText,
+            errorMaxLines: _kSelfTestFormErrorMaxLines,
+            labelText: 'HTTP Website Address',
+            // helperText: addressHelperText,
             helperMaxLines: 2,
             border: const OutlineInputBorder(),
             counterText: '',
@@ -3591,9 +3739,10 @@ class _ParameterizedServerCommandDialogState
           validator: _validateSelfTestParameterizedFtp20,
           autovalidateMode: AutovalidateMode.onUserInteraction,
           decoration: InputDecoration(
+            errorMaxLines: _kSelfTestFormErrorMaxLines,
             labelText: _isPasswordField ? 'Password' : 'Value',
-            helperText:
-                '1–20 printable characters. Shorter values are padded when sent.',
+            // helperText:
+            //     '1–20 printable characters. Shorter values are padded when sent.',
             border: const OutlineInputBorder(),
             counterText: '',
             suffixIcon: _isPasswordField
@@ -3624,8 +3773,10 @@ class _ParameterizedServerCommandDialogState
           validator: _validateSelfTestParameterizedPort,
           autovalidateMode: AutovalidateMode.onUserInteraction,
           decoration: const InputDecoration(
+            errorMaxLines: _kSelfTestFormErrorMaxLines,
             labelText: 'Port',
-            helperText: '0–65535 (sent as 5 digits with leading zeros).',
+            hintText: '00021',
+            // helperText: '0–65535 (sent as 5 digits with leading zeros).',
             border: OutlineInputBorder(),
             counterText: '',
           ),
@@ -3639,15 +3790,16 @@ class _ParameterizedServerCommandDialogState
           children: [
             DropdownButtonFormField<int>(
               decoration: const InputDecoration(
-                labelText: 'Server number (N)',
+                errorMaxLines: _kSelfTestFormErrorMaxLines,
+                labelText: 'Server Name',
                 border: OutlineInputBorder(),
               ),
               initialValue: httpPasswordSlot,
               items: const [
-                DropdownMenuItem(value: 1, child: Text('1')),
-                DropdownMenuItem(value: 2, child: Text('2')),
-                DropdownMenuItem(value: 3, child: Text('3')),
-                DropdownMenuItem(value: 4, child: Text('4')),
+                DropdownMenuItem(value: 1, child: Text('Primary Server')),
+                DropdownMenuItem(value: 2, child: Text('Secondary Server')),
+                DropdownMenuItem(value: 3, child: Text('Third Server')),
+                DropdownMenuItem(value: 4, child: Text('Factory Server')),
               ],
               onChanged: (v) {
                 if (v == null) {
@@ -3664,9 +3816,10 @@ class _ParameterizedServerCommandDialogState
               validator: _validateSelfTestPrintableAsciiMax64NoComma,
               autovalidateMode: AutovalidateMode.onUserInteraction,
               decoration: InputDecoration(
-                labelText: 'HTTP password',
-                helperText:
-                    'Max 64 printable ASCII chars. Sends ?97,$httpPasswordSlot,password,#',
+                errorMaxLines: _kSelfTestFormErrorMaxLines,
+                labelText: 'HTTP Password',
+                // helperText:
+                //     'Max 64 printable ASCII chars. Sends ?97,$httpPasswordSlot,password,#',
                 border: const OutlineInputBorder(),
                 counterText: '',
                 suffixIcon: IconButton(
@@ -3694,15 +3847,16 @@ class _ParameterizedServerCommandDialogState
           children: [
             DropdownButtonFormField<int>(
               decoration: const InputDecoration(
-                labelText: 'Server number (N)',
+                errorMaxLines: _kSelfTestFormErrorMaxLines,
+                labelText: 'Server Name',
                 border: OutlineInputBorder(),
               ),
               initialValue: httpPortSlot,
               items: const [
-                DropdownMenuItem(value: 0, child: Text('0')),
-                DropdownMenuItem(value: 1, child: Text('1')),
-                DropdownMenuItem(value: 2, child: Text('2')),
-                DropdownMenuItem(value: 3, child: Text('3')),
+                DropdownMenuItem(value: 0, child: Text('Primary Server')),
+                DropdownMenuItem(value: 1, child: Text('Secondary Server')),
+                DropdownMenuItem(value: 2, child: Text('Third Server')),
+                DropdownMenuItem(value: 3, child: Text('Factory Server')),
               ],
               onChanged: (v) {
                 if (v == null) {
@@ -3719,9 +3873,11 @@ class _ParameterizedServerCommandDialogState
               validator: _validateSelfTestParameterizedPort,
               autovalidateMode: AutovalidateMode.onUserInteraction,
               decoration: InputDecoration(
-                labelText: 'HTTP port (PPPPP)',
-                helperText:
-                    '0–65535. Sends ?98,$httpPortSlot,PPPPP,# (e.g. ?98,$httpPortSlot,11111,#).',
+                errorMaxLines: _kSelfTestFormErrorMaxLines,
+                labelText: 'HTTP Port',
+                hintText: "00021",
+                // helperText:
+                //     '0–65535. Sends ?98,$httpPortSlot,PPPPP,# (e.g. ?98,$httpPortSlot,11111,#).',
                 border: const OutlineInputBorder(),
                 counterText: '',
               ),
@@ -3735,9 +3891,11 @@ class _ParameterizedServerCommandDialogState
           keyboardType: TextInputType.phone,
           validator: _validateSelfTestParameterizedSmsCell,
           autovalidateMode: AutovalidateMode.onUserInteraction,
+          maxLength: 13,
           decoration: const InputDecoration(
-            labelText: 'Mobile number',
-            helperText: '10 digits, or +91 and 10 digits.',
+            errorMaxLines: _kSelfTestFormErrorMaxLines,
+            labelText: 'Mobile No.',
+            // helperText: '10 digits, or +91 and 10 digits.',
             border: OutlineInputBorder(),
           ),
         );
@@ -3757,13 +3915,13 @@ class _ParameterizedServerCommandDialogState
                 dense: true,
                 contentPadding: EdgeInsets.zero,
                 value: 0,
-                title: const Text('0'),
+                title: const Text('Enable'),
               ),
               RadioListTile<int>(
                 dense: true,
                 contentPadding: EdgeInsets.zero,
                 value: 1,
-                title: const Text('1'),
+                title: const Text('Disable'),
               ),
             ],
           ),
@@ -3783,12 +3941,12 @@ class _ParameterizedServerCommandDialogState
               RadioListTile<int>(
                 contentPadding: EdgeInsets.zero,
                 value: 0,
-                title: const Text('0 — GSM and GPRS'),
+                title: const Text('GSM and GPRS'),
               ),
               RadioListTile<int>(
                 contentPadding: EdgeInsets.zero,
                 value: 1,
-                title: const Text('1 — GSM if GPRS fail'),
+                title: const Text('GSM if GPRS fail'),
               ),
             ],
           ),
@@ -3801,9 +3959,10 @@ class _ParameterizedServerCommandDialogState
           validator: _validateSelfTestPrintableAsciiMax128NoComma,
           autovalidateMode: AutovalidateMode.onUserInteraction,
           decoration: const InputDecoration(
-            labelText: 'HTTP website address',
-            helperText:
-                'Max 128 printable ASCII chars. Catalog adds a trailing space when shorter than 40.',
+            errorMaxLines: _kSelfTestFormErrorMaxLines,
+            labelText: 'HTTP Website Address',
+            // helperText:
+            //     'Max 128 printable ASCII chars. Catalog adds a trailing space when shorter than 40.',
             border: OutlineInputBorder(),
             counterText: '',
           ),
@@ -3816,9 +3975,10 @@ class _ParameterizedServerCommandDialogState
           validator: _validateSelfTestPrintableAsciiMax15NoComma,
           autovalidateMode: AutovalidateMode.onUserInteraction,
           decoration: const InputDecoration(
-            labelText: 'RTC server key',
-            helperText:
-                'Max 15 printable ASCII chars. Catalog adds a trailing space when shorter than 40.',
+            errorMaxLines: _kSelfTestFormErrorMaxLines,
+            labelText: 'RTC Server Key',
+            // helperText:
+            //     'Max 15 printable ASCII chars. Catalog adds a trailing space when shorter than 40.',
             border: OutlineInputBorder(),
             counterText: '',
           ),
@@ -3859,15 +4019,16 @@ class _ParameterizedServerCommandDialogState
           children: [
             DropdownButtonFormField<int>(
               decoration: const InputDecoration(
-                labelText: 'HTTP server number (N)',
+                errorMaxLines: _kSelfTestFormErrorMaxLines,
+                labelText: 'HTTP Server',
                 border: OutlineInputBorder(),
               ),
               initialValue: _httpServerIndex.clamp(1, 4),
               items: const [
-                DropdownMenuItem(value: 1, child: Text('1')),
-                DropdownMenuItem(value: 2, child: Text('2')),
-                DropdownMenuItem(value: 3, child: Text('3')),
-                DropdownMenuItem(value: 4, child: Text('4')),
+                DropdownMenuItem(value: 1, child: Text('Primary Server')),
+                DropdownMenuItem(value: 2, child: Text('Secondary Server')),
+                DropdownMenuItem(value: 3, child: Text('Third Server')),
+                DropdownMenuItem(value: 4, child: Text('Factory Server')),
               ],
               onChanged: (v) {
                 if (v == null) {
@@ -3883,9 +4044,10 @@ class _ParameterizedServerCommandDialogState
               validator: _validateSelfTestPrintableAsciiMax64NoComma,
               autovalidateMode: AutovalidateMode.onUserInteraction,
               decoration: const InputDecoration(
-                labelText: 'HTTP server username',
-                helperText:
-                    'Max 64 printable ASCII chars. Shorter values are padded with spaces when sent.',
+                errorMaxLines: _kSelfTestFormErrorMaxLines,
+                labelText: 'HTTP Server Username',
+                // helperText:
+                //     'Max 64 printable ASCII chars. Shorter values are padded with spaces when sent.',
                 border: OutlineInputBorder(),
                 counterText: '',
               ),
@@ -3901,15 +4063,16 @@ class _ParameterizedServerCommandDialogState
           children: [
             DropdownButtonFormField<int>(
               decoration: const InputDecoration(
-                labelText: 'Slot (N)',
+                errorMaxLines: _kSelfTestFormErrorMaxLines,
+                labelText: 'Slot',
                 border: OutlineInputBorder(),
               ),
               initialValue: dlSlot,
               items: const [
-                DropdownMenuItem(value: 1, child: Text('1 — D.L. cell no. 1')),
-                DropdownMenuItem(value: 2, child: Text('2 — D.L. cell no. 2')),
-                DropdownMenuItem(value: 3, child: Text('3 — MSISDN no. 1')),
-                DropdownMenuItem(value: 4, child: Text('4 — MSISDN no. 2')),
+                DropdownMenuItem(value: 1, child: Text('D.L. Cell No. 1')),
+                DropdownMenuItem(value: 2, child: Text('D.L. Cell No. 2')),
+                DropdownMenuItem(value: 3, child: Text('MSISDN No. 1')),
+                DropdownMenuItem(value: 4, child: Text('MSISDN No. 2')),
               ],
               onChanged: (v) {
                 if (v == null) {
@@ -3926,8 +4089,8 @@ class _ParameterizedServerCommandDialogState
               validator: (v) => _validateSelfTestDlCellNumber(dlSlot, v),
               autovalidateMode: AutovalidateMode.onUserInteraction,
               decoration: InputDecoration(
-                labelText: 'Cell / MSISDN number',
-                helperText: _dlCellSlotHelperText(dlSlot),
+                errorMaxLines: _kSelfTestFormErrorMaxLines,
+                labelText: 'Cell / MSISDN Number',
                 border: const OutlineInputBorder(),
                 counterText: '',
               ),
@@ -3942,9 +4105,26 @@ class _ParameterizedServerCommandDialogState
           validator: _validateSelfTestPowerSwitchingValue,
           autovalidateMode: AutovalidateMode.onUserInteraction,
           decoration: const InputDecoration(
-            labelText: 'Power switching value (N)',
-            helperText: 'Example: 20 sends ?76,20,#',
+            errorMaxLines: _kSelfTestFormErrorMaxLines,
+            labelText: 'Power Switching Value',
+            // helperText: 'Example: 20 sends ?76,20,#',
             border: OutlineInputBorder(),
+          ),
+        );
+        break;
+      case SelfTestParameterizedCommandFieldKind.setBuoyOffsetSignedFourDigits:
+        field = TextFormField(
+          controller: _textController,
+          keyboardType: const TextInputType.numberWithOptions(signed: true),
+          maxLength: 7,
+          validator: _validateSelfTestBuoyOffset,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          decoration: const InputDecoration(
+            errorMaxLines: _kSelfTestFormErrorMaxLines,
+            labelText: 'Buoy Offset',
+            hintText: '+123456',
+            border: OutlineInputBorder(),
+            counterText: '',
           ),
         );
         break;
@@ -3956,8 +4136,9 @@ class _ParameterizedServerCommandDialogState
           validator: _validateSelfTestBatteryVoltageIndex,
           autovalidateMode: AutovalidateMode.onUserInteraction,
           decoration: const InputDecoration(
+            errorMaxLines: _kSelfTestFormErrorMaxLines,
             labelText: 'Index (xx)',
-            helperText: '00 to 11 (sent as two digits, e.g. 00, 05, 11).',
+            // helperText: '00 to 11 (sent as two digits, e.g. 00, 05, 11).',
             border: OutlineInputBorder(),
             counterText: '',
           ),
@@ -3972,8 +4153,9 @@ class _ParameterizedServerCommandDialogState
           validator: _validateSelfTestGetSensorParameter83Number,
           autovalidateMode: AutovalidateMode.onUserInteraction,
           decoration: const InputDecoration(
-            labelText: 'Sensor number',
-            helperText: '00 to 99 (sent as two digits, e.g. 01 → ?83,01,#).',
+            errorMaxLines: _kSelfTestFormErrorMaxLines,
+            labelText: 'Sensor Number',
+            // helperText: '00 to 99 (sent as two digits, e.g. 01 → ?83,01,#).',
             border: OutlineInputBorder(),
             counterText: '',
           ),
@@ -3987,6 +4169,9 @@ class _ParameterizedServerCommandDialogState
     final isGetSensorParameter83 =
         p.fieldKind ==
         SelfTestParameterizedCommandFieldKind.getSensorParameter83SensorNumber;
+    final isSetBuoyOffset =
+        p.fieldKind ==
+        SelfTestParameterizedCommandFieldKind.setBuoyOffsetSignedFourDigits;
 
     return AlertDialog(
       title: Text(p.testName),
@@ -3995,8 +4180,8 @@ class _ParameterizedServerCommandDialogState
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            ...header,
             Form(key: _formKey, child: field),
+            ...header,
           ],
         ),
       ),
@@ -4071,7 +4256,11 @@ class _ParameterizedServerCommandDialogState
             });
           },
           child: Text(
-            isBatteryVoltage || isGetSensorParameter83 ? 'Send' : 'Update',
+            isBatteryVoltage || isGetSensorParameter83
+                ? 'Send'
+                : isSetBuoyOffset
+                ? 'Add'
+                : 'Update',
           ),
         ),
       ],
@@ -4135,15 +4324,6 @@ class _SetAllGeneralParametersDialogState
   Widget build(BuildContext context) {
     final p = widget.prompt;
 
-    final header = <Widget>[];
-    if (_buildSelfTestDialogPrefetchWarning(context, p.prefetchWarning)
-        case final warn?) {
-      header.add(warn);
-    }
-    if (_buildSelfTestDialogNote(context, p.note) case final note?) {
-      header.add(note);
-    }
-
     return AlertDialog(
       title: Text(p.testName),
       content: SizedBox(
@@ -4155,7 +4335,7 @@ class _SetAllGeneralParametersDialogState
               crossAxisAlignment: CrossAxisAlignment.stretch,
               mainAxisSize: MainAxisSize.min,
               children: [
-                ...header,
+                SizedBox(height: 10),
                 TextFormField(
                   controller: _stationId,
                   maxLength: 8,
@@ -4163,8 +4343,9 @@ class _SetAllGeneralParametersDialogState
                   validator: _validateSelfTestStationIdSetAllGeneral,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   decoration: const InputDecoration(
+                    errorMaxLines: _kSelfTestFormErrorMaxLines,
                     labelText: 'Buoy ID',
-                    helperText: 'Up to 8 characters',
+                    // helperText: 'Up to 8 characters',
                     border: OutlineInputBorder(),
                     counterText: '',
                   ),
@@ -4176,8 +4357,9 @@ class _SetAllGeneralParametersDialogState
                   validator: _validateSelfTestStationNameSetAllGeneral,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   decoration: const InputDecoration(
-                    labelText: 'Station name',
-                    helperText: 'Up to 16 characters',
+                    errorMaxLines: _kSelfTestFormErrorMaxLines,
+                    labelText: 'Buoy Name',
+                    // helperText: 'Up to 16 characters',
                     border: OutlineInputBorder(),
                     counterText: '',
                   ),
@@ -4188,8 +4370,9 @@ class _SetAllGeneralParametersDialogState
                   validator: (v) => _validateSelfTestHhMmSs('Tx interval', v),
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   decoration: const InputDecoration(
-                    labelText: 'Tx interval',
-                    helperText: 'HH:MM:SS (24-hour)',
+                    errorMaxLines: _kSelfTestFormErrorMaxLines,
+                    labelText: 'Tx Interval',
+                    // helperText: 'HH:MM:SS (24-hour)',
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -4200,8 +4383,9 @@ class _SetAllGeneralParametersDialogState
                       _validateSelfTestHhMmSs('Measurement interval', v),
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   decoration: const InputDecoration(
-                    labelText: 'Measurement interval',
-                    helperText: 'HH:MM:SS (24-hour)',
+                    errorMaxLines: _kSelfTestFormErrorMaxLines,
+                    labelText: 'Measurement Interval',
+                    // helperText: 'HH:MM:SS (24-hour)',
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -4212,8 +4396,9 @@ class _SetAllGeneralParametersDialogState
                   validator: _validateSelfTestApnSetAllGeneral,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   decoration: const InputDecoration(
+                    errorMaxLines: _kSelfTestFormErrorMaxLines,
                     labelText: 'APN',
-                    helperText: 'Up to 31 characters',
+                    // helperText: 'Up to 31 characters',
                     border: OutlineInputBorder(),
                     counterText: '',
                   ),
@@ -4226,8 +4411,9 @@ class _SetAllGeneralParametersDialogState
                   validator: _validateSelfTestFastSmsSetAllGeneral,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   decoration: const InputDecoration(
-                    labelText: 'Fast SMS check',
-                    helperText: '0 or 1',
+                    errorMaxLines: _kSelfTestFormErrorMaxLines,
+                    labelText: 'Fast SMS Check',
+                    // helperText: '0 or 1',
                     border: OutlineInputBorder(),
                     counterText: '',
                   ),
@@ -4239,8 +4425,9 @@ class _SetAllGeneralParametersDialogState
                   validator: _validateSelfTestParameterizedSmsCell,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   decoration: const InputDecoration(
-                    labelText: 'Admin cell no. 1',
-                    helperText: '10 digits or +91 and 10 digits',
+                    errorMaxLines: _kSelfTestFormErrorMaxLines,
+                    labelText: 'Admin Cell No. 1',
+                    // helperText: '10 digits or +91 and 10 digits',
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -4251,8 +4438,9 @@ class _SetAllGeneralParametersDialogState
                   validator: _validateSelfTestParameterizedSmsCell,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   decoration: const InputDecoration(
-                    labelText: 'Admin cell no. 2',
-                    helperText: '10 digits or +91 and 10 digits',
+                    errorMaxLines: _kSelfTestFormErrorMaxLines,
+                    labelText: 'Admin Cell No. 2',
+                    // helperText: '10 digits or +91 and 10 digits',
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -4263,11 +4451,21 @@ class _SetAllGeneralParametersDialogState
                       _validateSelfTestHhMmSs('Measurement start time', v),
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   decoration: const InputDecoration(
-                    labelText: 'Measurement start time',
-                    helperText: 'HH:MM:SS (24-hour)',
+                    errorMaxLines: _kSelfTestFormErrorMaxLines,
+                    labelText: 'Measurement Start Time',
+                    // helperText: 'HH:MM:SS (24-hour)',
                     border: OutlineInputBorder(),
                   ),
                 ),
+                const SizedBox(height: 12),
+                if (_buildSelfTestDialogPrefetchWarning(
+                      context,
+                      p.prefetchWarning,
+                    )
+                    case final warn?)
+                  warn,
+                if (_buildSelfTestDialogNote(context, p.note) case final note?)
+                  note,
               ],
             ),
           ),
@@ -4362,15 +4560,6 @@ class _SetAllServerParametersDialogState
   Widget build(BuildContext context) {
     final p = widget.prompt;
 
-    final header = <Widget>[];
-    if (_buildSelfTestDialogPrefetchWarning(context, p.prefetchWarning)
-        case final warn?) {
-      header.add(warn);
-    }
-    if (_buildSelfTestDialogNote(context, p.note) case final note?) {
-      header.add(note);
-    }
-
     return AlertDialog(
       title: Text(p.testName),
       content: SizedBox(
@@ -4382,15 +4571,17 @@ class _SetAllServerParametersDialogState
               crossAxisAlignment: CrossAxisAlignment.stretch,
               mainAxisSize: MainAxisSize.min,
               children: [
-                ...header,
                 TextFormField(
                   controller: _stationId,
                   maxLength: 8,
+                  readOnly: true,
+
                   validator: _validateSelfTestSetAllServerStationId,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   decoration: const InputDecoration(
+                    errorMaxLines: _kSelfTestFormErrorMaxLines,
                     labelText: 'Buoy ID',
-                    helperText: 'Up to 8 characters',
+                    // helperText: 'Up to 8 characters',
                     border: OutlineInputBorder(),
                     counterText: '',
                   ),
@@ -4402,8 +4593,9 @@ class _SetAllServerParametersDialogState
                   validator: _validateSelfTestParameterizedFtp20,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   decoration: const InputDecoration(
-                    labelText: 'FTP server address',
-                    helperText: '1–20 printable ASCII characters',
+                    errorMaxLines: _kSelfTestFormErrorMaxLines,
+                    labelText: 'FTP Server Address',
+                    // helperText: '1–20 printable ASCII characters',
                     border: OutlineInputBorder(),
                     counterText: '',
                   ),
@@ -4416,8 +4608,9 @@ class _SetAllServerParametersDialogState
                   validator: _validateSelfTestParameterizedPort,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   decoration: const InputDecoration(
-                    labelText: 'FTP port',
-                    helperText: '0–65535 (sent as 5 digits)',
+                    errorMaxLines: _kSelfTestFormErrorMaxLines,
+                    labelText: 'FTP Port',
+                    // helperText: '0–65535 (sent as 5 digits)',
                     border: OutlineInputBorder(),
                     counterText: '',
                   ),
@@ -4429,8 +4622,9 @@ class _SetAllServerParametersDialogState
                   validator: _validateSelfTestParameterizedFtp20,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   decoration: const InputDecoration(
-                    labelText: 'FTP path',
-                    helperText: '1–20 printable ASCII characters',
+                    errorMaxLines: _kSelfTestFormErrorMaxLines,
+                    labelText: 'FTP Path',
+                    // helperText: '1–20 printable ASCII characters',
                     border: OutlineInputBorder(),
                     counterText: '',
                   ),
@@ -4442,8 +4636,9 @@ class _SetAllServerParametersDialogState
                   validator: _validateSelfTestParameterizedFtp20,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   decoration: const InputDecoration(
-                    labelText: 'FTP username',
-                    helperText: '1–20 printable ASCII characters',
+                    errorMaxLines: _kSelfTestFormErrorMaxLines,
+                    labelText: 'FTP Username',
+                    // helperText: '1–20 printable ASCII characters',
                     border: OutlineInputBorder(),
                     counterText: '',
                   ),
@@ -4456,8 +4651,9 @@ class _SetAllServerParametersDialogState
                   validator: _validateSelfTestParameterizedFtp20,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   decoration: InputDecoration(
-                    labelText: 'FTP password',
-                    helperText: '1–20 printable ASCII characters',
+                    errorMaxLines: _kSelfTestFormErrorMaxLines,
+                    labelText: 'FTP Password',
+                    // helperText: '1–20 printable ASCII characters',
                     border: const OutlineInputBorder(),
                     counterText: '',
                     suffixIcon: IconButton(
@@ -4484,21 +4680,23 @@ class _SetAllServerParametersDialogState
                   validator: _validateSelfTestParameterizedSmsCell,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   decoration: const InputDecoration(
-                    labelText: 'Cell no.',
-                    helperText: '10 digits, or +91 and 10 digits',
+                    errorMaxLines: _kSelfTestFormErrorMaxLines,
+                    labelText: 'Cell No.',
+                    // helperText: '10 digits, or +91 and 10 digits',
                     border: OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<int>(
                   decoration: const InputDecoration(
-                    labelText: 'TX redundancy (R)',
+                    errorMaxLines: _kSelfTestFormErrorMaxLines,
+                    labelText: 'TX Redundancy',
                     border: OutlineInputBorder(),
                   ),
                   initialValue: _txRedundancy,
                   items: const [
-                    DropdownMenuItem(value: 0, child: Text('0 — Disable')),
-                    DropdownMenuItem(value: 1, child: Text('1 — Enable')),
+                    DropdownMenuItem(value: 0, child: Text('GSM and GPRS')),
+                    DropdownMenuItem(value: 1, child: Text('GSM if GPRS fail')),
                   ],
                   onChanged: (v) {
                     if (v == null) {
@@ -4507,6 +4705,15 @@ class _SetAllServerParametersDialogState
                     setState(() => _txRedundancy = v);
                   },
                 ),
+                const SizedBox(height: 12),
+                if (_buildSelfTestDialogPrefetchWarning(
+                      context,
+                      p.prefetchWarning,
+                    )
+                    case final warn?)
+                  warn,
+                if (_buildSelfTestDialogNote(context, p.note) case final note?)
+                  note,
               ],
             ),
           ),
@@ -4560,9 +4767,7 @@ class _RestoreDefaultParametersDialog extends StatelessWidget {
       title: Text(prompt.testName),
       content: noteWidget == null
           ? null
-          : SingleChildScrollView(
-              child: noteWidget,
-            ),
+          : SingleChildScrollView(child: noteWidget),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
@@ -4598,9 +4803,7 @@ class _RestoreServerParametersDialog extends StatelessWidget {
       title: Text(prompt.testName),
       content: noteWidget == null
           ? null
-          : SingleChildScrollView(
-              child: noteWidget,
-            ),
+          : SingleChildScrollView(child: noteWidget),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
@@ -4752,41 +4955,39 @@ class _SetSensorAllParametersDialogState
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (_buildSelfTestDialogNote(context, widget.prompt.note)
-                      case final note?)
-                    note,
+                  SizedBox(height: 10),
                   _buildSelfTestSensorSetInputField(
                     controller: _sensorNo,
-                    label: 'Sensor no',
+                    label: 'Sensor No',
                     hint: '01',
                     maxLength: 2,
                     keyboardType: TextInputType.number,
                   ),
                   _buildSelfTestSensorSetInputField(
                     controller: _channelNo,
-                    label: 'Channel no',
+                    label: 'Channel No',
                     hint: '20',
                     maxLength: 2,
                     keyboardType: TextInputType.number,
                   ),
                   _buildSelfTestSensorSetInputField(
                     controller: _fg,
-                    label: 'F.G',
+                    label: 'Factory Gain',
                     hint: '00003.81475',
                   ),
                   _buildSelfTestSensorSetInputField(
                     controller: _factoryOff,
-                    label: 'Factory off',
+                    label: 'Factory Off',
                     hint: '+00000.00000',
                   ),
                   _buildSelfTestSensorSetInputField(
                     controller: _senG,
-                    label: 'senG',
+                    label: 'Sensor Gain',
                     hint: '+00001.00000',
                   ),
                   _buildSelfTestSensorSetInputField(
                     controller: _soff,
-                    label: 'S.off',
+                    label: 'Sensor Offset',
                     hint: '+00000.00000',
                   ),
                   _buildSelfTestSensorSetInputField(
@@ -4796,12 +4997,12 @@ class _SetSensorAllParametersDialogState
                   ),
                   _buildSelfTestSensorSetInputField(
                     controller: _senMin,
-                    label: 'Sen Min',
+                    label: 'Sensor Minimum',
                     hint: '-00040.00000',
                   ),
                   _buildSelfTestSensorSetInputField(
                     controller: _sensMax,
-                    label: 'Sens Max',
+                    label: 'Sensor Maximum',
                     hint: '+00060.00000',
                   ),
                   _buildSelfTestSensorSetInputField(
@@ -4820,7 +5021,7 @@ class _SetSensorAllParametersDialogState
                   ),
                   _buildSelfTestSensorSetInputField(
                     controller: _startTime,
-                    label: 'Start time',
+                    label: 'Start Time',
                     hint: '00:59:07',
                     helper: 'HH:MM:SS',
                     validator: (v) => _validateSelfTestHhMmSs('Start time', v),
@@ -4834,7 +5035,7 @@ class _SetSensorAllParametersDialogState
                   ),
                   _buildSelfTestSensorSetInputField(
                     controller: _totalSample,
-                    label: 'Total sample',
+                    label: 'Total Sample',
                     hint: '01',
                     maxLength: 2,
                     keyboardType: TextInputType.number,
@@ -4848,14 +5049,18 @@ class _SetSensorAllParametersDialogState
                   ),
                   _buildSelfTestSensorSetInputField(
                     controller: _txG,
-                    label: 'Tx.G',
+                    label: 'Transmit Gain',
                     hint: '+00010.00000',
                   ),
                   _buildSelfTestSensorSetInputField(
                     controller: _txO,
-                    label: 'Tx.O',
+                    label: 'Transmit Offset',
                     hint: '+00400.00000',
                   ),
+                  const SizedBox(height: 12),
+                  if (_buildSelfTestDialogNote(context, widget.prompt.note)
+                      case final note?)
+                    note,
                 ],
               ),
             ),
@@ -5012,12 +5217,10 @@ class _SetSensorsParametersDialogState
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (_buildSelfTestDialogNote(context, widget.prompt.note)
-                      case final note?)
-                    note,
+                  SizedBox(height: 10),
                   _buildSelfTestSensorSetInputField(
                     controller: _sensorNo,
-                    label: 'Sensor no',
+                    label: 'Sensor No',
                     hint: '00',
                     maxLength: 2,
                     keyboardType: TextInputType.number,
@@ -5031,141 +5234,145 @@ class _SetSensorsParametersDialogState
                   ),
                   _buildSelfTestSensorSetInputField(
                     controller: _senSelStatus,
-                    label: 'SenSelStatus',
+                    label: 'Sensor Select Status',
                     hint: '0',
                     maxLength: 1,
                     keyboardType: TextInputType.number,
                   ),
                   _buildSelfTestSensorSetInputField(
                     controller: _baudRate,
-                    label: 'BaudRate',
+                    label: 'Baud Rate',
                     hint: '5',
                     maxLength: 2,
                     keyboardType: TextInputType.number,
                   ),
                   _buildSelfTestSensorSetInputField(
                     controller: _reqLen,
-                    label: 'ReqLen',
+                    label: 'Request Length',
                     hint: '11',
                     maxLength: 2,
                     keyboardType: TextInputType.number,
                   ),
                   _buildSelfTestSensorSetInputField(
                     controller: _startChar,
-                    label: 'Start Char',
+                    label: 'Start Character',
                     hint: '<',
                     maxLength: 1,
                   ),
                   _buildSelfTestSensorSetInputField(
                     controller: _fp,
-                    label: 'Fp',
+                    label: 'FP',
                     hint: '09',
                     maxLength: 2,
                     keyboardType: TextInputType.number,
                   ),
                   _buildSelfTestSensorSetInputField(
                     controller: _lp,
-                    label: 'Lp',
+                    label: 'LP',
                     hint: '13',
                     maxLength: 2,
                     keyboardType: TextInputType.number,
                   ),
                   _buildSelfTestSensorSetInputField(
                     controller: _respLen,
-                    label: 'Resp Len',
+                    label: 'Response Length',
                     hint: '22',
                     maxLength: 2,
                     keyboardType: TextInputType.number,
                   ),
                   _buildSelfTestSensorSetInputField(
                     controller: _relayNo,
-                    label: 'RelayNo',
+                    label: 'Relay No',
                     hint: '2',
                     maxLength: 1,
                     keyboardType: TextInputType.number,
                   ),
                   _buildSelfTestSensorSetInputField(
                     controller: _periodicSmpl,
-                    label: 'PeriodicSmpl',
+                    label: 'Periodic Sample',
                     hint: '0',
                     maxLength: 1,
                     keyboardType: TextInputType.number,
                   ),
                   _buildSelfTestSensorSetInputField(
                     controller: _derievedPara,
-                    label: 'DerievedPara',
+                    label: 'Derived Parameter',
                     hint: '0',
                     maxLength: 1,
                     keyboardType: TextInputType.number,
                   ),
                   _buildSelfTestSensorSetInputField(
                     controller: _requestString,
-                    label: 'RequestString',
+                    label: 'Request String',
                     hint: '12345678912345678',
                     maxLength: 17,
                     helper: '17 characters',
                   ),
                   _buildSelfTestSensorSetInputField(
                     controller: _sensorName,
-                    label: 'Sensor name',
+                    label: 'Sensor Name',
                     hint: '1234567891234567',
                     maxLength: 16,
                     helper: '16 characters',
                   ),
                   _buildSelfTestSensorSetInputField(
                     controller: _id,
-                    label: 'id',
+                    label: 'ID',
                     hint: '01',
                     maxLength: 2,
                     keyboardType: TextInputType.number,
                   ),
                   _buildSelfTestSensorSetInputField(
                     controller: _model,
-                    label: 'model',
+                    label: 'Model',
                     hint: '20',
                     maxLength: 2,
                     keyboardType: TextInputType.number,
                   ),
                   _buildSelfTestSensorSetInputField(
                     controller: _rstcnt,
-                    label: 'rstcnt',
+                    label: 'Reset Count',
                     hint: '0',
                     maxLength: 1,
                     keyboardType: TextInputType.number,
                   ),
                   _buildSelfTestSensorSetInputField(
                     controller: _datum,
-                    label: 'datum',
+                    label: 'Datum',
                     hint: '0000',
                     maxLength: 4,
                     keyboardType: TextInputType.number,
                   ),
                   _buildSelfTestSensorSetInputField(
                     controller: _decLen,
-                    label: 'dec_len',
+                    label: 'Dec Len',
                     hint: '8',
                     maxLength: 2,
                     keyboardType: TextInputType.number,
                   ),
                   _buildSelfTestSensorSetInputField(
                     controller: _fracLen,
-                    label: 'frac_len',
+                    label: 'Frac Len',
                     hint: '6',
                     maxLength: 2,
                     keyboardType: TextInputType.number,
                   ),
                   _buildSelfTestSensorSetInputField(
                     controller: _maxThreshold,
-                    label: 'max_threshold',
+                    label: 'Max Threshold',
                     hint: '+00000.00000',
                     maxLength: 13,
                   ),
                   _buildSelfTestSensorSetInputField(
                     controller: _minThreshold,
-                    label: 'min_threshold',
+                    label: 'Min Threshold',
                     hint: '+00000.00000',
                     maxLength: 13,
                   ),
+                  const SizedBox(height: 12),
+                  if (_buildSelfTestDialogNote(context, widget.prompt.note)
+                      case final note?)
+                    note,
                 ],
               ),
             ),
@@ -5290,12 +5497,10 @@ class _SetIndividualSensorParameterDialogState
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (_buildSelfTestDialogNote(context, widget.prompt.note)
-                  case final note?)
-                note,
+              SizedBox(height: 10),
               _buildSelfTestSensorSetInputField(
                 controller: _sensorNo,
-                label: 'Sensor no',
+                label: 'Sensor No',
                 hint: '01',
                 helper: 'Two digits, 00–99',
                 keyboardType: TextInputType.number,
@@ -5303,7 +5508,7 @@ class _SetIndividualSensorParameterDialogState
               ),
               _buildSelfTestSensorSetInputField(
                 controller: _paraNo,
-                label: 'Para no',
+                label: 'Parameter No',
                 hint: '01',
                 helper: _setIndividualSensorParameterParaHelp,
                 keyboardType: TextInputType.number,
@@ -5317,6 +5522,10 @@ class _SetIndividualSensorParameterDialogState
                     'The length of the parameter should be exact as per given information.',
                 validator: _validateSelfTestIndividualSensorParameterValue,
               ),
+              const SizedBox(height: 12),
+              if (_buildSelfTestDialogNote(context, widget.prompt.note)
+                  case final note?)
+                note,
             ],
           ),
         ),
@@ -5416,6 +5625,309 @@ class _ActionTile extends StatelessWidget {
               const Icon(Icons.chevron_right_rounded, color: Color(0xFF8B9196)),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _TransmitterTestDialog extends StatefulWidget {
+  const _TransmitterTestDialog({required this.prompt, required this.onClosed});
+
+  final SelfTestTransmitterTestPrompt prompt;
+  final VoidCallback onClosed;
+
+  @override
+  State<_TransmitterTestDialog> createState() => _TransmitterTestDialogState();
+}
+
+class _TransmitterTestDialogState extends State<_TransmitterTestDialog> {
+  static const _timerDurationSeconds = 30;
+
+  late int _selectedN;
+  late bool _sOn;
+  int? _lockedN;
+  int _secondsRemaining = _timerDurationSeconds;
+  bool _timerActive = false;
+  bool _radiosLocked = false;
+  bool _awaitingBle = false;
+  bool _autoOffPending = false;
+  int _pendingSValue = 0;
+  int _pendingSelectedN = 0;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    final p = widget.prompt;
+    _selectedN = p.plainCarrierOn
+        ? 0
+        : p.modulationOn
+        ? 1
+        : p.prbsOn
+        ? 2
+        : 0;
+    _sOn = p.plainCarrierOn || p.modulationOn || p.prbsOn;
+  }
+
+  @override
+  void dispose() {
+    _cancelTimer();
+    super.dispose();
+  }
+
+  void _cancelTimer() {
+    _timer?.cancel();
+    _timer = null;
+  }
+
+  String _formatCountdown(int totalSeconds) {
+    final minutes = totalSeconds ~/ 60;
+    final seconds = totalSeconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  void _submitBle({
+    required int selectedN,
+    required int sValue,
+    bool autoOff = false,
+  }) {
+    setState(() {
+      _awaitingBle = true;
+      _pendingSValue = sValue;
+      _pendingSelectedN = selectedN;
+      _autoOffPending = autoOff;
+    });
+    context.read<GeneralUserSelfTestDebugBloc>().add(
+      SubmitGeneralUserTransmitterTest(
+        selectedN: selectedN,
+        sValue: sValue,
+        suppressResponseDialog: true,
+      ),
+    );
+  }
+
+  void _startTimer(int lockedN) {
+    _cancelTimer();
+    setState(() {
+      _lockedN = lockedN;
+      _selectedN = lockedN;
+      _timerActive = true;
+      _radiosLocked = true;
+      _secondsRemaining = _timerDurationSeconds;
+      _sOn = true;
+    });
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      if (_secondsRemaining <= 1) {
+        _cancelTimer();
+        setState(() {
+          _secondsRemaining = 0;
+          _timerActive = false;
+          _sOn = false;
+          _radiosLocked = true;
+        });
+        _submitBle(selectedN: lockedN, sValue: 1, autoOff: true);
+        return;
+      }
+      setState(() {
+        _secondsRemaining--;
+      });
+    });
+  }
+
+  void _onBleComplete(GeneralUserSelfTestDebugState state) {
+    if (!_awaitingBle) {
+      return;
+    }
+    final wasOn = _pendingSValue == 0;
+    setState(() => _awaitingBle = false);
+
+    if (state.message.isNotEmpty) {
+      AppFlushbar.error(state.message, context: context);
+      context.read<GeneralUserSelfTestDebugBloc>().add(
+        const ClearGeneralUserSelfTestDebugMessage(),
+      );
+      if (_autoOffPending) {
+        setState(() {
+          _autoOffPending = false;
+          _radiosLocked = false;
+        });
+      }
+      return;
+    }
+
+    if (wasOn) {
+      _startTimer(_pendingSelectedN);
+      return;
+    }
+
+    setState(() {
+      _sOn = false;
+      _timerActive = false;
+      if (_autoOffPending) {
+        _radiosLocked = true;
+        _autoOffPending = false;
+      } else {
+        _radiosLocked = false;
+        _lockedN = null;
+      }
+    });
+  }
+
+  void _onManualOffDuringTimer() {
+    final n = _lockedN ?? _selectedN;
+    _cancelTimer();
+    setState(() {
+      _timerActive = false;
+      _sOn = false;
+      _radiosLocked = false;
+      _lockedN = null;
+    });
+    _submitBle(selectedN: n, sValue: 1);
+  }
+
+  void _onSendPressed() {
+    if (_awaitingBle || _timerActive || (_radiosLocked && !_timerActive)) {
+      return;
+    }
+    FocusScope.of(context).unfocus();
+    _submitBle(selectedN: _selectedN, sValue: _sOn ? 0 : 1);
+  }
+
+  void _onCancelPressed() {
+    if (_awaitingBle) {
+      return;
+    }
+    FocusScope.of(context).unfocus();
+    if (_sOn || _timerActive) {
+      AppFlushbar.error(
+        'Please turn OFF the selected transmitter option before closing.',
+        context: context,
+      );
+      return;
+    }
+    Navigator.of(context).pop();
+    widget.onClosed();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final canChangeRadios = !_radiosLocked && !_timerActive && !_awaitingBle;
+    final canUseSwitch = !_awaitingBle && (!_radiosLocked || _timerActive);
+    final canSend =
+        !_awaitingBle && !_timerActive && !(_radiosLocked && !_timerActive);
+
+    return BlocListener<
+      GeneralUserSelfTestDebugBloc,
+      GeneralUserSelfTestDebugState
+    >(
+      listenWhen: (previous, current) =>
+          _awaitingBle &&
+          previous.status == GeneralUserSelfTestDebugStatus.running &&
+          current.status == GeneralUserSelfTestDebugStatus.loaded,
+      listener: (context, state) => _onBleComplete(state),
+      child: AlertDialog(
+        title: Row(
+          children: [
+            const Expanded(child: Text('Transmitter Test')),
+            if (_timerActive)
+              Text(
+                _formatCountdown(_secondsRemaining),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                  color: const Color(0xFFB3261E),
+                ),
+              ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              IgnorePointer(
+                ignoring: !canChangeRadios,
+                child: RadioGroup<int>(
+                  groupValue: _selectedN,
+                  onChanged: (v) {
+                    if (v != null) {
+                      setState(() => _selectedN = v);
+                    }
+                  },
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      RadioListTile<int>(
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        value: 0,
+                        title: const Text('UHF - Plain Carrier'),
+                      ),
+                      RadioListTile<int>(
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        value: 1,
+                        title: const Text('UHF - Modulation'),
+                      ),
+                      RadioListTile<int>(
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        value: 2,
+                        title: const Text('UHF - PRBS'),
+                      ),
+                      RadioListTile<int>(
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        value: 3,
+                        title: const Text('RF - Plain Carrier'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SwitchListTile(
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                value: _sOn,
+                title: const Text('Status'),
+                subtitle: Text(_sOn ? 'ON' : 'OFF'),
+                onChanged: canUseSwitch
+                    ? (val) {
+                        if (_timerActive) {
+                          if (val) {
+                            return;
+                          }
+                          _onManualOffDuringTimer();
+                          return;
+                        }
+                        setState(() => _sOn = val);
+                      }
+                    : null,
+              ),
+              const SizedBox(height: 12),
+              if (_buildSelfTestDialogNote(context, widget.prompt.note)
+                  case final note?)
+                note,
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: _onCancelPressed, child: const Text('Cancel')),
+          FilledButton(
+            onPressed: canSend ? _onSendPressed : null,
+            child: _awaitingBle
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Send'),
+          ),
+        ],
       ),
     );
   }
