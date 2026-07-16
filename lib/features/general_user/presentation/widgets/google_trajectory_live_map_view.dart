@@ -416,7 +416,7 @@ class _GoogleTrajectoryLiveMapViewState
         zoom: widget.initialZoom,
       ),
       style: _mapStyle,
-      mapType: MapType.normal,
+      mapType: MapType.hybrid,
       markers: _buildMarkers(),
       polylines: _buildPolylines(),
       minMaxZoomPreference: const MinMaxZoomPreference(3, 21),

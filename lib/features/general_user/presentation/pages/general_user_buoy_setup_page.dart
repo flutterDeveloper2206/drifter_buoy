@@ -113,25 +113,11 @@ class _GeneralUserBuoySetupPageState extends State<GeneralUserBuoySetupPage> {
                               label: 'Buoy ID',
                               controller: _stationIdController,
                               maxLength: 8,
-                              onChanged: (v) =>
-                                  context.read<GeneralUserBuoySetupBloc>().add(
-                                    UpdateGeneralUserBuoySetupField(
-                                      BuoySetupField.stationId,
-                                      v,
-                                    ),
-                                  ),
                             ),
                             _Field(
                               label: 'Buoy Name',
                               controller: _stationNameController,
                               maxLength: 16,
-                              onChanged: (v) =>
-                                  context.read<GeneralUserBuoySetupBloc>().add(
-                                    UpdateGeneralUserBuoySetupField(
-                                      BuoySetupField.stationName,
-                                      v,
-                                    ),
-                                  ),
                             ),
                             //   formFieldKey: ValueKey(
                             //     'txInterval-$fieldsMounted',
@@ -169,15 +155,27 @@ class _GeneralUserBuoySetupPageState extends State<GeneralUserBuoySetupPage> {
                                 onPressed: saving
                                     ? null
                                     : () {
-                                        context
-                                            .read<GeneralUserBuoySetupBloc>()
-                                            .add(
-                                              const SaveGeneralUserBuoySetup(),
-                                            );
-                                        _sendBleSetupCommands(
-                                          _stationIdController.text,
-                                          _stationNameController.text,
+                                        final bloc = context
+                                            .read<GeneralUserBuoySetupBloc>();
+                                        final id = _stationIdController.text;
+                                        final name =
+                                            _stationNameController.text;
+                                        bloc.add(
+                                          UpdateGeneralUserBuoySetupField(
+                                            BuoySetupField.stationId,
+                                            id,
+                                          ),
                                         );
+                                        bloc.add(
+                                          UpdateGeneralUserBuoySetupField(
+                                            BuoySetupField.stationName,
+                                            name,
+                                          ),
+                                        );
+                                        bloc.add(
+                                          const SaveGeneralUserBuoySetup(),
+                                        );
+                                        _sendBleSetupCommands(id, name);
                                       },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFF206BBE),
@@ -247,7 +245,7 @@ class _Field extends StatelessWidget {
   final Key? formFieldKey;
   final TextEditingController? controller;
   final int? maxLength;
-  final ValueChanged<String> onChanged;
+  final ValueChanged<String>? onChanged;
 
   const _Field({
     required this.label,
@@ -255,7 +253,7 @@ class _Field extends StatelessWidget {
     this.formFieldKey,
     this.controller,
     this.maxLength,
-    required this.onChanged,
+    this.onChanged,
   });
 
   @override

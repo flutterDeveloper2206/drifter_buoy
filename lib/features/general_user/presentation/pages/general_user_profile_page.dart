@@ -491,7 +491,7 @@ class _GeneralUserProfilePageState extends State<GeneralUserProfilePage> {
                                     const SizedBox(height: 16),
 
                                     Text(
-                                      'Version 1.0.5',
+                                      'Version 1.0.6',
 
                                       style: Theme.of(context)
                                           .textTheme

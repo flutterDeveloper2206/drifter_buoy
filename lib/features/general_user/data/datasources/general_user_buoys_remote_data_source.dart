@@ -178,10 +178,10 @@ class GeneralUserBuoysRemoteDataSource {
   }) {
     final payload = <String, dynamic>{
       'station': {
-        'stationId': stationId,
-        'stationName': stationName,
-        'transmissionInterval': transmissionInterval,
-        'transmissionStartTime': transmissionStartTime,
+        'buoyId': stationId,
+        'buoyName': stationName,
+        // 'transmissionInterval': transmissionInterval,
+        // 'transmissionStartTime': transmissionStartTime,
       }
     };
 

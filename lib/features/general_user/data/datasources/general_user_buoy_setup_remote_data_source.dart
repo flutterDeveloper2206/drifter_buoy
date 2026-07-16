@@ -19,10 +19,10 @@ class GeneralUserBuoySetupRemoteDataSource {
     required String transmissionStartTime,
   }) {
     final formData = FormData.fromMap({
-      'StationId': stationId.trim().toUpperCase(),
-      'StationName': stationName.trim(),
-      'TransmissionInterval': transmissionInterval.trim(),
-      'TransmissionStartTime': transmissionStartTime.trim(),
+      'buoyId': stationId.trim().toUpperCase(),
+      'buoyName': stationName.trim(),
+      // 'TransmissionInterval': transmissionInterval.trim(),
+      // 'TransmissionStartTime': transmissionStartTime.trim(),
     });
 
     return _apiService.post<CreateNewDrifterBuoyResponse>(

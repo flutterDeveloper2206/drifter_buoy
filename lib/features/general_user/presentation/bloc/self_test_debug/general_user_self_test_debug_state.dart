@@ -35,25 +35,29 @@ class SelfTestBleResponseSnapshot extends Equatable {
 
 class SelfTestStationIdPrompt extends Equatable {
   const SelfTestStationIdPrompt({
+    required this.testName,
     required this.currentStationId,
     this.note = '',
   });
 
+  final String testName;
   final String currentStationId;
   final String note;
 
   @override
-  List<Object?> get props => [currentStationId, note];
+  List<Object?> get props => [testName, currentStationId, note];
 }
 
 /// `?07` — station name field is 16 characters (space-padded on send).
 class SelfTestStationNamePrompt extends Equatable {
   const SelfTestStationNamePrompt({
+    required this.testName,
     required this.currentStationName,
     this.prefetchWarning,
     this.note = '',
   });
 
+  final String testName;
   final String currentStationName;
 
   /// Non-fatal hint when `?04` prefetch did not yield a name.
@@ -61,7 +65,7 @@ class SelfTestStationNamePrompt extends Equatable {
   final String note;
 
   @override
-  List<Object?> get props => [currentStationName, prefetchWarning, note];
+  List<Object?> get props => [testName, currentStationName, prefetchWarning, note];
 }
 
 /// `?61,HH:MM:SS,#` — dialog only (no `?04` prefetch); user enters time, then BLE send.
@@ -235,45 +239,51 @@ class SelfTestAdminSmsCellPrompt extends Equatable {
 
 class SelfTestTransmitterFrequencyPrompt extends Equatable {
   const SelfTestTransmitterFrequencyPrompt({
+    required this.testName,
     required this.transmitterType,
     required this.frequencyValue,
     this.note = '',
   });
 
+  final String testName;
   final int transmitterType;
   final String frequencyValue;
   final String note;
 
   @override
-  List<Object?> get props => [transmitterType, frequencyValue, note];
+  List<Object?> get props => [testName, transmitterType, frequencyValue, note];
 }
 
 class SelfTestSetAttenuationPrompt extends Equatable {
   const SelfTestSetAttenuationPrompt({
+    required this.testName,
     required this.transmitterType,
     required this.attenuationValue,
     this.note = '',
   });
 
+  final String testName;
   final int transmitterType;
   final String attenuationValue;
   final String note;
 
   @override
-  List<Object?> get props => [transmitterType, attenuationValue, note];
+  List<Object?> get props => [testName, transmitterType, attenuationValue, note];
 }
 
 class SelfTestRadioSondeTransmitterIdPrompt extends Equatable {
   const SelfTestRadioSondeTransmitterIdPrompt({
+    required this.testName,
     required this.currentTransmitterId,
     this.note = '',
   });
 
+  final String testName;
   final String currentTransmitterId;
   final String note;
 
   @override
-  List<Object?> get props => [currentTransmitterId, note];
+  List<Object?> get props => [testName, currentTransmitterId, note];
 }
 
 /// `?99,N,HH:MM:SS,#` — UHF / Sonde transmission times (N 1–4).
@@ -800,6 +810,7 @@ class SelfTestSetIndividualSensorParameterPrompt extends Equatable {
 
 class SelfTestCheckStatusPrompt extends Equatable {
   const SelfTestCheckStatusPrompt({
+    required this.testName,
     required this.peripheralStatus,
     required this.gprsPrimary,
     required this.gprsSecondary,
@@ -813,6 +824,7 @@ class SelfTestCheckStatusPrompt extends Equatable {
     required this.firmwareVersion,
   });
 
+  final String testName;
   final String peripheralStatus;
   final String gprsPrimary;
   final String gprsSecondary;
@@ -827,6 +839,7 @@ class SelfTestCheckStatusPrompt extends Equatable {
 
   @override
   List<Object?> get props => [
+    testName,
     peripheralStatus,
     gprsPrimary,
     gprsSecondary,

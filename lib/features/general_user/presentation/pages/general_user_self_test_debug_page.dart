@@ -824,7 +824,7 @@ class _GeneralUserSelfTestDebugPageState
         barrierDismissible: false,
         builder: (ctx) {
           return AlertDialog(
-            title: const Text('Set Buoy ID'),
+            title: Text(prompt.testName),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -900,7 +900,7 @@ class _GeneralUserSelfTestDebugPageState
         barrierDismissible: false,
         builder: (ctx) {
           return AlertDialog(
-            title: const Text('Set station name'),
+            title: Text(prompt.testName),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -1511,7 +1511,7 @@ class _GeneralUserSelfTestDebugPageState
           return StatefulBuilder(
             builder: (ctx, setLocalState) {
               return AlertDialog(
-                title: const Text('RF & UHF Transmitter Frequency'),
+                title: Text(prompt.testName),
                 content: SingleChildScrollView(
                   child: Form(
                     key: formKey,
@@ -1522,7 +1522,7 @@ class _GeneralUserSelfTestDebugPageState
                         DropdownButtonFormField<int>(
                           initialValue: draftType,
                           items: const [
-                            DropdownMenuItem(value: 0, child: Text('UHF')),
+                            DropdownMenuItem(value: 0, child: Text('UHF Tx')),
                             DropdownMenuItem(value: 1, child: Text('RF Tx')),
                           ],
                           onChanged: (v) {
@@ -1656,7 +1656,7 @@ class _GeneralUserSelfTestDebugPageState
           return StatefulBuilder(
             builder: (ctx, setLocalState) {
               return AlertDialog(
-                title: const Text('Set Attenuation'),
+                title: Text(prompt.testName),
                 content: SingleChildScrollView(
                   child: Form(
                     key: formKey,
@@ -1792,7 +1792,7 @@ class _GeneralUserSelfTestDebugPageState
         barrierDismissible: false,
         builder: (ctx) {
           return AlertDialog(
-            title: const Text('Get Buoy Id of Radio Sonde Transmitter'),
+            title: Text(prompt.testName),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -1899,7 +1899,7 @@ class _GeneralUserSelfTestDebugPageState
                           isExpanded: true,
                           selectedItemBuilder: (context) => const [
                             Text(
-                              'UHF Transmission Start Time',
+                              'UHF Tx Start Time',
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               softWrap: true,
@@ -1927,7 +1927,7 @@ class _GeneralUserSelfTestDebugPageState
                             DropdownMenuItem(
                               value: 1,
                               child: Text(
-                                'UHF Transmission Start Time',
+                                'UHF Tx Start Time',
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 softWrap: true,
@@ -2096,7 +2096,7 @@ class _GeneralUserSelfTestDebugPageState
       await showDialog<void>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('Health Status'),
+          title: Text(prompt.testName),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -3166,6 +3166,8 @@ class _GeneralUserSelfTestDebugPageState
                                                         '6a04547227be228113206999') {
                                                       _showManualFtpModeDialog(
                                                         context: context,
+                                                        testName:
+                                                            command.testName,
                                                         onProceed: (selectedCmd) {
                                                           if (_pinProtectedCommandIds
                                                               .contains(
@@ -4155,7 +4157,7 @@ class _ParameterizedServerCommandDialogState
       case SelfTestParameterizedCommandFieldKind.setBuoyOffsetSignedFourDigits:
         field = TextFormField(
           controller: _textController,
-          keyboardType: const TextInputType.numberWithOptions(signed: true),
+          keyboardType:  TextInputType.text,
           maxLength: 7,
           validator: _validateSelfTestBuoyOffset,
           autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -6070,6 +6072,7 @@ class _EraseMemoryCountdownDialogState
 
 Future<void> _showManualFtpModeDialog({
   required BuildContext context,
+  required String testName,
   required void Function(String selectedCommand) onProceed,
 }) async {
   int selectedIndex = 0; // 0: GPRS, 1: UHF, 2: RF
@@ -6081,7 +6084,7 @@ Future<void> _showManualFtpModeDialog({
       return StatefulBuilder(
         builder: (context, setStateDialog) {
           return AlertDialog(
-            title: const Text('Select Manual Transmission Mode'),
+            title: Text(testName),
             content: RadioGroup<int>(
               groupValue: selectedIndex,
               onChanged: (val) {

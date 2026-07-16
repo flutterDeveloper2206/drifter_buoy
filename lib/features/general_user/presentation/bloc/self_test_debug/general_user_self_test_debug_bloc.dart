@@ -2365,6 +2365,7 @@ class GeneralUserSelfTestDebugBloc
           status: GeneralUserSelfTestDebugStatus.loaded,
           clearRunningCommandIndex: true,
           stationIdPrompt: SelfTestStationIdPrompt(
+            testName: cmd.testName,
             currentStationId: stationId,
             note: _commandCatalogNote(cmd),
           ),
@@ -2441,6 +2442,7 @@ class GeneralUserSelfTestDebugBloc
         status: GeneralUserSelfTestDebugStatus.loaded,
         clearRunningCommandIndex: true,
         stationNamePrompt: SelfTestStationNamePrompt(
+          testName: cmd.testName,
           currentStationName: initialName,
           prefetchWarning: prefetchWarning,
           note: _commandCatalogNote(cmd),
@@ -3653,6 +3655,7 @@ class GeneralUserSelfTestDebugBloc
       state.copyWith(
         status: GeneralUserSelfTestDebugStatus.loaded,
         transmitterFrequencyPrompt: SelfTestTransmitterFrequencyPrompt(
+          testName: cmd.testName,
           transmitterType: 0,
           frequencyValue: '',
           note: _commandCatalogNote(cmd),
@@ -3777,6 +3780,7 @@ class GeneralUserSelfTestDebugBloc
         status: GeneralUserSelfTestDebugStatus.loaded,
         clearRunningCommandIndex: true,
         setAttenuationPrompt: SelfTestSetAttenuationPrompt(
+          testName: cmd.testName,
           transmitterType: 0,
           attenuationValue: '',
           note: _commandCatalogNote(cmd),
@@ -3930,7 +3934,7 @@ class GeneralUserSelfTestDebugBloc
             status: GeneralUserSelfTestDebugStatus.loaded,
             clearRunningCommandIndex: true,
             message:
-                'Could not parse radio sonde transmitter id from device response.',
+                'Could not parse RF Tx id from device response.',
             isSuccessMessage: false,
           ),
         );
@@ -3942,7 +3946,7 @@ class GeneralUserSelfTestDebugBloc
             status: GeneralUserSelfTestDebugStatus.loaded,
             clearRunningCommandIndex: true,
             message:
-                'Device reported failure while reading radio sonde transmitter id (S=${parsed.s}).',
+                'Device reported failure while reading RF Tx id (S=${parsed.s}).',
             isSuccessMessage: false,
           ),
         );
@@ -3955,7 +3959,7 @@ class GeneralUserSelfTestDebugBloc
             status: GeneralUserSelfTestDebugStatus.loaded,
             clearRunningCommandIndex: true,
             message:
-                'Could not parse radio sonde transmitter id from device response.',
+                'Could not parse RF Tx id from device response.',
             isSuccessMessage: false,
           ),
         );
@@ -3967,6 +3971,7 @@ class GeneralUserSelfTestDebugBloc
           status: GeneralUserSelfTestDebugStatus.loaded,
           clearRunningCommandIndex: true,
           radioSondeTransmitterIdPrompt: SelfTestRadioSondeTransmitterIdPrompt(
+            testName: cmd.testName,
             currentTransmitterId: id,
             note: _commandCatalogNote(cmd),
           ),
@@ -3981,7 +3986,7 @@ class GeneralUserSelfTestDebugBloc
         state.copyWith(
           status: GeneralUserSelfTestDebugStatus.loaded,
           clearRunningCommandIndex: true,
-          message: 'Timed out while reading radio sonde transmitter id.',
+          message: 'Timed out while reading RF Tx id.',
           isSuccessMessage: false,
         ),
       );
@@ -4021,7 +4026,7 @@ class GeneralUserSelfTestDebugBloc
     if (nextId.length != 3) {
       emit(
         state.copyWith(
-          message: 'Radio sonde transmitter id must be exactly 3 characters.',
+          message: 'RF Tx id must be exactly 3 characters.',
           isSuccessMessage: false,
         ),
       );
@@ -4062,7 +4067,7 @@ class GeneralUserSelfTestDebugBloc
           isSuccessMessage: false,
           lastSnapshot: SelfTestBleResponseSnapshot(
             testName:
-                model?.testName ?? 'Get station ID of Radio Sonde Transmitter',
+                model?.testName ?? 'Get station ID of RF Tx',
             responseLine: line,
             hideResponseLine: true,
             helpText: summary,
@@ -4076,7 +4081,7 @@ class GeneralUserSelfTestDebugBloc
         state.copyWith(
           status: GeneralUserSelfTestDebugStatus.loaded,
           clearRunningCommandIndex: true,
-          message: 'Timed out while updating radio sonde transmitter id.',
+          message: 'Timed out while updating RF Tx id.',
           isSuccessMessage: false,
         ),
       );
@@ -4202,7 +4207,7 @@ class GeneralUserSelfTestDebugBloc
         state.copyWith(
           status: GeneralUserSelfTestDebugStatus.loaded,
           clearRunningCommandIndex: true,
-          message: 'Timed out while updating UHF/Sonde time.',
+          message: 'Timed out while updating UHF/RF time.',
           isSuccessMessage: false,
         ),
       );
@@ -4631,7 +4636,7 @@ class GeneralUserSelfTestDebugBloc
         '?02,,#',
         cmd.responseWaitTimeout,
       );
-      final parsed = _parseCheckStatus(line);
+      final parsed = _parseCheckStatus(line, testName: cmd.testName);
       if (parsed == null) {
         emit(
           state.copyWith(
@@ -5061,7 +5066,7 @@ class GeneralUserSelfTestDebugBloc
     }
     final parsed = _parseUhfSondeTxInTimeResponse(rawLine);
     if (parsed == null) {
-      return 'Could not parse UHF/Sonde TxIn time response.\n\n'
+      return 'Could not parse UHF/RF TxIn time response.\n\n'
           'Raw response:\n$trimmed';
     }
 
@@ -5335,7 +5340,7 @@ class GeneralUserSelfTestDebugBloc
     }
     final parsed = _parseRadioSondeTransmitterIdResponse(rawLine);
     if (parsed == null) {
-      return 'Could not parse radio sonde transmitter response.\n\n'
+      return 'Could not parse RF Tx response.\n\n'
           'Raw response:\n$trimmed';
     }
 
@@ -5390,7 +5395,10 @@ class GeneralUserSelfTestDebugBloc
   /// Parses `$02,PP,GG,GG,GG,GG,F1,MT1,F2,MT2,CH,DL firmware…#` (extra commas in
   /// the firmware segment are re-joined). If CH is omitted, the last field is
   /// treated as firmware and [chargeStatus] is left empty for the UI.
-  SelfTestCheckStatusPrompt? _parseCheckStatus(String responseLine) {
+  SelfTestCheckStatusPrompt? _parseCheckStatus(
+    String responseLine, {
+    required String testName,
+  }) {
     final cleaned = responseLine.trim().replaceAll('#', '').trim();
     if (cleaned.isEmpty) {
       return null;
@@ -5444,6 +5452,7 @@ class GeneralUserSelfTestDebugBloc
     }
 
     return SelfTestCheckStatusPrompt(
+      testName: testName,
       peripheralStatus: pp,
       gprsPrimary: g1,
       gprsSecondary: g2,
@@ -8213,7 +8222,7 @@ class GeneralUserSelfTestDebugBloc
 
   /// `?84,xx,#` — xx is 00–11 (two digits).
   static String? _normalizeBuoyOffset(String raw) {
-    final match = RegExp(r'^([+-])(\d{4})$').firstMatch(raw.trim());
+    final match = RegExp(r'^([+-])(\d{6})$').firstMatch(raw.trim());
     if (match == null) {
       return null;
     }
@@ -8738,7 +8747,7 @@ class GeneralUserSelfTestDebugBloc
         final offset = _normalizeBuoyOffset(userValue);
         if (offset == null) {
           throw ArgumentError(
-            'Enter offset as + or - followed by 4 digits (e.g. +123456).',
+            'Enter offset as + or - followed by 6 digits (e.g. +123456).',
           );
         }
         return '?$opcode,$offset,#';
