@@ -59,11 +59,12 @@ class _GeneralUserSetupDetailPageState
     final bloc = context.read<GeneralUserSetupDetailBloc>();
     await showSetupBluetoothDeviceSheet(
       context,
-      onConnected: (displayName, bluetoothId) {
+      onConnected: (displayName, bluetoothId, rssi) {
         bloc.add(
           SelectBluetoothDevice(
             displayName: displayName,
             bluetoothId: bluetoothId,
+            rssi: rssi,
           ),
         );
       },
@@ -336,7 +337,7 @@ class _GeneralUserSetupDetailPageState
                                       bluetoothOn) ...[
                                     const SizedBox(height: 8),
                                     InkWell(
-                                      onTap: (){
+                                      onTap: () {
                                         if (!state.enableConfiguration) {
                                           AppFlushbar.info(
                                             'Please enable configuration using the switch above.',
@@ -355,12 +356,11 @@ class _GeneralUserSetupDetailPageState
                                           AppRoutes.buoySetupPath,
                                           extra: state.contextBuoyId,
                                         );
-                                      }
+                                      },
                                       // => context.push(
                                       //   AppRoutes.buoySetupPath,
                                       //   extra: state.contextBuoyId,
                                       // )
-                                      ,
                                       borderRadius: BorderRadius.circular(8),
                                       child: Padding(
                                         padding: const EdgeInsets.symmetric(
@@ -558,10 +558,7 @@ class _BleTimingSettingsCardState extends State<_BleTimingSettingsCard> {
                   children: [
                     const Text(
                       'Please enter the 4-digit security PIN to access timing settings.',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF6A7178),
-                      ),
+                      style: TextStyle(fontSize: 14, color: Color(0xFF6A7178)),
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -570,9 +567,7 @@ class _BleTimingSettingsCardState extends State<_BleTimingSettingsCard> {
                       maxLength: 4,
                       obscureText: obscurePin,
                       autofocus: true,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                      ],
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       decoration: InputDecoration(
                         labelText: 'PIN',
                         errorText: errorMessage,
@@ -615,7 +610,8 @@ class _BleTimingSettingsCardState extends State<_BleTimingSettingsCard> {
                     if (!dialogFormKey.currentState!.validate()) {
                       return;
                     }
-                    if (pinController.text.trim() == AppConstants.bleTimingSettingsPin) {
+                    if (pinController.text.trim() ==
+                        AppConstants.bleTimingSettingsPin) {
                       Navigator.of(ctx).pop();
                       setState(() {
                         _isExpanded = true;

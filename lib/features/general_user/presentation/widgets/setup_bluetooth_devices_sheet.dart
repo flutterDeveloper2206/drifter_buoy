@@ -12,7 +12,7 @@ import 'package:flutter/material.dart';
 Future<void> showSetupBluetoothDeviceSheet(
   BuildContext context, {
   BleConnectionService? ble,
-  void Function(String displayName, String remoteId)? onConnected,
+  void Function(String displayName, String remoteId, int rssi)? onConnected,
 }) {
   final BleConnectionService resolved = ble ?? sl<BleConnectionService>();
   return showModalBottomSheet<void>(
@@ -36,7 +36,8 @@ class _SetupBluetoothDevicesSheet extends StatefulWidget {
   const _SetupBluetoothDevicesSheet({required this.ble, this.onConnected});
 
   final BleConnectionService ble;
-  final void Function(String displayName, String remoteId)? onConnected;
+  final void Function(String displayName, String remoteId, int rssi)?
+  onConnected;
 
   @override
   State<_SetupBluetoothDevicesSheet> createState() =>
@@ -116,7 +117,11 @@ class _SetupBluetoothDevicesSheetState
       if (!mounted) {
         return;
       }
-      widget.onConnected?.call(device.displayName, device.remoteId);
+      widget.onConnected?.call(
+        device.displayName,
+        device.remoteId,
+        device.rssi,
+      );
       setState(() {
         _connectingRemoteId = null;
         _connectedDisplayName = device.displayName;

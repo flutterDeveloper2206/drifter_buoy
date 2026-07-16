@@ -33,13 +33,17 @@ class SelectBluetoothDevice extends GeneralUserSetupDetailEvent {
   const SelectBluetoothDevice({
     required this.displayName,
     required this.bluetoothId,
+    this.rssi = -70,
   });
 
   final String displayName;
   final String bluetoothId;
 
+  /// Scan RSSI in dBm at connect time (optional; default used if omitted).
+  final int rssi;
+
   @override
-  List<Object?> get props => [displayName, bluetoothId];
+  List<Object?> get props => [displayName, bluetoothId, rssi];
 }
 
 class SaveBleTimingSettings extends GeneralUserSetupDetailEvent {

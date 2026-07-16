@@ -154,8 +154,8 @@ class GeneralUserSetupDetailBloc
         bluetoothDevice: name,
         bluetoothRemoteId: event.bluetoothId,
         connectionStatus: 'Connected',
-        signalStrength: '82%',
-        lastSync: '10:45 AM',
+        signalStrength: _formatRssiPercent(event.rssi),
+        lastSync: _formatLastSync(DateTime.now()),
       ),
     );
   }
@@ -177,5 +177,25 @@ class GeneralUserSetupDetailBloc
 
   String _memoryLabel(bool configEnabled) {
     return configEnabled ? '234 Logs' : '0 Records';
+  }
+
+  /// Maps typical BLE RSSI (~-100 … -50 dBm) to a clamped 0–100% label.
+  static String _formatRssiPercent(int rssi) {
+    const minDbm = -100;
+    const maxDbm = -50;
+    final clamped = rssi.clamp(minDbm, maxDbm);
+    final percent = (((clamped - minDbm) / (maxDbm - minDbm)) * 100)
+        .round()
+        .clamp(0, 100);
+    return '$percent%';
+  }
+
+  /// Local wall-clock time, e.g. `10:45 AM`.
+  static String _formatLastSync(DateTime when) {
+    final hour24 = when.hour;
+    final minute = when.minute.toString().padLeft(2, '0');
+    final period = hour24 >= 12 ? 'PM' : 'AM';
+    final hour12 = hour24 % 12 == 0 ? 12 : hour24 % 12;
+    return '$hour12:$minute $period';
   }
 }

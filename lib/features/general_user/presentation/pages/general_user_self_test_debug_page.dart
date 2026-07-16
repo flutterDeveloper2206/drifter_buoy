@@ -290,6 +290,31 @@ String? _validateSelfTestTransmitterFrequency(String? value) {
   return null;
 }
 
+/// Set Attenuation xx: UHF (N=0) 00–10, RF (N=1) 00–07.
+String? _validateSelfTestAttenuationXx(int transmitterType, String? value) {
+  final t = value?.trim() ?? '';
+  if (t.isEmpty) {
+    return 'Enter attenuation (2 digits).';
+  }
+  if (!RegExp(r'^\d{1,2}$').hasMatch(t)) {
+    return 'Use digits only (00–99).';
+  }
+  final n = int.tryParse(t);
+  if (n == null) {
+    return 'Invalid attenuation.';
+  }
+  if (transmitterType == 1) {
+    if (n < 0 || n > 7) {
+      return 'RF attenuation must be 00–07.';
+    }
+  } else {
+    if (n < 0 || n > 10) {
+      return 'UHF attenuation must be 00–10.';
+    }
+  }
+  return null;
+}
+
 String? _validateSelfTestPrintableAsciiMax128NoComma(String? value) {
   final t = value?.trim() ?? '';
   if (t.isEmpty) {
@@ -1621,6 +1646,7 @@ class _GeneralUserSelfTestDebugPageState
     var draftType = prompt.transmitterType == 1 ? 1 : 0;
     var draftXx = prompt.attenuationValue;
     var selectedAction = 0;
+    final formKey = GlobalKey<FormState>();
 
     try {
       await showDialog<void>(
@@ -1632,65 +1658,75 @@ class _GeneralUserSelfTestDebugPageState
               return AlertDialog(
                 title: const Text('Set Attenuation'),
                 content: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      DropdownButtonFormField<int>(
-                        initialValue: draftType,
-                        items: const [
-                          DropdownMenuItem(value: 0, child: Text('UHF')),
-                          DropdownMenuItem(value: 1, child: Text('RF')),
-                        ],
-                        onChanged: (v) {
-                          setLocalState(() {
-                            draftType = v ?? 0;
-                          });
-                        },
-                        decoration: const InputDecoration(
-                          errorMaxLines: _kSelfTestFormErrorMaxLines,
-                          labelText: 'Transmitter Type',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      DropdownButtonFormField<int>(
-                        initialValue: selectedAction,
-                        items: const [
-                          DropdownMenuItem(value: 0, child: Text('GET')),
-                          DropdownMenuItem(value: 1, child: Text('SET')),
-                        ],
-                        onChanged: (v) {
-                          setLocalState(() {
-                            selectedAction = v ?? 0;
-                          });
-                        },
-                        decoration: const InputDecoration(
-                          errorMaxLines: _kSelfTestFormErrorMaxLines,
-                          labelText: 'Action',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      if (selectedAction == 1) ...[
-                        const SizedBox(height: 12),
-                        TextFormField(
-                          initialValue: prompt.attenuationValue,
-                          maxLength: 2,
-                          keyboardType: TextInputType.number,
-                          onChanged: (v) => draftXx = v,
+                  child: Form(
+                    key: formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        DropdownButtonFormField<int>(
+                          initialValue: draftType,
+                          items: const [
+                            DropdownMenuItem(value: 0, child: Text('UHF')),
+                            DropdownMenuItem(value: 1, child: Text('RF')),
+                          ],
+                          onChanged: (v) {
+                            setLocalState(() {
+                              draftType = v ?? 0;
+                            });
+                          },
                           decoration: const InputDecoration(
                             errorMaxLines: _kSelfTestFormErrorMaxLines,
-                            labelText: 'Attenuation',
+                            labelText: 'Transmitter Type',
                             border: OutlineInputBorder(),
-                            hintText: '05',
-                            counterText: '',
                           ),
                         ),
-                        if (_buildSelfTestDialogNote(ctx, prompt.note)
-                            case final note?)
-                          note,
+                        const SizedBox(height: 12),
+                        DropdownButtonFormField<int>(
+                          initialValue: selectedAction,
+                          items: const [
+                            DropdownMenuItem(value: 0, child: Text('GET')),
+                            DropdownMenuItem(value: 1, child: Text('SET')),
+                          ],
+                          onChanged: (v) {
+                            setLocalState(() {
+                              selectedAction = v ?? 0;
+                            });
+                          },
+                          decoration: const InputDecoration(
+                            errorMaxLines: _kSelfTestFormErrorMaxLines,
+                            labelText: 'Action',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                        if (selectedAction == 1) ...[
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            key: ValueKey<int>(draftType),
+                            initialValue: draftXx,
+                            maxLength: 2,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
+                            validator: (v) =>
+                                _validateSelfTestAttenuationXx(draftType, v),
+                            onChanged: (v) => draftXx = v,
+                            decoration: InputDecoration(
+                              errorMaxLines: _kSelfTestFormErrorMaxLines,
+                              labelText: 'Attenuation',
+                              border: const OutlineInputBorder(),
+                              hintText: "07",
+                            ),
+                          ),
+                          if (_buildSelfTestDialogNote(ctx, prompt.note)
+                              case final note?)
+                            note,
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
                 actions: [
@@ -1704,6 +1740,10 @@ class _GeneralUserSelfTestDebugPageState
                   FilledButton(
                     onPressed: () {
                       FocusScope.of(ctx).unfocus();
+                      if (selectedAction == 1 &&
+                          !(formKey.currentState?.validate() ?? false)) {
+                        return;
+                      }
                       final bloc = context.read<GeneralUserSelfTestDebugBloc>();
                       final transmitterType = draftType;
                       final attenuationValue = draftXx;
@@ -1871,13 +1911,13 @@ class _GeneralUserSelfTestDebugPageState
                               softWrap: true,
                             ),
                             Text(
-                              'Sonde Transmission Start Time',
+                              'RF Tx Start Time',
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               softWrap: true,
                             ),
                             Text(
-                              'Sonde Interval Time',
+                              'RF Interval Time',
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               softWrap: true,
@@ -1905,7 +1945,7 @@ class _GeneralUserSelfTestDebugPageState
                             DropdownMenuItem(
                               value: 3,
                               child: Text(
-                                'Sonde Transmission Start Time',
+                                'RF Tx Start Time',
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 softWrap: true,
@@ -1914,7 +1954,7 @@ class _GeneralUserSelfTestDebugPageState
                             DropdownMenuItem(
                               value: 4,
                               child: Text(
-                                'Sonde Interval Time',
+                                'RF Interval Time',
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 softWrap: true,
@@ -4045,7 +4085,7 @@ class _ParameterizedServerCommandDialogState
               autovalidateMode: AutovalidateMode.onUserInteraction,
               decoration: const InputDecoration(
                 errorMaxLines: _kSelfTestFormErrorMaxLines,
-                labelText: 'HTTP Server Username',
+                labelText: 'Set HTTP Server Username',
                 // helperText:
                 //     'Max 64 printable ASCII chars. Shorter values are padded with spaces when sent.',
                 border: OutlineInputBorder(),
@@ -6041,7 +6081,7 @@ Future<void> _showManualFtpModeDialog({
       return StatefulBuilder(
         builder: (context, setStateDialog) {
           return AlertDialog(
-            title: const Text('Select Transmission Mode'),
+            title: const Text('Select Manual Transmission Mode'),
             content: RadioGroup<int>(
               groupValue: selectedIndex,
               onChanged: (val) {

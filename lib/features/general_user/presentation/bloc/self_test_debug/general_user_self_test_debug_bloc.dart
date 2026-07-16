@@ -1270,7 +1270,7 @@ class GeneralUserSelfTestDebugBloc
     ),
     DrifterBuoyCommandModel(
       id: _httpServerUsernameCommandId,
-      testName: 'HTTP Server Username',
+      testName: 'Set HTTP Server Username',
       requestCommand: '?62,N,username,#',
       waitingPeriodSecondsRaw: '1 min',
       requestCommandDescription:
@@ -3817,11 +3817,16 @@ class GeneralUserSelfTestDebugBloc
     final n = event.transmitterType == 1 ? 1 : 0;
     String? xx;
     if (event.sValue == 1) {
-      xx = _normalizeAttenuationXx(event.attenuationValue);
+      xx = _normalizeAttenuationXxForTransmitter(
+        transmitterType: n,
+        value: event.attenuationValue,
+      );
       if (xx == null) {
         emit(
           state.copyWith(
-            message: 'Attenuation must be a 2-digit value.',
+            message: n == 1
+                ? 'RF attenuation must be 00–07.'
+                : 'UHF attenuation must be 00–10.',
             isSuccessMessage: false,
           ),
         );
@@ -5064,7 +5069,7 @@ class GeneralUserSelfTestDebugBloc
       MapEntry('Response Code', parsed.responseCode),
       MapEntry('Buoy Id', _displaySensorParameterFieldValue(parsed.stationId)),
       MapEntry(
-        'UHF Transmission Start Time',
+        'UHF Tx Start Time',
         _displaySensorParameterFieldValue(parsed.uhfStartTime),
       ),
       MapEntry(
@@ -5072,11 +5077,11 @@ class GeneralUserSelfTestDebugBloc
         _displaySensorParameterFieldValue(parsed.uhfIntervalTime),
       ),
       MapEntry(
-        'Sonde Transmission Start Time',
+        'RF Tx Start Time',
         _displaySensorParameterFieldValue(parsed.sondeStartTime),
       ),
       MapEntry(
-        'Sonde Interval Time',
+        'RF Interval Time',
         _displaySensorParameterFieldValue(parsed.sondeIntervalTime),
       ),
     ]);
@@ -5250,8 +5255,29 @@ class GeneralUserSelfTestDebugBloc
   static bool _isSetAttenuationErrorXx(String xx) =>
       xx.trim().toUpperCase() == 'FF';
 
-  String? _normalizeAttenuationXx(String value) =>
-      _parseSetAttenuationXxField(value);
+  String? _normalizeAttenuationXxForTransmitter({
+    required int transmitterType,
+    required String value,
+  }) {
+    final xx = _normalizeAttenuationXxStatic(value);
+    if (xx == null) {
+      return null;
+    }
+    final n = int.tryParse(xx);
+    if (n == null) {
+      return null;
+    }
+    if (transmitterType == 1) {
+      if (n < 0 || n > 7) {
+        return null;
+      }
+    } else {
+      if (n < 0 || n > 10) {
+        return null;
+      }
+    }
+    return xx;
+  }
 
   static String? _normalizeAttenuationXxStatic(String value) {
     final onlyDigits = value.trim().replaceAll(RegExp(r'[^0-9]'), '');
@@ -5324,7 +5350,7 @@ class GeneralUserSelfTestDebugBloc
       MapEntry('Buoy Id', _displaySensorParameterFieldValue(parsed.stationId)),
       MapEntry('Status', sLabel),
       MapEntry(
-        'Radio Sonde Transmitter Id',
+        'RF Tx Id',
         _displaySensorParameterFieldValue(parsed.transmitterId),
       ),
     ];
@@ -7269,7 +7295,7 @@ class GeneralUserSelfTestDebugBloc
     final serverNo = parts[2];
     final username = parts.sublist(3).join(',').trim();
     return [
-      'HTTP server username from device:',
+      'Set HTTP server username from device:',
       '',
       'HTTP Server: ${_httpServerLabelFromNo(serverNo)}',
       'Username: ${dash(username)}',
