@@ -4,6 +4,18 @@ Cross-platform mobile application for monitoring, managing, and exporting drifte
 
 ## Author & Contact
 
+> ### ⭐ **Keval Buha**
+>
+> **Lead / Primary Developer**  
+> Fullstack Developer — Flutter, Android, iOS, Web
+>
+> | | |
+> |---|---|
+> | **Email** | [**gbuha12345@gmail.com**](mailto:gbuha12345@gmail.com) |
+> | **Phone** | [**+91 9925130170**](tel:+919925130170) |
+
+---
+
 **Kishan Dobariya**  
 Fullstack Developer — Flutter, Android, iOS, Web
 
