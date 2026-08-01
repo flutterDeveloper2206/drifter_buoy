@@ -12,8 +12,7 @@ class GeneralUserMapFiltersBloc
     on<ToggleGpsPoints>(_onToggleGpsPoints);
     on<ToggleBatteryStatus>(_onToggleBatteryStatus);
     on<ToggleGprsSignal>(_onToggleGprsSignal);
-    on<ToggleStatusFilter>(_onToggleStatusFilter);
-    on<ToggleSignalStrengthFilter>(_onToggleSignalStrengthFilter);
+    on<ChangeStatusFilter>(_onChangeStatusFilter);
     on<ToggleLocationZoneFilter>(_onToggleLocationZoneFilter);
     on<ChangeMapDisplayType>(_onChangeMapDisplayType);
   }
@@ -74,18 +73,11 @@ class GeneralUserMapFiltersBloc
     emit(state.copyWith(gprsSignalEnabled: !state.gprsSignalEnabled));
   }
 
-  void _onToggleStatusFilter(
-    ToggleStatusFilter event,
+  void _onChangeStatusFilter(
+    ChangeStatusFilter event,
     Emitter<GeneralUserMapFiltersState> emit,
   ) {
-    emit(state.copyWith(statusFilterEnabled: !state.statusFilterEnabled));
-  }
-
-  void _onToggleSignalStrengthFilter(
-    ToggleSignalStrengthFilter event,
-    Emitter<GeneralUserMapFiltersState> emit,
-  ) {
-    emit(state.copyWith(signalStrengthEnabled: !state.signalStrengthEnabled));
+    emit(state.copyWith(statusFilter: event.filter));
   }
 
   void _onToggleLocationZoneFilter(

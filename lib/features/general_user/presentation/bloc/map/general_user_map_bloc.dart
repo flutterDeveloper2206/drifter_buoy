@@ -1,4 +1,5 @@
 import 'package:drifter_buoy/core/utils/app_logger.dart';
+import 'package:drifter_buoy/core/utils/google_maps_camera_utils.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/map/general_user_map_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/map/general_user_map_state.dart';
 import 'package:drifter_buoy/features/general_user/presentation/widgets/dummy_buoy_map_view.dart';
@@ -23,15 +24,23 @@ class GeneralUserMapBloc
     AppLogger.i('LoadGeneralUserMap event triggered');
 
     if (event.preloadedBuoys != null) {
+      final buoys = event.preloadedBuoys!
+          .where(
+            (b) => isValidMapCoordinate(
+              b.position.latitude,
+              b.position.longitude,
+            ),
+          )
+          .toList(growable: false);
       emit(
         state.copyWith(
           status: GeneralUserMapStatus.loaded,
-          buoys: event.preloadedBuoys,
+          buoys: buoys,
           message: '',
         ),
       );
       AppLogger.i(
-        'LoadGeneralUserMap from preloaded data: ${event.preloadedBuoys!.length} buoys',
+        'LoadGeneralUserMap from preloaded data: ${buoys.length} buoys',
       );
       return;
     }
@@ -43,12 +52,11 @@ class GeneralUserMapBloc
       emit(
         state.copyWith(
           status: GeneralUserMapStatus.loaded,
-          buoys: DummyBuoyMapView.defaultBuoys,
+          buoys: const [],
+          message: '',
         ),
       );
-      AppLogger.i(
-        'LoadGeneralUserMap success: ${DummyBuoyMapView.defaultBuoys.length} buoys',
-      );
+      AppLogger.i('LoadGeneralUserMap success: no preloaded buoys');
     } catch (error, stackTrace) {
       AppLogger.e(
         'LoadGeneralUserMap failed',

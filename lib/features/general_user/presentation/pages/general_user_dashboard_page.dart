@@ -1,5 +1,6 @@
 import 'package:drifter_buoy/core/constants/app_assets.dart';
 import 'package:drifter_buoy/core/constants/app_routes.dart';
+import 'package:drifter_buoy/core/utils/google_maps_camera_utils.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_general_user_main_app_bar.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_shimmer.dart';
 import 'package:drifter_buoy/core/utils/widgets/app_error_view.dart';
@@ -148,28 +149,32 @@ class GeneralUserDashboardPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 28),
-                  GestureDetector(
-                    onTap: () {
-                      context.go(AppRoutes.mapPath, extra: loadedState.mapData);
-                    },
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.fromLTRB(14, 14, 10, 12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.07),
-                            blurRadius: 14,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Padding(
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.fromLTRB(14, 14, 10, 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.07),
+                          blurRadius: 14,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        InkWell(
+                          onTap: () {
+                            context.go(
+                              AppRoutes.mapPath,
+                              extra: loadedState.mapData,
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(8),
+                          child: Padding(
                             padding: const EdgeInsets.only(left: 2, right: 4),
                             child: Row(
                               children: [
@@ -198,13 +203,13 @@ class GeneralUserDashboardPage extends StatelessWidget {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          _MapPreviewCard(
-                            dashboardData: dashboardData,
-                            mapData: loadedState.mapData,
-                          ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 8),
+                        _MapPreviewCard(
+                          dashboardData: dashboardData,
+                          mapData: loadedState.mapData,
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -409,6 +414,9 @@ class _MapPreviewCard extends StatelessWidget {
 
     for (int i = 0; i < locations.length; i++) {
       final location = locations[i];
+      if (!isValidMapCoordinate(location.latitude, location.longitude)) {
+        continue;
+      }
       final latLng = LatLng(location.latitude, location.longitude);
 
       final status = i < activeCount
@@ -424,61 +432,54 @@ class _MapPreviewCard extends StatelessWidget {
       );
     }
 
-    return IgnorePointer(
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: SizedBox(
-          height: 320,
-          width: double.infinity,
-          child: GeneralUserGoogleMapView(
-            buoys: buoyMarkers,
-            zoomLevel: _calculatePreviewZoom(buoyMarkers),
-            mapType: MapDisplayType.terrain,
-            showDeviceName: true,
-            showBatteryStatus: false,
-            selectedBuoy: null,
-            boundsPaddingPx: 100,
-            fitBoundsLatitudeExpansionDeg: 0.003,
-            showEmbeddedZoomControls: true,
-            showFitAllBuoysControl: true,
-          ),
+    if (buoyMarkers.isEmpty) {
+      return Container(
+        height: 180,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF2F2F2),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE2E2E2)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(Icons.map_outlined, size: 48, color: Color(0xFF8B9196)),
+            SizedBox(height: 12),
+            Text(
+              'No buoy locations available',
+              style: TextStyle(
+                fontSize: 14,
+                color: Color(0xFF6A7178),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: SizedBox(
+        height: 320,
+        width: double.infinity,
+        child: GeneralUserGoogleMapView(
+          buoys: buoyMarkers,
+          zoomLevel: 13.0,
+          mapType: MapDisplayType.terrain,
+          showDeviceName: true,
+          showBatteryStatus: false,
+          selectedBuoy: null,
+          boundsPaddingPx: 72,
+          fitBoundsLatitudeExpansionDeg: 0.003,
+          focusBuoysOnLoad: true,
+          interactive: true,
+          showEmbeddedZoomControls: true,
+          showFitAllBuoysControl: true,
         ),
       ),
     );
-  }
-
-  double _calculatePreviewZoom(List<DummyBuoy> buoys) {
-    if (buoys.isEmpty) {
-      return 10.3;
-    }
-    if (buoys.length == 1) {
-      return 13.0;
-    }
-
-    var minLat = buoys.first.position.latitude;
-    var maxLat = buoys.first.position.latitude;
-    var minLng = buoys.first.position.longitude;
-    var maxLng = buoys.first.position.longitude;
-
-    for (final b in buoys.skip(1)) {
-      final lat = b.position.latitude;
-      final lng = b.position.longitude;
-      if (lat < minLat) minLat = lat;
-      if (lat > maxLat) maxLat = lat;
-      if (lng < minLng) minLng = lng;
-      if (lng > maxLng) maxLng = lng;
-    }
-
-    final latSpan = (maxLat - minLat).abs();
-    final lngSpan = (maxLng - minLng).abs();
-    final span = latSpan > lngSpan ? latSpan : lngSpan;
-
-    if (span <= 0.01) return 13.2;
-    if (span <= 0.03) return 12.3;
-    if (span <= 0.06) return 11.6;
-    if (span <= 0.12) return 10.8;
-    if (span <= 0.22) return 10.0;
-    return 9.4;
   }
 }
 

@@ -4,6 +4,7 @@ import 'package:drifter_buoy/features/general_user/presentation/bloc/map_filters
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -16,6 +17,7 @@ class GeneralUserGoogleMapView extends StatefulWidget {
     required this.buoys,
     required this.zoomLevel,
     required this.mapType,
+    this.fitBuoys,
     this.showDeviceName = true,
     this.showBatteryStatus = false,
     this.selectedBuoy,
@@ -27,11 +29,19 @@ class GeneralUserGoogleMapView extends StatefulWidget {
     this.showEmbeddedZoomControls = false,
     this.showNativeZoomControls = false,
     this.showFitAllBuoysControl = false,
+    this.focusBuoysOnLoad = false,
+    this.interactive = true,
+    this.focusControlBottomPadding = 10,
   });
 
   final List<DummyBuoy> buoys;
   final double zoomLevel;
   final MapDisplayType mapType;
+
+  /// Buoys used to frame the camera. Defaults to [buoys]. Pass all buoys when
+  /// [buoys] is a filtered subset so the map stays near real marker locations.
+  final List<DummyBuoy>? fitBuoys;
+
   final bool showDeviceName;
   final bool showBatteryStatus;
   final DummyBuoy? selectedBuoy;
@@ -53,6 +63,17 @@ class GeneralUserGoogleMapView extends StatefulWidget {
   /// Shows a control that refits the camera to all [buoys] (dashboard preview).
   final bool showFitAllBuoysControl;
 
+  /// When true, the map stays hidden until the camera is focused on all
+  /// [buoys] (used on the home page preview).
+  final bool focusBuoysOnLoad;
+
+  /// Enables pan/zoom gestures. Use [gestureRecognizers] when embedded in a
+  /// scroll view (e.g. home page preview).
+  final bool interactive;
+
+  /// Bottom inset for the focus-on-buoys control (clears bottom sheets/overlays).
+  final double focusControlBottomPadding;
+
   @override
   State<GeneralUserGoogleMapView> createState() =>
       _GeneralUserGoogleMapViewState();
@@ -62,6 +83,10 @@ class _GeneralUserGoogleMapViewState extends State<GeneralUserGoogleMapView> {
   GoogleMapController? _controller;
   Set<Marker> _markers = {};
   bool _didInitialFit = false;
+  bool _pendingLabelRefit = false;
+  bool _buoyFocusReady = false;
+  bool _userMovedCamera = false;
+  bool _isProgrammaticCameraMove = false;
 
   // Custom marker icons from `assets/images/`.
   BitmapDescriptor? _activeIcon;
@@ -83,6 +108,8 @@ class _GeneralUserGoogleMapViewState extends State<GeneralUserGoogleMapView> {
   void initState() {
     super.initState();
     _markers = _buildMarkers();
+    _buoyFocusReady =
+        !widget.focusBuoysOnLoad || _validFitLatLngs.isEmpty;
     _scheduleLoadIcons();
   }
 
@@ -90,16 +117,24 @@ class _GeneralUserGoogleMapViewState extends State<GeneralUserGoogleMapView> {
   void didUpdateWidget(covariant GeneralUserGoogleMapView oldWidget) {
     super.didUpdateWidget(oldWidget);
     final buoysChanged = !listEquals(oldWidget.buoys, widget.buoys);
+    final fitBuoysChanged = !listEquals(_fitBuoyListFor(oldWidget), _fitBuoyList);
     final selectedChanged =
         oldWidget.selectedBuoy?.id != widget.selectedBuoy?.id;
     final labelConfigChanged =
         oldWidget.showDeviceName != widget.showDeviceName ||
         oldWidget.showBatteryStatus != widget.showBatteryStatus;
-    if (buoysChanged || selectedChanged) {
-      _didInitialFit = buoysChanged ? false : _didInitialFit;
+    if (buoysChanged || fitBuoysChanged || selectedChanged) {
+      if (buoysChanged || fitBuoysChanged) {
+        _didInitialFit = false;
+        _pendingLabelRefit = false;
+        if (widget.focusBuoysOnLoad && _validFitLatLngs.isNotEmpty) {
+          _buoyFocusReady = false;
+          _userMovedCamera = false;
+        }
+      }
       _markers = _buildMarkers();
       setState(() {});
-      if (buoysChanged) {
+      if (buoysChanged || fitBuoysChanged) {
         _scheduleFitCamera();
       }
     }
@@ -338,9 +373,12 @@ class _GeneralUserGoogleMapViewState extends State<GeneralUserGoogleMapView> {
     setState(() {
       _markers = _buildMarkers();
     });
-    // First fit uses default pins; labeled bitmaps are taller — refit once labels exist.
-    if (widget.showDeviceName && _allLabeledMarkersReady()) {
+    // Labeled bitmaps are taller — refit once labels exist unless user moved.
+    if (widget.showDeviceName &&
+        _allLabeledMarkersReady() &&
+        !_userMovedCamera) {
       _didInitialFit = false;
+      _pendingLabelRefit = true;
       _scheduleFitCamera();
     }
   }
@@ -499,36 +537,193 @@ class _GeneralUserGoogleMapViewState extends State<GeneralUserGoogleMapView> {
       if (!mounted) {
         return;
       }
-      _fitCamera();
+      _fitCamera(animate: _pendingLabelRefit);
     });
   }
 
-  Future<void> _fitCamera() async {
+  Future<void> _fitCamera({bool animate = false, int attempt = 0}) async {
     final c = _controller;
-    if (c == null || widget.buoys.isEmpty || _didInitialFit) {
+    if (c == null || _validFitLatLngs.isEmpty || _didInitialFit) {
       return;
     }
-    final points = widget.buoys
-        .map((b) => LatLng(b.position.latitude, b.position.longitude))
-        .toList(growable: false);
+    final points = _validFitLatLngs;
     try {
+      if (attempt == 0) {
+        await Future<void>.delayed(const Duration(milliseconds: 80));
+        if (!mounted) {
+          return;
+        }
+      }
+      _isProgrammaticCameraMove = true;
       await fitGoogleMapToPoints(
         controller: c,
         points: points,
         paddingPx: widget.boundsPaddingPx,
         singlePointZoom: widget.zoomLevel.clamp(3, 17).toDouble(),
         expandLatitudeDeg: widget.fitBoundsLatitudeExpansionDeg,
+        animate: animate,
       );
-      _didInitialFit = true;
+      _isProgrammaticCameraMove = false;
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _didInitialFit = true;
+        _pendingLabelRefit = false;
+        _buoyFocusReady = true;
+      });
     } on Object catch (_) {
-      _didInitialFit = false;
+      _isProgrammaticCameraMove = false;
+      if (attempt < 4) {
+        await Future<void>.delayed(Duration(milliseconds: 120 + (attempt * 80)));
+        if (mounted) {
+          await _fitCamera(animate: animate, attempt: attempt + 1);
+        }
+        return;
+      }
+      if (mounted) {
+        setState(() {
+          _didInitialFit = false;
+          _buoyFocusReady = true;
+        });
+      }
     }
   }
 
+  void _refitAllBuoys() {
+    _userMovedCamera = false;
+    _didInitialFit = false;
+    _pendingLabelRefit = false;
+    _scheduleFitCamera();
+  }
 
+  Future<void> _nudgeZoom(int delta) async {
+    final c = _controller;
+    if (c == null) {
+      return;
+    }
+    _userMovedCamera = true;
+    _isProgrammaticCameraMove = true;
+    try {
+      final zoom = await c.getZoomLevel();
+      await c.animateCamera(
+        CameraUpdate.zoomTo((zoom + delta).clamp(3, 17).toDouble()),
+      );
+    } on Object catch (_) {
+    } finally {
+      _isProgrammaticCameraMove = false;
+    }
+  }
+
+  Widget _buildFocusBuoysButton() {
+    return Material(
+      color: const Color(0xFF1C1C1C),
+      elevation: 4,
+      shadowColor: Colors.black.withValues(alpha: 0.28),
+      borderRadius: BorderRadius.circular(12),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: _validFitLatLngs.isEmpty ? null : _refitAllBuoys,
+        child: SizedBox(
+          width: 44,
+          height: 44,
+          child: Icon(
+            Icons.my_location,
+            color: widget.buoys.isEmpty && _validFitLatLngs.isEmpty
+                ? Colors.white.withValues(alpha: 0.45)
+                : Colors.white,
+            size: 22,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMapControls() {
+    return Material(
+      color: Colors.white.withValues(alpha: 0.92),
+      elevation: 2,
+      borderRadius: BorderRadius.circular(10),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            tooltip: 'Zoom in',
+            onPressed: () => _nudgeZoom(1),
+            icon: const Icon(Icons.add, size: 20),
+            color: const Color(0xFF23282D),
+          ),
+          const SizedBox(height: 2),
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            tooltip: 'Zoom out',
+            onPressed: () => _nudgeZoom(-1),
+            icon: const Icon(Icons.remove, size: 20),
+            color: const Color(0xFF23282D),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<DummyBuoy> _fitBuoyListFor(GeneralUserGoogleMapView config) {
+    return config.fitBuoys ?? config.buoys;
+  }
+
+  List<DummyBuoy> get _fitBuoyList => _fitBuoyListFor(widget);
+
+  List<LatLng> get _validFitLatLngs => _fitBuoyList
+      .map((b) => LatLng(b.position.latitude, b.position.longitude))
+      .where((p) => isValidMapCoordinate(p.latitude, p.longitude))
+      .toList(growable: false);
+
+  CameraPosition? _initialCameraPosition() {
+    final camera = cameraTargetAndZoomForPoints(
+      _validFitLatLngs,
+      singlePointZoom: widget.zoomLevel.clamp(3, 17).toDouble(),
+    );
+    if (camera == null) {
+      return null;
+    }
+    return CameraPosition(
+      target: camera.target,
+      zoom: camera.zoom.clamp(3, 17).toDouble(),
+    );
+  }
+
+  Widget _buildNoLocationPlaceholder() {
+    return const ColoredBox(
+      color: Color(0xFFE8EBED),
+      child: Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Text(
+            'Buoy GPS coordinates could not be read from the server.\n'
+            'The map needs valid latitude and longitude to show marker locations.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Color(0xFF6A7178),
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_validFitLatLngs.isEmpty) {
+      return _buildNoLocationPlaceholder();
+    }
+
+    final initialCamera = _initialCameraPosition();
+    if (initialCamera == null) {
+      return _buildNoLocationPlaceholder();
+    }
+
     // Ensure labeled marker bitmaps exist for current visible buoys.
     if (widget.showDeviceName) {
       final selectedId = widget.selectedBuoy?.id;
@@ -537,93 +732,92 @@ class _GeneralUserGoogleMapViewState extends State<GeneralUserGoogleMapView> {
       }
     }
 
-    final first = widget.buoys.isNotEmpty ? widget.buoys.first : null;
-    final initial = first != null
-        ? LatLng(first.position.latitude, first.position.longitude)
-        : const LatLng(20.5937, 78.9629);
-
     final map = GoogleMap(
-      initialCameraPosition: CameraPosition(
-        target: initial,
-        zoom: widget.zoomLevel.clamp(3, 17).toDouble(),
-      ),
+      initialCameraPosition: initialCamera,
       mapType: _googleMapType(),
       markers: _markers,
       compassEnabled: false,
       mapToolbarEnabled: false,
-      rotateGesturesEnabled: true,
-      scrollGesturesEnabled: true,
-      zoomGesturesEnabled: true,
+      rotateGesturesEnabled: widget.interactive,
+      scrollGesturesEnabled: widget.interactive,
+      zoomGesturesEnabled: widget.interactive,
       tiltGesturesEnabled: false,
       myLocationButtonEnabled: false,
       zoomControlsEnabled: widget.showNativeZoomControls,
       minMaxZoomPreference: const MinMaxZoomPreference(3, 21),
+      gestureRecognizers: widget.interactive
+          ? <Factory<OneSequenceGestureRecognizer>>{
+              Factory<EagerGestureRecognizer>(() => EagerGestureRecognizer()),
+            }
+          : const <Factory<OneSequenceGestureRecognizer>>{},
       onMapCreated: (controller) {
         _controller = controller;
         widget.onControllerReady?.call(controller);
         _didInitialFit = false;
+        _pendingLabelRefit = false;
+        _userMovedCamera = false;
         _scheduleFitCamera();
+      },
+      onCameraMoveStarted: () {
+        if (!_isProgrammaticCameraMove) {
+          _userMovedCamera = true;
+        }
       },
       onTap: (_) {
         widget.onMapTap?.call();
       },
     );
 
+    final mapLayer = widget.focusBuoysOnLoad
+        ? Stack(
+            fit: StackFit.expand,
+            clipBehavior: Clip.hardEdge,
+            children: [
+              AnimatedOpacity(
+                opacity: _buoyFocusReady ? 1 : 0,
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOut,
+                child: map,
+              ),
+              if (!_buoyFocusReady)
+                const ColoredBox(
+                  color: Color(0xFFE8EBED),
+                  child: Center(
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Color(0xFF1F88D1),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          )
+        : map;
+
     if (!widget.showEmbeddedZoomControls && !widget.showFitAllBuoysControl) {
-      return map;
+      return mapLayer;
     }
 
     return Stack(
       fit: StackFit.expand,
       clipBehavior: Clip.hardEdge,
       children: [
-        map,
-        // if (widget.showEmbeddedZoomControls || widget.showFitAllBuoysControl)
-        //   Positioned(
-        //     right: 6,
-        //     top: 6,
-        //     child: Material(
-        //       color: Colors.white.withValues(alpha: 0.92),
-        //       elevation: 2,
-        //       borderRadius: BorderRadius.circular(10),
-        //       child: Column(
-        //         mainAxisSize: MainAxisSize.min,
-        //         children: [
-        //           if (widget.showEmbeddedZoomControls) ...[
-        //             IconButton(
-        //               visualDensity: VisualDensity.compact,
-        //               tooltip: 'Zoom in',
-        //               onPressed: () => _nudgeZoom(1),
-        //               icon: const Icon(Icons.add, size: 20),
-        //               color: const Color(0xFF23282D),
-        //             ),
-        //             const SizedBox(height: 2),
-        //             IconButton(
-        //               visualDensity: VisualDensity.compact,
-        //               tooltip: 'Zoom out',
-        //               onPressed: () => _nudgeZoom(-1),
-        //               icon: const Icon(Icons.remove, size: 20),
-        //               color: const Color(0xFF23282D),
-        //             ),
-        //           ],
-        //           if (widget.showFitAllBuoysControl) ...[
-        //             if (widget.showEmbeddedZoomControls)
-        //               const SizedBox(height: 4),
-        //             IconButton(
-        //               visualDensity: VisualDensity.compact,
-        //               tooltip: 'Fit all buoys',
-        //               onPressed: () {
-        //                 _didInitialFit = false;
-        //                 _scheduleFitCamera();
-        //               },
-        //               icon: const Icon(Icons.my_location, size: 20),
-        //               color: const Color(0xFF23282D),
-        //             ),
-        //           ],
-        //         ],
-        //       ),
-        //     ),
-        //   ),
+        mapLayer,
+        if (widget.showEmbeddedZoomControls)
+          Positioned(
+            right: 6,
+            top: 6,
+            child: _buildMapControls(),
+          ),
+        if (widget.showFitAllBuoysControl)
+          Positioned(
+            right: 10,
+            bottom: widget.focusControlBottomPadding,
+            child: _buildFocusBuoysButton(),
+          ),
       ],
     );
   }

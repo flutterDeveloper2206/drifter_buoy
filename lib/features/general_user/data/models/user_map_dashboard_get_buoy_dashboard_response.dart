@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:drifter_buoy/core/utils/geo_coordinate_parse.dart';
 
 class UserMapDashboardGetBuoyDashboardSummary
     extends Equatable {
@@ -45,14 +46,12 @@ class UserMapDashboardGetBuoyDashboardLocation extends Equatable {
   factory UserMapDashboardGetBuoyDashboardLocation.fromJson(
     Map<String, dynamic> json,
   ) {
-    final lat = (json['latitude'] ?? 0);
-    final lng = (json['longitude'] ?? 0);
+    final (lat, lng) = resolveLatitudeLongitudeFromJson(json);
 
     return UserMapDashboardGetBuoyDashboardLocation(
       buoyId: (json['buoyId'] ?? '').toString(),
-      latitude: lat is num ? lat.toDouble() : double.tryParse(lat.toString()) ?? 0,
-      longitude:
-          lng is num ? lng.toDouble() : double.tryParse(lng.toString()) ?? 0,
+      latitude: lat,
+      longitude: lng,
     );
   }
 

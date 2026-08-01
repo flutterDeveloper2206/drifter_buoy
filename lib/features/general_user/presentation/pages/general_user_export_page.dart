@@ -734,6 +734,7 @@ class _GeneralUserExportPageState extends State<GeneralUserExportPage> {
           !state.isMultiBuoyDistanceReportBlocked) ...[
         const SizedBox(height: 10),
         _DistanceStartPointCard(
+          key: const ValueKey('export_distance_start_point_card'),
           enabled: !isExporting,
           isLoading: state.isReportLoading,
           isSearching: state.isStartPointSearching,
@@ -1042,6 +1043,7 @@ class _ExportFormatCardSection extends StatelessWidget {
 
 class _DistanceStartPointCard extends StatefulWidget {
   const _DistanceStartPointCard({
+    super.key,
     required this.enabled,
     required this.isLoading,
     required this.isSearching,
@@ -1070,6 +1072,10 @@ class _DistanceStartPointCardState extends State<_DistanceStartPointCard> {
   late final TextEditingController _lngController;
   String _selectedTime = '';
 
+  /// Last query sent to SearchByLatLon. Used to ignore late responses after the
+  /// user clears the search box.
+  String? _pendingSearchQuery;
+
   @override
   void initState() {
     super.initState();
@@ -1083,26 +1089,54 @@ class _DistanceStartPointCardState extends State<_DistanceStartPointCard> {
   void didUpdateWidget(covariant _DistanceStartPointCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.startPointType != widget.startPointType) {
+      _pendingSearchQuery = null;
       _searchController.clear();
       _latController.text = '';
       _lngController.text = '';
       _selectedTime = '';
-    } else {
-      var synced = false;
-      if (_latController.text != widget.startLatitude) {
-        _latController.text = widget.startLatitude;
-        synced = true;
+      return;
+    }
+
+    // Keep search text after a search. If the user manually cleared search,
+    // do not re-fill lat/lng from a late API response.
+    if (_searchController.text.trim().isEmpty) {
+      _pendingSearchQuery = null;
+      if (_latController.text.isNotEmpty || _lngController.text.isNotEmpty) {
+        _latController.clear();
+        _lngController.clear();
       }
-      if (_lngController.text != widget.startLongitude) {
-        _lngController.text = widget.startLongitude;
-        synced = true;
-      }
-      if (synced) {
-        setState(() {});
+      if (widget.startLatitude.isNotEmpty || widget.startLongitude.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || _searchController.text.trim().isNotEmpty) {
+            return;
+          }
+          context.read<GeneralUserExportBloc>().add(
+                const ClearGeneralUserExportStartPointLatLng(),
+              );
+        });
       }
       if (widget.startTime.isNotEmpty && _selectedTime != widget.startTime) {
         _selectedTime = widget.startTime;
       }
+      return;
+    }
+
+    var synced = false;
+    if (_latController.text != widget.startLatitude) {
+      _latController.text = widget.startLatitude;
+      synced = true;
+    }
+    if (_lngController.text != widget.startLongitude) {
+      _lngController.text = widget.startLongitude;
+      synced = true;
+    }
+    if (synced) {
+      // Search completed (or failed) — keep the typed search text as-is.
+      _pendingSearchQuery = null;
+      setState(() {});
+    }
+    if (widget.startTime.isNotEmpty && _selectedTime != widget.startTime) {
+      _selectedTime = widget.startTime;
     }
   }
 
@@ -1146,6 +1180,8 @@ class _DistanceStartPointCardState extends State<_DistanceStartPointCard> {
       return;
     }
 
+    // User manually cleared search → clear latitude & longitude.
+    _pendingSearchQuery = null;
     _latController.clear();
     _lngController.clear();
     context.read<GeneralUserExportBloc>().add(
@@ -1163,6 +1199,8 @@ class _DistanceStartPointCardState extends State<_DistanceStartPointCard> {
       return;
     }
 
+    // Keep search text after search (do not clear _searchController).
+    _pendingSearchQuery = query;
     context.read<GeneralUserExportBloc>().add(
           SearchGeneralUserExportByLatLon(latLng: query),
         );

@@ -9,8 +9,7 @@ class GeneralUserMapFiltersState extends Equatable {
   final bool gpsPointsEnabled;
   final bool batteryStatusEnabled;
   final bool gprsSignalEnabled;
-  final bool statusFilterEnabled;
-  final bool signalStrengthEnabled;
+  final MapBuoyStatusFilter statusFilter;
   final bool locationZoneFilterEnabled;
   final MapDisplayType mapType;
   final String message;
@@ -21,8 +20,7 @@ class GeneralUserMapFiltersState extends Equatable {
     required this.gpsPointsEnabled,
     required this.batteryStatusEnabled,
     required this.gprsSignalEnabled,
-    required this.statusFilterEnabled,
-    required this.signalStrengthEnabled,
+    required this.statusFilter,
     required this.locationZoneFilterEnabled,
     required this.mapType,
     required this.message,
@@ -34,11 +32,18 @@ class GeneralUserMapFiltersState extends Equatable {
       gpsPointsEnabled = true,
       batteryStatusEnabled = false,
       gprsSignalEnabled = false,
-      statusFilterEnabled = true,
-      signalStrengthEnabled = false,
+      statusFilter = MapBuoyStatusFilter.both,
       locationZoneFilterEnabled = false,
       mapType = MapDisplayType.terrain,
       message = '';
+
+  bool get showOnlineBuoys =>
+      statusFilter == MapBuoyStatusFilter.online ||
+      statusFilter == MapBuoyStatusFilter.both;
+
+  bool get showOfflineBuoys =>
+      statusFilter == MapBuoyStatusFilter.offline ||
+      statusFilter == MapBuoyStatusFilter.both;
 
   GeneralUserMapFiltersState copyWith({
     GeneralUserMapFiltersStatus? status,
@@ -46,8 +51,7 @@ class GeneralUserMapFiltersState extends Equatable {
     bool? gpsPointsEnabled,
     bool? batteryStatusEnabled,
     bool? gprsSignalEnabled,
-    bool? statusFilterEnabled,
-    bool? signalStrengthEnabled,
+    MapBuoyStatusFilter? statusFilter,
     bool? locationZoneFilterEnabled,
     MapDisplayType? mapType,
     String? message,
@@ -58,9 +62,7 @@ class GeneralUserMapFiltersState extends Equatable {
       gpsPointsEnabled: gpsPointsEnabled ?? this.gpsPointsEnabled,
       batteryStatusEnabled: batteryStatusEnabled ?? this.batteryStatusEnabled,
       gprsSignalEnabled: gprsSignalEnabled ?? this.gprsSignalEnabled,
-      statusFilterEnabled: statusFilterEnabled ?? this.statusFilterEnabled,
-      signalStrengthEnabled:
-          signalStrengthEnabled ?? this.signalStrengthEnabled,
+      statusFilter: statusFilter ?? this.statusFilter,
       locationZoneFilterEnabled:
           locationZoneFilterEnabled ?? this.locationZoneFilterEnabled,
       mapType: mapType ?? this.mapType,
@@ -75,8 +77,7 @@ class GeneralUserMapFiltersState extends Equatable {
     gpsPointsEnabled,
     batteryStatusEnabled,
     gprsSignalEnabled,
-    statusFilterEnabled,
-    signalStrengthEnabled,
+    statusFilter,
     locationZoneFilterEnabled,
     mapType,
     message,

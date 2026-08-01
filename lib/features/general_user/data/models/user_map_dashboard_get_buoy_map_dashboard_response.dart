@@ -1,5 +1,6 @@
 import 'package:drifter_buoy/core/utils/format_buoy_last_update_time.dart';
 import 'package:drifter_buoy/core/utils/geo_coordinate_parse.dart';
+import 'package:drifter_buoy/core/utils/google_maps_camera_utils.dart';
 import 'package:equatable/equatable.dart';
 
 class UserMapDashboardGetBuoyMapDashboardItem extends Equatable {
@@ -44,14 +45,36 @@ class UserMapDashboardGetBuoyMapDashboardItem extends Equatable {
   factory UserMapDashboardGetBuoyMapDashboardItem.fromJson(
     Map<String, dynamic> json,
   ) {
-    final latRaw = _readAny(json, const ['latitude', 'Latitude']);
-    final lngRaw = _readAny(json, const ['longitude', 'Longitude']);
+    final latRaw = _readAny(json, const [
+      'latitude',
+      'Latitude',
+      'lat',
+      'Lat',
+      'latitudeDMS',
+      'LatitudeDMS',
+      'latitude_dms',
+    ]);
+    final lngRaw = _readAny(json, const [
+      'longitude',
+      'Longitude',
+      'lng',
+      'Lng',
+      'lon',
+      'Lon',
+      'longitudeDMS',
+      'LongitudeDMS',
+      'longitude_dms',
+    ]);
 
-    final lat = parseGeoCoordinateToDouble(latRaw);
-    final lng = parseGeoCoordinateToDouble(lngRaw);
+    var (lat, lng) = resolveLatitudeLongitudeFromJson(json);
 
-    final latStr = latRaw is String ? latRaw.trim() : '';
-    final lngStr = lngRaw is String ? lngRaw.trim() : '';
+    final latStr = latRaw?.toString().trim() ?? '';
+    final lngStr = lngRaw?.toString().trim() ?? '';
+
+    if (!isValidMapCoordinate(lat, lng)) {
+      lat = parseGeoCoordinateToDouble(latStr);
+      lng = parseGeoCoordinateToDouble(lngStr);
+    }
 
     final gpsDisplay = _buildGpsDisplay(
       latitudeText: latStr,

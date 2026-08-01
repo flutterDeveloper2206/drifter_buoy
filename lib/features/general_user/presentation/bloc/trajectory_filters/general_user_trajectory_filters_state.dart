@@ -1,4 +1,5 @@
-import 'package:drifter_buoy/features/general_user/presentation/widgets/dummy_buoy_map_view.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/map_filters/general_user_map_filters_event.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_view/general_user_trajectory_view_mapper.dart';
 import 'package:drifter_buoy/features/general_user/presentation/widgets/dummy_trajectory_live_map_view.dart';
 import 'package:equatable/equatable.dart';
 
@@ -11,6 +12,7 @@ class GeneralUserTrajectoryFiltersState extends Equatable {
   final bool gpsCoordinatesEnabled;
   final bool timestampsEnabled;
   final bool batteryLogsEnabled;
+  final MapDisplayType mapType;
   final double zoom;
   final String message;
 
@@ -21,6 +23,7 @@ class GeneralUserTrajectoryFiltersState extends Equatable {
     required this.gpsCoordinatesEnabled,
     required this.timestampsEnabled,
     required this.batteryLogsEnabled,
+    required this.mapType,
     required this.zoom,
     required this.message,
   });
@@ -32,6 +35,7 @@ class GeneralUserTrajectoryFiltersState extends Equatable {
       gpsCoordinatesEnabled = false,
       timestampsEnabled = false,
       batteryLogsEnabled = false,
+      mapType = MapDisplayType.terrain,
       zoom = 10.3,
       message = '';
 
@@ -42,17 +46,10 @@ class GeneralUserTrajectoryFiltersState extends Equatable {
   bool get showSecondaryLabels => gpsCoordinatesEnabled && timestampsEnabled;
 
   List<TrajectoryBuoyPoint> get displayedPoints {
-    if (batteryLogsEnabled) {
-      return trajectoryPoints;
-    }
-
-    return trajectoryPoints
-        .map(
-          (point) => point.status == BuoyStatus.batteryLow
-              ? point.copyWith(status: BuoyStatus.online)
-              : point,
-        )
-        .toList(growable: false);
+    return applyTrajectoryBatteryDisplayFilter(
+      trajectoryPoints,
+      batteryLogsEnabled: batteryLogsEnabled,
+    );
   }
 
   GeneralUserTrajectoryFiltersState copyWith({
@@ -62,6 +59,7 @@ class GeneralUserTrajectoryFiltersState extends Equatable {
     bool? gpsCoordinatesEnabled,
     bool? timestampsEnabled,
     bool? batteryLogsEnabled,
+    MapDisplayType? mapType,
     double? zoom,
     String? message,
   }) {
@@ -73,6 +71,7 @@ class GeneralUserTrajectoryFiltersState extends Equatable {
           gpsCoordinatesEnabled ?? this.gpsCoordinatesEnabled,
       timestampsEnabled: timestampsEnabled ?? this.timestampsEnabled,
       batteryLogsEnabled: batteryLogsEnabled ?? this.batteryLogsEnabled,
+      mapType: mapType ?? this.mapType,
       zoom: zoom ?? this.zoom,
       message: message ?? this.message,
     );
@@ -86,6 +85,7 @@ class GeneralUserTrajectoryFiltersState extends Equatable {
     gpsCoordinatesEnabled,
     timestampsEnabled,
     batteryLogsEnabled,
+    mapType,
     zoom,
     message,
   ];

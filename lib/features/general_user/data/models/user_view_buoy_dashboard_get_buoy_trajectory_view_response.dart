@@ -1,4 +1,5 @@
 import 'package:drifter_buoy/core/utils/geo_coordinate_parse.dart';
+import 'package:drifter_buoy/core/utils/trajectory_datetime_parse.dart';
 import 'package:equatable/equatable.dart';
 
 /// Response from `GetBuoyTrajectoryView` (multipart: buoyId, fromDate, toDate).
@@ -48,6 +49,7 @@ class BuoyTrajectoryViewRowModel extends Equatable {
   const BuoyTrajectoryViewRowModel({
     required this.buoyId,
     required this.datetime,
+    required this.sortDatetime,
     required this.latitude,
     required this.longitude,
     required this.batteryVoltage,
@@ -55,7 +57,12 @@ class BuoyTrajectoryViewRowModel extends Equatable {
   });
 
   final String buoyId;
+
+  /// User-facing datetime (prefers IST/GMT labels from the API).
   final String datetime;
+
+  /// Best available value for chronological sorting.
+  final String sortDatetime;
   final double latitude;
   final double longitude;
   final double batteryVoltage;
@@ -72,11 +79,18 @@ class BuoyTrajectoryViewRowModel extends Equatable {
         (_readAny(json, const ['datetime', 'dateTime', 'Datetime']) ?? '')
             .toString()
             .trim();
+    final displayDatetime = dateIst.isNotEmpty
+        ? dateIst
+        : (dateGmt.isNotEmpty ? dateGmt : fallbackDate);
+    final sortDatetime = pickTrajectorySortDatetime(
+      fullDatetime: fallbackDate,
+      datetimeIst: dateIst,
+      datetimeGmt: dateGmt,
+    );
     return BuoyTrajectoryViewRowModel(
       buoyId: (_readAny(json, const ['buoyId', 'BuoyId']) ?? '').toString(),
-      datetime: dateIst.isNotEmpty
-          ? dateIst
-          : (dateGmt.isNotEmpty ? dateGmt : fallbackDate),
+      datetime: displayDatetime,
+      sortDatetime: sortDatetime,
       latitude: parseGeoCoordinateToDouble(
         _readAny(json, const ['latitude', 'Latitude']),
       ),
@@ -95,6 +109,7 @@ class BuoyTrajectoryViewRowModel extends Equatable {
   List<Object> get props => [
     buoyId,
     datetime,
+    sortDatetime,
     latitude,
     longitude,
     batteryVoltage,

@@ -193,8 +193,7 @@ class _GeneralUserMapPageState extends State<GeneralUserMapPage> {
                     previous.status != current.status &&
                     current.status == GeneralUserMapFiltersStatus.loaded;
                 return statusJustLoaded ||
-                    previous.statusFilterEnabled !=
-                        current.statusFilterEnabled ||
+                    previous.statusFilter != current.statusFilter ||
                     previous.batteryStatusEnabled !=
                         current.batteryStatusEnabled;
               },
@@ -202,13 +201,11 @@ class _GeneralUserMapPageState extends State<GeneralUserMapPage> {
                 if (filtersState.status != GeneralUserMapFiltersStatus.loaded) {
                   return;
                 }
-                final show = filtersState.statusFilterEnabled;
-                final showBattery = filtersState.batteryStatusEnabled;
                 context.read<GeneralUserMapBloc>().add(
                   ApplyBuoyStatusVisibility(
-                    showActive: show,
-                    showOffline: show,
-                    showBatteryLow: showBattery,
+                    showActive: filtersState.showOnlineBuoys,
+                    showOffline: filtersState.showOfflineBuoys,
+                    showBatteryLow: filtersState.batteryStatusEnabled,
                   ),
                 );
               },
@@ -228,7 +225,12 @@ class _GeneralUserMapPageState extends State<GeneralUserMapPage> {
                           GeneralUserMapFiltersState
                         >(
                           builder: (context, filtersState) {
-                            return _buildMapLayer(context, state, filtersState);
+                            return _buildMapLayer(
+                              context,
+                              state,
+                              filtersState,
+                              sheetLift: sheetLift,
+                            );
                           },
                         ),
                   ),
@@ -426,8 +428,9 @@ class _GeneralUserMapPageState extends State<GeneralUserMapPage> {
   Widget _buildMapLayer(
     BuildContext context,
     GeneralUserMapState state,
-    GeneralUserMapFiltersState filtersState,
-  ) {
+    GeneralUserMapFiltersState filtersState, {
+    required double sheetLift,
+  }) {
     if (state.status == GeneralUserMapStatus.loading ||
         state.status == GeneralUserMapStatus.initial) {
       return const GeneralUserMapShimmer();
@@ -448,12 +451,17 @@ class _GeneralUserMapPageState extends State<GeneralUserMapPage> {
         Positioned.fill(
           child: GeneralUserGoogleMapView(
             buoys: state.filteredBuoys,
+            fitBuoys: state.buoys,
             zoomLevel: state.zoom,
             mapType: filtersState.mapType,
             showDeviceName: true,
             showBatteryStatus: filtersState.batteryStatusEnabled,
             selectedBuoy: _activeSelectedBuoyForState(state),
-            boundsPaddingPx: 72,
+            boundsPaddingPx: 160,
+            fitBoundsLatitudeExpansionDeg: 0.003,
+            focusBuoysOnLoad: true,
+            showFitAllBuoysControl: true,
+            focusControlBottomPadding: sheetLift + 88,
             onControllerReady: (c) {
               _mapController = c;
             },
@@ -1163,23 +1171,32 @@ class _MapFiltersDraggablePanel extends StatelessWidget {
         const SizedBox(height: 10),
         const Divider(color: Color(0xFFD2D2D2), thickness: 1),
         const SizedBox(height: 14),
-        const _SheetSectionTitle(label: 'Filters'),
+        const _SheetSectionTitle(label: 'Status'),
         const SizedBox(height: 8),
         AppCheckboxSettingTile(
-          label: 'Status (Online / Offline)',
-          selected: state.statusFilterEnabled,
+          label: 'Online',
+          selected: state.statusFilter == MapBuoyStatusFilter.online,
           onTap: () {
             context.read<GeneralUserMapFiltersBloc>().add(
-              const ToggleStatusFilter(),
+              const ChangeStatusFilter(MapBuoyStatusFilter.online),
             );
           },
         ),
         AppCheckboxSettingTile(
-          label: 'Signal strength',
-          selected: state.signalStrengthEnabled,
+          label: 'Offline',
+          selected: state.statusFilter == MapBuoyStatusFilter.offline,
           onTap: () {
             context.read<GeneralUserMapFiltersBloc>().add(
-              const ToggleSignalStrengthFilter(),
+              const ChangeStatusFilter(MapBuoyStatusFilter.offline),
+            );
+          },
+        ),
+        AppCheckboxSettingTile(
+          label: 'Both',
+          selected: state.statusFilter == MapBuoyStatusFilter.both,
+          onTap: () {
+            context.read<GeneralUserMapFiltersBloc>().add(
+              const ChangeStatusFilter(MapBuoyStatusFilter.both),
             );
           },
         ),
@@ -1189,7 +1206,7 @@ class _MapFiltersDraggablePanel extends StatelessWidget {
         const SizedBox(height: 14),
         const _SheetSectionTitle(label: 'Map Type'),
         const SizedBox(height: 8),
-        AppRadioSettingTile(
+        AppCheckboxSettingTile(
           label: 'Satellite',
           selected: state.mapType == MapDisplayType.satellite,
           onTap: () {
@@ -1198,7 +1215,7 @@ class _MapFiltersDraggablePanel extends StatelessWidget {
             );
           },
         ),
-        AppRadioSettingTile(
+        AppCheckboxSettingTile(
           label: 'Terrain',
           selected: state.mapType == MapDisplayType.terrain,
           onTap: () {

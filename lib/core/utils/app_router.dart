@@ -1,4 +1,5 @@
 import 'package:drifter_buoy/core/constants/app_routes.dart';
+import 'package:drifter_buoy/core/utils/google_maps_camera_utils.dart';
 import 'package:drifter_buoy/core/utils/injection_container.dart';
 import 'package:drifter_buoy/core/utils/navigation_service.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/buoys/general_user_buoys_bloc.dart';
@@ -473,7 +474,10 @@ List<DummyBuoy>? _toPreloadedMapBuoys(dynamic extra) {
     return null;
   }
 
-  return items
+  final buoys = items
+      .where(
+        (e) => isValidMapCoordinate(e.latitude, e.longitude),
+      )
       .map(
         (e) => DummyBuoy(
           id: e.buoyId,
@@ -486,6 +490,12 @@ List<DummyBuoy>? _toPreloadedMapBuoys(dynamic extra) {
         ),
       )
       .toList(growable: false);
+
+  if (buoys.isEmpty) {
+    return null;
+  }
+
+  return buoys;
 }
 
 BuoyStatus _mapStatusFromDashboardItem(

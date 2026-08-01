@@ -202,21 +202,38 @@ class GeneralUserMapFiltersPage extends StatelessWidget {
             const SizedBox(height: 14),
             _SectionTitle(label: 'Filters'),
             const SizedBox(height: 8),
+            Text(
+              'Status',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: const Color(0xFF4A4A4A),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 8),
             AppCheckboxSettingTile(
-              label: 'Status (Online / Offline)',
-              selected: state.statusFilterEnabled,
+              label: 'Online',
+              selected: state.statusFilter == MapBuoyStatusFilter.online,
               onTap: () {
                 context.read<GeneralUserMapFiltersBloc>().add(
-                  const ToggleStatusFilter(),
+                  const ChangeStatusFilter(MapBuoyStatusFilter.online),
                 );
               },
             ),
             AppCheckboxSettingTile(
-              label: 'Signal strength',
-              selected: state.signalStrengthEnabled,
+              label: 'Offline',
+              selected: state.statusFilter == MapBuoyStatusFilter.offline,
               onTap: () {
                 context.read<GeneralUserMapFiltersBloc>().add(
-                  const ToggleSignalStrengthFilter(),
+                  const ChangeStatusFilter(MapBuoyStatusFilter.offline),
+                );
+              },
+            ),
+            AppCheckboxSettingTile(
+              label: 'Both',
+              selected: state.statusFilter == MapBuoyStatusFilter.both,
+              onTap: () {
+                context.read<GeneralUserMapFiltersBloc>().add(
+                  const ChangeStatusFilter(MapBuoyStatusFilter.both),
                 );
               },
             ),
@@ -226,29 +243,6 @@ class GeneralUserMapFiltersPage extends StatelessWidget {
               onTap: () {
                 context.read<GeneralUserMapFiltersBloc>().add(
                   const ToggleLocationZoneFilter(),
-                );
-              },
-            ),
-            const SizedBox(height: 10),
-            const Divider(color: Color(0xFFD2D2D2), thickness: 1),
-            const SizedBox(height: 14),
-            _SectionTitle(label: 'Map Type'),
-            const SizedBox(height: 8),
-            AppRadioSettingTile(
-              label: 'Satellite',
-              selected: state.mapType == MapDisplayType.satellite,
-              onTap: () {
-                context.read<GeneralUserMapFiltersBloc>().add(
-                  const ChangeMapDisplayType(MapDisplayType.satellite),
-                );
-              },
-            ),
-            AppRadioSettingTile(
-              label: 'Terrain',
-              selected: state.mapType == MapDisplayType.terrain,
-              onTap: () {
-                context.read<GeneralUserMapFiltersBloc>().add(
-                  const ChangeMapDisplayType(MapDisplayType.terrain),
                 );
               },
             ),

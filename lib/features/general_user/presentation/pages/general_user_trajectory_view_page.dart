@@ -8,9 +8,11 @@ import 'package:drifter_buoy/core/utils/widgets/app_settings_tiles.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_filters/general_user_trajectory_filters_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_filters/general_user_trajectory_filters_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_filters/general_user_trajectory_filters_state.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/map_filters/general_user_map_filters_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_view/general_user_trajectory_view_bloc.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_view/general_user_trajectory_view_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_view/general_user_trajectory_view_state.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/trajectory_view/general_user_trajectory_view_mapper.dart';
 import 'package:drifter_buoy/features/general_user/presentation/widgets/google_trajectory_live_map_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -210,15 +212,13 @@ class _GeneralUserTrajectoryViewPageState
       );
     }
 
-    final points =
-        (filters.status == GeneralUserTrajectoryFiltersStatus.loaded &&
-            filters.trajectoryPoints.isNotEmpty)
-        ? filters.displayedPoints
-        : state.trajectoryPoints;
+    final points = applyTrajectoryBatteryDisplayFilter(
+      state.trajectoryPoints,
+      batteryLogsEnabled: filters.batteryLogsEnabled,
+    );
 
     final showInlineLoader =
-        state.status == GeneralUserTrajectoryViewStatus.loading ||
-        filters.status == GeneralUserTrajectoryFiltersStatus.loading;
+        state.status == GeneralUserTrajectoryViewStatus.loading;
 
     return Stack(
       children: [
@@ -226,18 +226,10 @@ class _GeneralUserTrajectoryViewPageState
           child: GoogleTrajectoryLiveMapView(
             points: points,
             initialZoom: state.zoom,
-            showGpsCoordinates:
-                filters.status == GeneralUserTrajectoryFiltersStatus.loaded
-                ? filters.gpsCoordinatesEnabled
-                : false,
-            showTimestamps:
-                filters.status == GeneralUserTrajectoryFiltersStatus.loaded
-                ? filters.timestampsEnabled
-                : false,
-            showBatteryLogs:
-                filters.status == GeneralUserTrajectoryFiltersStatus.loaded
-                ? filters.batteryLogsEnabled
-                : false,
+            showGpsCoordinates: filters.gpsCoordinatesEnabled,
+            showTimestamps: filters.timestampsEnabled,
+            showBatteryLogs: filters.batteryLogsEnabled,
+            mapType: filters.mapType,
             interactive: true,
             onControllerReady: (c) => _mapController = c,
             onMapZoomChanged: (zoom) {
@@ -626,6 +618,33 @@ class _TrajectoryFiltersSheet extends StatelessWidget {
                     );
                   },
                 ),
+                const SizedBox(height: 10),
+                const Divider(color: Color(0xFFD2D2D2), thickness: 1),
+                const SizedBox(height: 14),
+                const _TrajectorySheetSectionTitle(label: 'Map Type'),
+                const SizedBox(height: 8),
+                AppCheckboxSettingTile(
+                  label: 'Satellite',
+                  selected: state.mapType == MapDisplayType.satellite,
+                  onTap: () {
+                    context.read<GeneralUserTrajectoryFiltersBloc>().add(
+                      const ChangeTrajectoryMapDisplayType(
+                        MapDisplayType.satellite,
+                      ),
+                    );
+                  },
+                ),
+                AppCheckboxSettingTile(
+                  label: 'Terrain',
+                  selected: state.mapType == MapDisplayType.terrain,
+                  onTap: () {
+                    context.read<GeneralUserTrajectoryFiltersBloc>().add(
+                      const ChangeTrajectoryMapDisplayType(
+                        MapDisplayType.terrain,
+                      ),
+                    );
+                  },
+                ),
               ],
             ),
           ),
@@ -645,7 +664,7 @@ class _TrajectoryFiltersBottomSheetContainer extends StatelessWidget {
     return Container(
       constraints: BoxConstraints(
         minHeight: MediaQuery.sizeOf(context).height * 0.34,
-        maxHeight: MediaQuery.sizeOf(context).height * 0.52,
+        maxHeight: MediaQuery.sizeOf(context).height * 0.58,
       ),
       width: double.infinity,
       decoration: const BoxDecoration(
@@ -653,6 +672,23 @@ class _TrajectoryFiltersBottomSheetContainer extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
       ),
       child: SafeArea(top: false, child: child),
+    );
+  }
+}
+
+class _TrajectorySheetSectionTitle extends StatelessWidget {
+  const _TrajectorySheetSectionTitle({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label,
+      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+        color: const Color(0xFF2D3238),
+        fontWeight: FontWeight.w700,
+      ),
     );
   }
 }

@@ -67,6 +67,20 @@ const _longitudeKeys = [
   'Long',
 ];
 
+final _coordinateNumberPattern = RegExp(
+  r'^[+\-]?\d+(?:\.\d+)?$',
+);
+
+final _latitudeInTextPattern = RegExp(
+  r'latitude\s*[:=]\s*([+\-]?\d+(?:\.\d+)?)',
+  caseSensitive: false,
+);
+
+final _longitudeInTextPattern = RegExp(
+  r'longitude\s*[:=]\s*([+\-]?\d+(?:\.\d+)?)',
+  caseSensitive: false,
+);
+
 (String, String) _extractCoordinates(dynamic node, [int depth = 0]) {
   if (depth > 8 || node == null) {
     return ('', '');
@@ -84,7 +98,7 @@ const _longitudeKeys = [
     if (node.length >= 2) {
       final first = _coordinateToString(node[0]);
       final second = _coordinateToString(node[1]);
-      if (first.isNotEmpty && second.isNotEmpty) {
+      if (_isCoordinateValue(first) && _isCoordinateValue(second)) {
         return (first, second);
       }
     }
@@ -137,10 +151,20 @@ const _longitudeKeys = [
     return ('', '');
   }
 
+  final latMatch = _latitudeInTextPattern.firstMatch(trimmed);
+  final lonMatch = _longitudeInTextPattern.firstMatch(trimmed);
+  if (latMatch != null && lonMatch != null) {
+    return (
+      _normalizeCoordinateText(latMatch.group(1) ?? ''),
+      _normalizeCoordinateText(lonMatch.group(1) ?? ''),
+    );
+  }
+
   final parts = trimmed
       .split(RegExp(r'[,;|\s]+'))
       .map((part) => part.trim())
-      .where((part) => part.isNotEmpty)
+      .where(_isCoordinateValue)
+      .map(_normalizeCoordinateText)
       .toList(growable: false);
 
   if (parts.length >= 2) {
@@ -167,19 +191,22 @@ String _readCoordinate(Map<String, dynamic> json, List<String> keys) {
   }
 
   for (final entry in json.entries) {
-    final key = entry.key.toLowerCase();
-    if (_latitudeKeys.any((k) => k.toLowerCase() == key) ||
-        key.contains('latitude') ||
-        key == 'lat') {
+    final key = entry.key.toLowerCase().trim();
+    final isExactLatitude =
+        _latitudeKeys.any((k) => k.toLowerCase() == key) ||
+        key == 'lat';
+    final isExactLongitude =
+        _longitudeKeys.any((k) => k.toLowerCase() == key) ||
+        key == 'lng' ||
+        key == 'lon';
+
+    if (isExactLatitude) {
       final text = _coordinateToString(entry.value);
       if (text.isNotEmpty) {
         return text;
       }
     }
-    if (_longitudeKeys.any((k) => k.toLowerCase() == key) ||
-        key.contains('longitude') ||
-        key == 'lng' ||
-        key == 'lon') {
+    if (isExactLongitude) {
       final text = _coordinateToString(entry.value);
       if (text.isNotEmpty) {
         return text;
@@ -194,16 +221,34 @@ String _coordinateToString(dynamic value) {
   if (value == null) {
     return '';
   }
+  // Never treat nested maps/lists as coordinate text (avoids Map.toString()
+  // like `{buoyId: BUOY0001, latitude: +23.060812, ...}` in the UI).
+  if (value is Map || value is List) {
+    return '';
+  }
   if (value is num) {
     return _formatCoordinateNumber(value);
   }
   final text = value.toString().trim();
   if (text.isEmpty ||
       text.toLowerCase() == 'null' ||
-      _isNoDataText(text)) {
+      _isNoDataText(text) ||
+      !_isCoordinateValue(text)) {
     return '';
   }
-  return text;
+  return _normalizeCoordinateText(text);
+}
+
+bool _isCoordinateValue(String value) {
+  return _coordinateNumberPattern.hasMatch(value.trim());
+}
+
+String _normalizeCoordinateText(String value) {
+  final trimmed = value.trim();
+  if (trimmed.startsWith('+')) {
+    return trimmed.substring(1);
+  }
+  return trimmed;
 }
 
 String _formatCoordinateNumber(num value) {

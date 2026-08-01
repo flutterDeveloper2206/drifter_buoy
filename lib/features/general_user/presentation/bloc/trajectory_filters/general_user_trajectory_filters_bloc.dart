@@ -20,6 +20,7 @@ class GeneralUserTrajectoryFiltersBloc
     on<ToggleGpsCoordinatesFilter>(_onToggleGpsCoordinatesFilter);
     on<ToggleTimestampsFilter>(_onToggleTimestampsFilter);
     on<ToggleBatteryLogsFilter>(_onToggleBatteryLogsFilter);
+    on<ChangeTrajectoryMapDisplayType>(_onChangeTrajectoryMapDisplayType);
     on<ZoomInGeneralUserTrajectoryFilters>(
       _onZoomInGeneralUserTrajectoryFilters,
     );
@@ -105,6 +106,13 @@ class GeneralUserTrajectoryFiltersBloc
     Emitter<GeneralUserTrajectoryFiltersState> emit,
   ) {
     emit(state.copyWith(batteryLogsEnabled: !state.batteryLogsEnabled));
+  }
+
+  void _onChangeTrajectoryMapDisplayType(
+    ChangeTrajectoryMapDisplayType event,
+    Emitter<GeneralUserTrajectoryFiltersState> emit,
+  ) {
+    emit(state.copyWith(mapType: event.mapType));
   }
 
   void _onZoomInGeneralUserTrajectoryFilters(

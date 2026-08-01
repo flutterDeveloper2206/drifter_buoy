@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 
 import 'package:drifter_buoy/core/utils/google_maps_camera_utils.dart';
+import 'package:drifter_buoy/features/general_user/presentation/bloc/map_filters/general_user_map_filters_event.dart';
 import 'package:drifter_buoy/features/general_user/presentation/widgets/dummy_buoy_map_view.dart';
 import 'package:drifter_buoy/features/general_user/presentation/widgets/dummy_trajectory_live_map_view.dart';
 import 'package:flutter/foundation.dart';
@@ -17,6 +18,7 @@ class GoogleTrajectoryLiveMapView extends StatefulWidget {
     this.showGpsCoordinates = false,
     this.showTimestamps = false,
     this.showBatteryLogs = false,
+    this.mapType = MapDisplayType.terrain,
     this.interactive = true,
     this.onControllerReady,
     this.onMapZoomChanged,
@@ -27,6 +29,7 @@ class GoogleTrajectoryLiveMapView extends StatefulWidget {
   final bool showGpsCoordinates;
   final bool showTimestamps;
   final bool showBatteryLogs;
+  final MapDisplayType mapType;
   final bool interactive;
   final ValueChanged<GoogleMapController>? onControllerReady;
 
@@ -91,6 +94,19 @@ class _GoogleTrajectoryLiveMapViewState
       _didFit = false;
       _scheduleFit();
     }
+    if (oldWidget.mapType != widget.mapType) {
+      setState(() {});
+    }
+  }
+
+  MapType _googleMapType() {
+    return widget.mapType == MapDisplayType.satellite
+        ? MapType.satellite
+        : MapType.terrain;
+  }
+
+  String? _mapStyleForType() {
+    return widget.mapType == MapDisplayType.terrain ? _mapStyle : null;
   }
 
   bool _sameTrajectoryPath(
@@ -229,17 +245,18 @@ class _GoogleTrajectoryLiveMapViewState
 
   Set<Marker> _buildMarkers() {
     final markers = <Marker>{};
-    final lastIndex = widget.points.length - 1;
     for (var i = 0; i < widget.points.length; i++) {
       final p = widget.points[i];
       final pos = LatLng(p.position.latitude, p.position.longitude);
       final key = _cacheKey(p);
       final icon = _markerIconCache[key];
-      final isStart = i == 0;
-      final isCurrent = i == lastIndex;
+      final isStart = p.isStartPoint;
+      final isCurrent = p.isEndPoint;
       markers.add(
         Marker(
-          markerId: MarkerId('trajectory_$i'),
+          markerId: MarkerId(
+            'trajectory_${p.position.latitude}_${p.position.longitude}_${p.timestampLabel}_$i',
+          ),
           position: pos,
           zIndexInt: isCurrent ? 3 : (isStart ? 2 : 1),
           icon: isCurrent
@@ -371,7 +388,11 @@ class _GoogleTrajectoryLiveMapViewState
     if (c == null || _didFit || widget.points.isEmpty) return;
     final points = widget.points
         .map((e) => LatLng(e.position.latitude, e.position.longitude))
+        .where((p) => isValidMapCoordinate(p.latitude, p.longitude))
         .toList(growable: false);
+    if (points.isEmpty) {
+      return;
+    }
     _didFit = true;
     try {
       await fitGoogleMapToPoints(
@@ -404,19 +425,36 @@ class _GoogleTrajectoryLiveMapViewState
 
   @override
   Widget build(BuildContext context) {
-    final target = widget.points.isNotEmpty
-        ? LatLng(
-            widget.points.first.position.latitude,
-            widget.points.first.position.longitude,
-          )
-        : const LatLng(37.7749, -122.4194);
+    final validPoints = widget.points
+        .map((p) => LatLng(p.position.latitude, p.position.longitude))
+        .where((p) => isValidMapCoordinate(p.latitude, p.longitude))
+        .toList(growable: false);
+    final initialTarget = validPoints.isNotEmpty
+        ? validPoints.first
+        : null;
+    if (initialTarget == null) {
+      return const ColoredBox(
+        color: Color(0xFFE8EBED),
+        child: Center(
+          child: Text(
+            'No valid trajectory points to display.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Color(0xFF6A7178),
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      );
+    }
     return GoogleMap(
       initialCameraPosition: CameraPosition(
-        target: target,
+        target: initialTarget,
         zoom: widget.initialZoom,
       ),
-      style: _mapStyle,
-      mapType: MapType.hybrid,
+      style: _mapStyleForType(),
+      mapType: _googleMapType(),
       markers: _buildMarkers(),
       polylines: _buildPolylines(),
       minMaxZoomPreference: const MinMaxZoomPreference(3, 21),

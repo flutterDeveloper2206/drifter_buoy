@@ -2,6 +2,8 @@ import 'package:equatable/equatable.dart';
 
 enum MapDisplayType { satellite, terrain }
 
+enum MapBuoyStatusFilter { online, offline, both }
+
 abstract class GeneralUserMapFiltersEvent extends Equatable {
   const GeneralUserMapFiltersEvent();
 
@@ -29,12 +31,13 @@ class ToggleGprsSignal extends GeneralUserMapFiltersEvent {
   const ToggleGprsSignal();
 }
 
-class ToggleStatusFilter extends GeneralUserMapFiltersEvent {
-  const ToggleStatusFilter();
-}
+class ChangeStatusFilter extends GeneralUserMapFiltersEvent {
+  const ChangeStatusFilter(this.filter);
 
-class ToggleSignalStrengthFilter extends GeneralUserMapFiltersEvent {
-  const ToggleSignalStrengthFilter();
+  final MapBuoyStatusFilter filter;
+
+  @override
+  List<Object> get props => [filter];
 }
 
 class ToggleLocationZoneFilter extends GeneralUserMapFiltersEvent {

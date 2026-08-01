@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import 'package:drifter_buoy/features/general_user/presentation/bloc/map_filters/general_user_map_filters_event.dart';
+
 abstract class GeneralUserTrajectoryFiltersEvent extends Equatable {
   const GeneralUserTrajectoryFiltersEvent();
 
@@ -35,6 +37,16 @@ class ToggleTimestampsFilter extends GeneralUserTrajectoryFiltersEvent {
 
 class ToggleBatteryLogsFilter extends GeneralUserTrajectoryFiltersEvent {
   const ToggleBatteryLogsFilter();
+}
+
+class ChangeTrajectoryMapDisplayType
+    extends GeneralUserTrajectoryFiltersEvent {
+  const ChangeTrajectoryMapDisplayType(this.mapType);
+
+  final MapDisplayType mapType;
+
+  @override
+  List<Object> get props => [mapType];
 }
 
 class ZoomInGeneralUserTrajectoryFilters
